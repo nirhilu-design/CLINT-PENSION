@@ -1,285 +1,264 @@
 import React, { useState } from 'react'
-import StatusBadge from './StatusBadge.jsx'
-import SummaryCards from './SummaryCards.jsx'
+import FindingCard from './FindingCard.jsx'
 
-const TABS = [
-  { id: 'fees', label: 'דמי ניהול' },
-  { id: 'insurance', label: 'מסלול ביטוחי' },
-  { id: 'investment', label: 'מסלול השקעה' },
-  { id: 'endage', label: 'תום תקופת ביטוח' },
-]
-
-export default function Dashboard({ analytics, onReset }) {
-  const [activeTab, setActiveTab] = useState('fees')
-
-  return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 20 }}>דוח בקרת פנסיה</h1>
-          <p style={{ margin: '4px 0 0', color: 'var(--color-text-muted)', fontSize: 13 }}>
-            {analytics.totalRows} שורות נותחו
-          </p>
-        </div>
-        <button
-          onClick={onReset}
-          style={{ padding: '8px 16px', border: '1px solid var(--color-border)', borderRadius: 8, background: '#fff', fontSize: 13 }}
-        >
-          העלה קובץ חדש
-        </button>
-      </div>
-
-      {/* Tab bar */}
-      <div style={{ display: 'flex', gap: 4, borderBottom: '2px solid var(--color-border)', marginBottom: 24 }}>
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setActiveTab(t.id)}
-            style={{
-              padding: '10px 20px', border: 'none', background: 'none', fontWeight: activeTab === t.id ? 700 : 400,
-              color: activeTab === t.id ? 'var(--color-primary)' : 'var(--color-text-muted)',
-              borderBottom: activeTab === t.id ? '2px solid var(--color-primary)' : '2px solid transparent',
-              cursor: 'pointer', fontSize: 14, marginBottom: -2,
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {activeTab === 'fees'       && <FeesTab data={analytics.managementFees} />}
-      {activeTab === 'insurance'  && <InsuranceTab data={analytics.insuranceTrack} />}
-      {activeTab === 'investment' && <InvestmentTab data={analytics.investmentTrack} />}
-      {activeTab === 'endage'     && <EndAgeTab data={analytics.insuranceEndAge} />}
-    </div>
-  )
+const PRODUCT_LABELS = {
+  pension:           'פנסיה',
+  bituach_menahalim: 'ביטוח מנהלים',
+  gemel:             'גמל',
+  hishtalmut:        'השתלמות',
 }
 
-// ─── Fees Tab ────────────────────────────────────────────────
-function FeesTab({ data }) {
-  const { rows, summary } = data
-  const [filter, setFilter] = useState('all')
-  const filtered = filter === 'all' ? rows : rows.filter(r => r.feeStatus === filter)
+const PRODUCT_ORDER = ['pension', 'bituach_menahalim', 'gemel', 'hishtalmut']
 
-  const cards = [
-    { value: summary.ok || 0,           label: 'תקין',        color: 'var(--color-ok)',     bg: 'var(--color-ok-bg)',     border: '#bbf7d0' },
-    { value: summary.overpaying || 0,   label: 'משלם יתר',   color: 'var(--color-danger)', bg: 'var(--color-danger-bg)', border: '#fecaca' },
-    { value: summary.no_agreement || 0, label: 'ללא הסכם',   color: 'var(--color-warn)',   bg: 'var(--color-warn-bg)',   border: '#fde68a' },
-  ]
+export default function Dashboard({ analytics, clientProfile = {}, onReset }) {
+  const { byType, globalFindings, summary, totalRows } = analytics
+  const clientInfo = analytics.clientInfo || {}
+
+  const availableTypes = PRODUCT_ORDER.filter(t => byType[t]?.length > 0)
+  const tabs = ['overview', ...availableTypes]
+  const [activeTab, setActiveTab] = useState('overview')
 
   return (
-    <div>
-      <SummaryCards cards={cards} />
-      <FilterBar value={filter} onChange={setFilter} options={[
-        { value: 'all', label: 'הכל' },
-        { value: 'overpaying', label: 'משלם יתר' },
-        { value: 'no_agreement', label: 'ללא הסכם' },
-        { value: 'ok', label: 'תקין' },
-      ]} />
-      <TableCard>
-        <table>
-          <thead>
-            <tr>
-              <th>עובד</th><th>יצרן</th><th>דמ מפרמיה</th><th>הסכם פרמיה</th>
-              <th>דמ מצבירה</th><th>הסכם צבירה</th><th>סטטוס</th><th>הערה</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 && <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>אין נתונים</td></tr>}
-            {filtered.map((r, i) => (
-              <tr key={i}>
-                <td>{r.employeeName || r.employeeCode || '—'}</td>
-                <td>{r.issuer || '—'}</td>
-                <td>{r.feeFromPremium != null ? `${r.feeFromPremium}%` : '—'}</td>
-                <td>{r.agreedPremium != null ? `${r.agreedPremium}%` : '—'}</td>
-                <td>{r.feeFromAccumulation != null ? `${r.feeFromAccumulation}%` : '—'}</td>
-                <td>{r.agreedAccum != null ? `${r.agreedAccum}%` : '—'}</td>
-                <td><StatusBadge status={r.feeStatus} /></td>
-                <td style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{r.feeReason || ''}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </TableCard>
-    </div>
-  )
-}
-
-// ─── Insurance Track Tab ─────────────────────────────────────
-function InsuranceTab({ data }) {
-  const { rows, summary } = data
-  const [filter, setFilter] = useState('all')
-  const filtered = filter === 'all' ? rows : rows.filter(r => r.insuranceStatus === filter)
-
-  const cards = [
-    { value: summary.ok || 0,            label: 'תקין',        color: 'var(--color-ok)',     bg: 'var(--color-ok-bg)',     border: '#bbf7d0' },
-    { value: summary.suspicious || 0,    label: 'חשוד',        color: 'var(--color-warn)',   bg: 'var(--color-warn-bg)',   border: '#fde68a' },
-    { value: summary.missing || 0,       label: 'חסר מידע',   color: 'var(--color-info)',   bg: 'var(--color-info-bg)',   border: '#bae6fd' },
-    { value: summary.not_applicable || 0,label: 'לא רלוונטי', color: 'var(--color-text-muted)', bg: '#f1f5f9', border: '#e2e8f0' },
-  ]
-
-  return (
-    <div>
-      <SummaryCards cards={cards} />
-      <FilterBar value={filter} onChange={setFilter} options={[
-        { value: 'all', label: 'הכל' },
-        { value: 'suspicious', label: 'חשוד' },
-        { value: 'missing', label: 'חסר מידע' },
-        { value: 'ok', label: 'תקין' },
-        { value: 'not_applicable', label: 'לא רלוונטי' },
-      ]} />
-      <TableCard>
-        <table>
-          <thead>
-            <tr><th>עובד</th><th>יצרן</th><th>מס׳ קרנות</th><th>סטטוס</th><th>הערה</th></tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>אין נתונים</td></tr>}
-            {filtered.map((r, i) => (
-              <tr key={i}>
-                <td>{r.employeeName || r.employeeCode || '—'}</td>
-                <td>{r.issuer || '—'}</td>
-                <td>{r.fundCount || 1}</td>
-                <td><StatusBadge status={r.insuranceStatus} /></td>
-                <td style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{r.insuranceReason || ''}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </TableCard>
-    </div>
-  )
-}
-
-// ─── Investment Track Tab ─────────────────────────────────────
-function InvestmentTab({ data }) {
-  const { rows, summary, categoryBreakdown } = data
-  const [filter, setFilter] = useState('all')
-  const filtered = filter === 'all' ? rows : rows.filter(r => r.trackStatus === filter)
-
-  const cards = [
-    { value: summary.ok || 0,                label: 'תקין',           color: 'var(--color-ok)',     bg: 'var(--color-ok-bg)',     border: '#bbf7d0' },
-    { value: summary.suspicious || 0,         label: 'חשוד',           color: 'var(--color-warn)',   bg: 'var(--color-warn-bg)',   border: '#fde68a' },
-    { value: summary.missing_section14 || 0,  label: 'נדרש בירור',    color: 'var(--color-info)',   bg: 'var(--color-info-bg)',   border: '#bae6fd' },
-    { value: summary.missing || 0,            label: 'חסר מסלול',     color: 'var(--color-danger)', bg: 'var(--color-danger-bg)', border: '#fecaca' },
-  ]
-
-  const CATEGORY_LABELS = {
-    AGE_BASED: 'מבוסס גיל', STOCKS: 'מניות', SP500: 'S&P500',
-    INDEX: 'מחקה מדד', BONDS: "אג\"ח", SHEKEL: 'שקלי', GENERAL: 'כללי', unknown: 'לא ידוע',
-  }
-
-  return (
-    <div>
-      <SummaryCards cards={cards} />
-
-      {/* Category breakdown */}
-      {categoryBreakdown && (
-        <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 10, padding: '16px 20px', marginBottom: 20 }}>
-          <div style={{ fontWeight: 600, marginBottom: 12, fontSize: 13 }}>פילוח מסלולים</div>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            {Object.entries(categoryBreakdown).map(([cat, cnt]) => (
-              <div key={cat} style={{ background: '#f8fafc', borderRadius: 8, padding: '8px 14px', fontSize: 13 }}>
-                <span style={{ fontWeight: 700 }}>{cnt}</span>
-                <span style={{ color: 'var(--color-text-muted)', marginRight: 6 }}>{CATEGORY_LABELS[cat] || cat}</span>
+    <div style={{ background: 'var(--color-bg)', minHeight: '100vh', direction: 'rtl' }}>
+      {/* Top header */}
+      <div style={{ background: '#fff', borderBottom: '1px solid var(--color-border)', padding: '0 24px' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0 0' }}>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
+                {clientInfo.clientName || 'לקוח'}
               </div>
+              <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
+                {[
+                  clientInfo.age ? `גיל ${clientInfo.age}` : null,
+                  clientInfo.clientId ? `ת.ז. ${clientInfo.clientId}` : null,
+                  clientInfo.birthDate ? `נולד ${clientInfo.birthDate}` : null,
+                  clientProfile.gender === 'male' ? 'זכר' : clientProfile.gender === 'female' ? 'נקבה' : null,
+                  clientProfile.marital ? MARITAL_LABELS[clientProfile.marital] : null,
+                  clientProfile.children > 0 ? `${clientProfile.children} ילדים` : null,
+                ].filter(Boolean).join(' | ')}
+              </div>
+            </div>
+            <button
+              onClick={onReset}
+              style={{ padding: '8px 16px', border: '1px solid var(--color-border)', borderRadius: 8, background: '#fff', fontSize: 13, cursor: 'pointer' }}
+            >
+              העלה קבצים חדשים
+            </button>
+          </div>
+
+          {/* Tab bar */}
+          <div style={{ display: 'flex', gap: 0, marginTop: 16 }}>
+            {tabs.map(t => (
+              <button key={t} onClick={() => setActiveTab(t)} style={{
+                padding: '10px 20px', border: 'none', background: 'none',
+                fontWeight: activeTab === t ? 700 : 400,
+                color: activeTab === t ? 'var(--color-primary)' : '#6b7280',
+                borderBottom: `2px solid ${activeTab === t ? 'var(--color-primary)' : 'transparent'}`,
+                cursor: 'pointer', fontSize: 14, whiteSpace: 'nowrap',
+              }}>
+                {t === 'overview' ? 'סקירה כללית' : PRODUCT_LABELS[t]}
+                {t !== 'overview' && (
+                  <span style={{ marginRight: 6, fontSize: 11, color: '#9ca3af' }}>({byType[t]?.length})</span>
+                )}
+              </button>
             ))}
           </div>
         </div>
-      )}
+      </div>
 
-      <FilterBar value={filter} onChange={setFilter} options={[
-        { value: 'all', label: 'הכל' },
-        { value: 'suspicious', label: 'חשוד' },
-        { value: 'missing_section14', label: 'נדרש בירור' },
-        { value: 'ok', label: 'תקין' },
-      ]} />
-      <TableCard>
-        <table>
-          <thead>
-            <tr><th>עובד</th><th>יצרן</th><th>מסלול</th><th>קטגוריה</th><th>סטטוס</th><th>הערה</th></tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>אין נתונים</td></tr>}
-            {filtered.map((r, i) => (
-              <tr key={i}>
-                <td>{r.employeeName || r.employeeCode || '—'}</td>
-                <td>{r.issuer || '—'}</td>
-                <td style={{ fontSize: 12 }}>{r.investmentTrack || '—'}</td>
-                <td>{r.trackLabel || '—'}</td>
-                <td><StatusBadge status={r.trackStatus} /></td>
-                <td style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{r.trackReason || ''}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </TableCard>
+      {/* Tab content */}
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px' }}>
+        {activeTab === 'overview' && (
+          <OverviewTab summary={summary} globalFindings={globalFindings} byType={byType} />
+        )}
+        {availableTypes.map(type => (
+          activeTab === type && (
+            <ProductTab key={type} rows={byType[type]} label={PRODUCT_LABELS[type]} />
+          )
+        ))}
+      </div>
     </div>
   )
 }
 
-// ─── Insurance End Age Tab ───────────────────────────────────
-function EndAgeTab({ data }) {
-  const { rows, totalChecked, flaggedCount } = data
+const MARITAL_LABELS = { single: 'רווק/ה', married: 'נשוי/אה', divorced: 'גרוש/ה', widowed: 'אלמן/ה' }
 
-  const cards = [
-    { value: totalChecked,  label: 'סה"כ נבדקו',     color: 'var(--color-text)' },
-    { value: flaggedCount,  label: 'גיל תום < 67',   color: 'var(--color-danger)', bg: 'var(--color-danger-bg)', border: '#fecaca' },
-    { value: totalChecked - flaggedCount, label: 'תקין', color: 'var(--color-ok)', bg: 'var(--color-ok-bg)', border: '#bbf7d0' },
-  ]
+// ─── Overview Tab ─────────────────────────────────────────────────
+function OverviewTab({ summary, globalFindings, byType }) {
+  const { totalAccumulation, maxSalary, byType: typeStats, activeCount, totalCount } = summary
 
   return (
     <div>
-      <SummaryCards cards={cards} />
-      <TableCard>
-        <table>
-          <thead>
-            <tr><th>עובד</th><th>יצרן</th><th>גיל תום ביטוח</th><th>הערה</th></tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--color-ok)' }}>✓ אין עובדים עם גיל תום ביטוח מתחת ל-67</td></tr>}
-            {rows.map((r, i) => (
-              <tr key={i}>
-                <td>{r.employeeName || r.employeeCode || '—'}</td>
-                <td>{r.issuer || '—'}</td>
-                <td style={{ color: 'var(--color-danger)', fontWeight: 700 }}>{r.insuranceEndAge}</td>
-                <td style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{r.insuranceEndAgeReason}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </TableCard>
+      {/* Summary cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
+        <StatCard label="סה״כ צבירה" value={totalAccumulation > 0 ? `₪${Math.round(totalAccumulation).toLocaleString()}` : '—'} />
+        <StatCard label="מוצרים פעילים" value={activeCount} />
+        {maxSalary && <StatCard label="שכר מבוטח" value={`₪${maxSalary.toLocaleString()}`} />}
+        {PRODUCT_ORDER.filter(t => typeStats[t]).map(t => (
+          <StatCard
+            key={t}
+            label={PRODUCT_LABELS[t]}
+            value={typeStats[t]?.accumulation > 0 ? `₪${Math.round(typeStats[t].accumulation).toLocaleString()}` : `${typeStats[t]?.count} מוצרים`}
+          />
+        ))}
+      </div>
+
+      {/* Global findings */}
+      {globalFindings?.length > 0 && (
+        <Section title="ממצאים כלל-תיק">
+          {globalFindings.map((f, i) => <FindingCard key={i} {...f} />)}
+        </Section>
+      )}
+
+      {/* Quick product summary */}
+      <Section title="סקירת מוצרים">
+        {PRODUCT_ORDER.filter(t => byType[t]).map(type => (
+          <div key={type} style={{ marginBottom: 16 }}>
+            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8, color: '#374151' }}>{PRODUCT_LABELS[type]}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 8 }}>
+              {byType[type].map((row, i) => <ProductMiniCard key={i} row={row} />)}
+            </div>
+          </div>
+        ))}
+      </Section>
     </div>
   )
 }
 
-// ─── Shared helpers ──────────────────────────────────────────
-function TableCard({ children }) {
+function StatCard({ label, value }) {
   return (
-    <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 10, overflow: 'hidden' }}>
-      <div style={{ overflowX: 'auto' }}>{children}</div>
+    <div style={{ background: '#fff', border: '1px solid var(--color-border)', borderRadius: 10, padding: '16px 20px' }}>
+      <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 20, fontWeight: 700, color: '#111827' }}>{value}</div>
     </div>
   )
 }
 
-function FilterBar({ value, onChange, options }) {
+function ProductMiniCard({ row }) {
+  const hasDanger  = row.findings?.some(f => f.status === 'danger')
+  const hasWarn    = row.findings?.some(f => f.status === 'warn')
+  const dotColor   = hasDanger ? '#ef4444' : hasWarn ? '#f59e0b' : '#22c55e'
+
   return (
-    <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-      {options.map(o => (
-        <button
-          key={o.value}
-          onClick={() => onChange(o.value)}
-          style={{
-            padding: '5px 14px', borderRadius: 999, border: '1px solid',
-            borderColor: value === o.value ? 'var(--color-primary)' : 'var(--color-border)',
-            background: value === o.value ? 'var(--color-primary-light)' : '#fff',
-            color: value === o.value ? 'var(--color-primary)' : 'var(--color-text-muted)',
-            fontWeight: value === o.value ? 700 : 400, fontSize: 12,
-          }}
-        >
-          {o.label}
-        </button>
+    <div style={{ background: '#fff', border: '1px solid var(--color-border)', borderRadius: 8, padding: '12px 14px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+        <span style={{ width: 8, height: 8, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+        <span style={{ fontWeight: 600, fontSize: 13 }}>{row.issuer || '—'}</span>
+        <span style={{ fontSize: 11, color: '#9ca3af', marginRight: 'auto' }}>
+          {row.status === 'active' ? 'פעיל' : 'לא פעיל'}
+        </span>
+      </div>
+      {row.planName && <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 2 }}>{row.planName}</div>}
+      {row.accumulation > 0 && (
+        <div style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>
+          ₪{Math.round(row.accumulation).toLocaleString()}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Product Tab ──────────────────────────────────────────────────
+function ProductTab({ rows, label }) {
+  const activeRows   = rows.filter(r => r.status === 'active')
+  const inactiveRows = rows.filter(r => r.status !== 'active')
+
+  return (
+    <div>
+      {activeRows.length > 0 && (
+        <Section title={`מוצרים פעילים (${activeRows.length})`}>
+          {activeRows.map((row, i) => <ProductCard key={i} row={row} />)}
+        </Section>
+      )}
+      {inactiveRows.length > 0 && (
+        <Section title={`מוצרים לא פעילים (${inactiveRows.length})`}>
+          {inactiveRows.map((row, i) => <ProductCard key={i} row={row} />)}
+        </Section>
+      )}
+    </div>
+  )
+}
+
+function ProductCard({ row }) {
+  const [open, setOpen] = useState(true)
+
+  const findingCount = row.findings?.filter(f => f.status === 'danger' || f.status === 'warn').length || 0
+  const statusColor  = findingCount > 0 ? (row.findings?.some(f => f.status === 'danger') ? '#ef4444' : '#f59e0b') : '#22c55e'
+
+  return (
+    <div style={{
+      background: '#fff', border: '1px solid var(--color-border)',
+      borderRadius: 10, marginBottom: 12, overflow: 'hidden',
+    }}>
+      {/* Card header */}
+      <div
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px',
+          cursor: 'pointer', borderBottom: open ? '1px solid var(--color-border)' : 'none',
+        }}
+      >
+        <span style={{ width: 10, height: 10, borderRadius: '50%', background: statusColor, flexShrink: 0 }} />
+        <div style={{ flex: 1 }}>
+          <span style={{ fontWeight: 700, fontSize: 15 }}>{row.issuer || '—'}</span>
+          {row.planName && <span style={{ fontSize: 13, color: '#6b7280', marginRight: 10 }}>{row.planName}</span>}
+        </div>
+        <span style={{ fontSize: 11, color: row.status === 'active' ? '#16a34a' : '#9ca3af', fontWeight: 600 }}>
+          {row.status === 'active' ? 'פעיל' : 'לא פעיל'}
+        </span>
+        {row.policyNumber && (
+          <span style={{ fontSize: 11, color: '#9ca3af' }}>מס׳ {row.policyNumber}</span>
+        )}
+        <span style={{ color: '#9ca3af', fontSize: 12 }}>{open ? '▲' : '▼'}</span>
+      </div>
+
+      {open && (
+        <div style={{ padding: '16px 18px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+          {/* Left: data fields */}
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af', marginBottom: 10, textTransform: 'uppercase' }}>פרטי מוצר</div>
+            <DataGrid rows={[
+              ['יצרן', row.issuer],
+              ['שכר', row.salary ? `₪${row.salary.toLocaleString()}` : null],
+              ['צבירה', row.accumulation > 0 ? `₪${Math.round(row.accumulation).toLocaleString()}` : null],
+              ['תשואה נטו', row.returnNet != null ? `${row.returnNet}%` : null],
+              ['מסלול השקעה', row.investmentTrack],
+              ['מעסיק', row.employerName],
+            ]} />
+          </div>
+
+          {/* Right: findings */}
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af', marginBottom: 10, textTransform: 'uppercase' }}>ממצאים</div>
+            {row.findings?.length > 0
+              ? row.findings.map((f, i) => <FindingCard key={i} {...f} />)
+              : <div style={{ fontSize: 12, color: '#9ca3af' }}>אין ממצאים</div>}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function DataGrid({ rows }) {
+  return (
+    <div>
+      {rows.filter(([, v]) => v != null && v !== '').map(([label, value]) => (
+        <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '4px 0', borderBottom: '1px solid #f3f4f6' }}>
+          <span style={{ color: '#6b7280' }}>{label}</span>
+          <span style={{ fontWeight: 500, color: '#111827', maxWidth: '60%', textAlign: 'left' }}>{value}</span>
+        </div>
       ))}
+    </div>
+  )
+}
+
+function Section({ title, children }) {
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <div style={{ fontWeight: 700, fontSize: 14, color: '#374151', marginBottom: 12 }}>{title}</div>
+      {children}
     </div>
   )
 }
