@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import UploadPanel from './components/UploadPanel.jsx'
 import Dashboard from './components/Dashboard.jsx'
-import { parseManagerFile } from './parsing/parseManagerFile.js'
+import { parseXmlFiles } from './parsing/parseXmlFiles.js'
 import { buildPensionAnalytics } from './unified/analyticsEngine.js'
 
 export default function App() {
@@ -9,13 +9,13 @@ export default function App() {
   const [analytics, setAnalytics] = useState(null)
   const [error, setError] = useState(null)
 
-  async function handleParse(dataBuffer, agrBuffer) {
+  async function handleParse(fileArray) {
     setLoading(true)
     setError(null)
     try {
-      const result = await parseManagerFile(dataBuffer, agrBuffer)
-      const analyticsResult = buildPensionAnalytics(result.unifiedRows, result.agreements)
-      setAnalytics(analyticsResult)
+      const result = await parseXmlFiles(fileArray)
+      const analyticsResult = buildPensionAnalytics(result.unifiedRows, [])
+      setAnalytics({ ...analyticsResult, clientInfo: result.clientInfo })
     } catch (err) {
       setError(err.message || 'שגיאה בניתוח')
     } finally {

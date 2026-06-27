@@ -1,106 +1,155 @@
 import React, { useRef, useState } from 'react'
 
 export default function UploadPanel({ onParse, loading }) {
-  const dataRef = useRef(null)
-  const agrRef = useRef(null)
-  const [dataFile, setDataFile] = useState(null)
-  const [agrFile, setAgrFile] = useState(null)
+  const inputRef = useRef(null)
+  const [files, setFiles] = useState([])
+  const [dragging, setDragging] = useState(false)
   const [error, setError] = useState(null)
 
-  function handleDrop(setter, e) {
+  function addFiles(newFiles) {
+    const xmlFiles = Array.from(newFiles).filter(f => f.name.toLowerCase().endsWith('.xml'))
+    if (xmlFiles.length === 0) {
+      setError('יש לבחור קובצי XML בלבד')
+      return
+    }
+    setError(null)
+    setFiles(prev => {
+      const existing = new Set(prev.map(f => f.name))
+      const merged = [...prev, ...xmlFiles.filter(f => !existing.has(f.name))]
+      return merged
+    })
+  }
+
+  function handleDrop(e) {
     e.preventDefault()
-    const f = e.dataTransfer?.files[0]
-    if (f) setter(f)
+    setDragging(false)
+    addFiles(e.dataTransfer?.files || [])
+  }
+
+  function handleChange(e) {
+    addFiles(e.target.files || [])
+    e.target.value = ''
+  }
+
+  function removeFile(name) {
+    setFiles(prev => prev.filter(f => f.name !== name))
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!dataFile) { setError('יש לבחור קובץ DATA'); return }
+    if (files.length === 0) return
     setError(null)
     try {
-      const dataBuffer = await dataFile.arrayBuffer()
-      const agrBuffer = agrFile ? await agrFile.arrayBuffer() : null
-      await onParse(dataBuffer, agrBuffer)
+      await onParse(files)
     } catch (err) {
-      setError(err.message || 'שגיאה בניתוח הקובץ')
+      setError(err.message || 'שגיאה בניתוח הקבצים')
     }
   }
 
+  const canSubmit = files.length > 0 && !loading
+
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg)' }}>
-      <div style={{ background: 'var(--color-surface)', borderRadius: 16, padding: 40, width: 520, boxShadow: '0 4px 24px rgba(0,0,0,0.1)' }}>
-        <h1 style={{ margin: '0 0 4px', fontSize: 22, color: 'var(--color-text)' }}>מערכת ניתוח תיק פנסיה</h1>
-        <p style={{ margin: '0 0 32px', color: 'var(--color-text-muted)', fontSize: 14 }}>העלה קובץ DATA לניתוח מלא</p>
+    <div style={{
+      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'var(--color-bg)', direction: 'rtl',
+    }}>
+      <div style={{
+        background: 'var(--color-surface)', borderRadius: 16, padding: 40, width: 540,
+        boxShadow: '0 4px 24px rgba(0,0,0,0.1)',
+      }}>
+        <h1 style={{ margin: '0 0 4px', fontSize: 22, color: 'var(--color-text)' }}>
+          מערכת ניתוח תיק פנסיה
+        </h1>
+        <p style={{ margin: '0 0 32px', color: 'var(--color-text-muted)', fontSize: 14 }}>
+          העלה קובצי XML של הלקוח לניתוח מלא
+        </p>
 
         <form onSubmit={handleSubmit}>
-          <DropZone
-            label="קובץ DATA *"
-            hint="Excel עם גיליונות קרן פנסיה"
-            file={dataFile}
-            onChange={setDataFile}
-            inputRef={dataRef}
-            accept=".xlsx,.xls"
-            required
+          {/* Drop zone */}
+          <div
+            onClick={() => inputRef.current?.click()}
+            onDragOver={e => { e.preventDefault(); setDragging(true) }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={handleDrop}
+            style={{
+              border: `2px dashed ${dragging ? 'var(--color-primary)' : files.length > 0 ? '#22c55e' : 'var(--color-border)'}`,
+              borderRadius: 10, padding: '28px 20px', textAlign: 'center', cursor: 'pointer',
+              background: dragging ? 'var(--color-primary-light)' : files.length > 0 ? '#f0fdf4' : '#f8fafc',
+              transition: 'all 0.2s', marginBottom: 16,
+            }}
+          >
+            <div style={{ fontSize: 32, marginBottom: 8 }}>{files.length > 0 ? '✅' : '📂'}</div>
+            <div style={{ fontSize: 14, color: files.length > 0 ? 'var(--color-ok)' : 'var(--color-text-muted)', fontWeight: 600 }}>
+              {files.length > 0
+                ? `${files.length} ${files.length === 1 ? 'קובץ נבחר' : 'קבצים נבחרו'}`
+                : 'גרור קבצי XML לכאן או לחץ לבחירה'}
+            </div>
+            {files.length === 0 && (
+              <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
+                ניתן לבחור מספר קבצים בו-זמנית
+              </div>
+            )}
+          </div>
+
+          <input
+            ref={inputRef}
+            type="file"
+            accept=".xml"
+            multiple
+            style={{ display: 'none' }}
+            onChange={handleChange}
           />
 
-          <DropZone
-            label="קובץ הסכמי מעסיק (אופציונלי)"
-            hint="אם חסר — יחפש גיליון 'הסכמי מעסיק' בקובץ DATA"
-            file={agrFile}
-            onChange={setAgrFile}
-            inputRef={agrRef}
-            accept=".xlsx,.xls"
-          />
+          {/* File list */}
+          {files.length > 0 && (
+            <div style={{ marginBottom: 20 }}>
+              {files.map(f => (
+                <div key={f.name} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  background: '#f1f5f9', borderRadius: 6, padding: '8px 12px', marginBottom: 6,
+                  fontSize: 13,
+                }}>
+                  <span style={{ color: 'var(--color-text)', fontWeight: 500 }}>📄 {f.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeFile(f.name)}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      color: '#94a3b8', fontSize: 16, padding: '0 4px', lineHeight: 1,
+                    }}
+                    title="הסר קובץ"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           {error && (
-            <div style={{ background: 'var(--color-danger-bg)', color: 'var(--color-danger)', padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
+            <div style={{
+              background: 'var(--color-danger-bg)', color: 'var(--color-danger)',
+              padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: 13,
+            }}>
               {error}
             </div>
           )}
 
           <button
             type="submit"
-            disabled={loading || !dataFile}
+            disabled={!canSubmit}
             style={{
               width: '100%', padding: '12px 0', borderRadius: 8, border: 'none',
-              background: loading || !dataFile ? '#cbd5e1' : 'var(--color-primary)',
-              color: '#fff', fontWeight: 700, fontSize: 15, cursor: loading || !dataFile ? 'not-allowed' : 'pointer',
+              background: canSubmit ? 'var(--color-primary)' : '#cbd5e1',
+              color: '#fff', fontWeight: 700, fontSize: 15,
+              cursor: canSubmit ? 'pointer' : 'not-allowed',
+              transition: 'background 0.2s',
             }}
           >
-            {loading ? 'מנתח...' : 'נתח קובץ'}
+            {loading ? 'מנתח...' : 'נתח קבצים'}
           </button>
         </form>
       </div>
-    </div>
-  )
-}
-
-function DropZone({ label, hint, file, onChange, inputRef, accept, required }) {
-  const [dragging, setDragging] = useState(false)
-
-  return (
-    <div style={{ marginBottom: 20 }}>
-      <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, fontSize: 13 }}>{label}</label>
-      <div
-        onClick={() => inputRef.current?.click()}
-        onDragOver={e => { e.preventDefault(); setDragging(true) }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={e => { setDragging(false); e.preventDefault(); const f = e.dataTransfer?.files[0]; if (f) onChange(f) }}
-        style={{
-          border: `2px dashed ${dragging ? 'var(--color-primary)' : file ? '#22c55e' : 'var(--color-border)'}`,
-          borderRadius: 8, padding: '20px 16px', textAlign: 'center', cursor: 'pointer',
-          background: dragging ? 'var(--color-primary-light)' : file ? '#f0fdf4' : '#f8fafc',
-          transition: 'all 0.2s',
-        }}
-      >
-        <div style={{ fontSize: 24, marginBottom: 6 }}>{file ? '✅' : '📂'}</div>
-        <div style={{ fontSize: 13, color: file ? 'var(--color-ok)' : 'var(--color-text-muted)', fontWeight: file ? 600 : 400 }}>
-          {file ? file.name : 'גרור קובץ לכאן או לחץ לבחירה'}
-        </div>
-        {!file && <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>{hint}</div>}
-      </div>
-      <input ref={inputRef} type="file" accept={accept} style={{ display: 'none' }} required={required}
-        onChange={e => onChange(e.target.files[0] || null)} />
     </div>
   )
 }
