@@ -1,11 +1,11 @@
-:root {
-  color-scheme: light dark;
-}
+@import "tailwindcss";
 
-* {
-  box-sizing: border-box;
+html {
+  direction: rtl;
 }
 
 body {
-  margin: 0;
+  font-family: "Segoe UI", "Heebo", Arial, sans-serif;
+  background-color: #f5f7fa;
+  color: #1a2233;
 }
