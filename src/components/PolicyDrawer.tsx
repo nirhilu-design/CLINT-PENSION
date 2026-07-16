@@ -84,6 +84,29 @@ export default function PolicyDrawer({
           )}
         </Section>
 
+        <Section title="מסלולי השקעה">
+          {policy.investmentTracks.length === 0 ? (
+            <p className="text-sm text-slate-400">לא דווחו מסלולי השקעה</p>
+          ) : (
+            policy.investmentTracks.map((t, i) => (
+              <div key={i} className="rounded-lg border border-slate-200 p-2.5 mb-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="font-medium text-slate-700">{t.name ?? 'מסלול ללא שם'}</span>
+                  <span className="font-semibold text-slate-800">{formatCurrency(t.value)}</span>
+                </div>
+                <div className="flex flex-wrap gap-x-4 mt-1 text-xs text-slate-500">
+                  {t.depositPercent !== null && <span>מההפקדה: {formatPercent(t.depositPercent, 0)}</span>}
+                  {t.returnNet !== null && <span>תשואה נטו: {formatPercent(t.returnNet)}</span>}
+                  {t.feeFromAccumulation !== null && <span>ד"נ מצבירה: {formatPercent(t.feeFromAccumulation)}</span>}
+                  {t.feeFromDeposit !== null && t.feeFromDeposit > 0 && (
+                    <span>ד"נ מהפקדה: {formatPercent(t.feeFromDeposit)}</span>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </Section>
+
         <Section title="כיסויים ביטוחיים">
           {policy.coverages.length === 0 ? (
             <p className="text-sm text-slate-400">לא דווחו כיסויים</p>

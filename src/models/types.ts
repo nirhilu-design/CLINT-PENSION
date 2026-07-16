@@ -50,6 +50,10 @@ export interface Beneficiary {
 export interface InvestmentTrack {
   name: string | null
   value: number | null
+  depositPercent: number | null // share of new deposits routed to this track
+  returnNet: number | null // per-track net return, where the issuer reports it
+  feeFromDeposit: number | null
+  feeFromAccumulation: number | null
 }
 
 export interface FeeStructure {

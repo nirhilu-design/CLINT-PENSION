@@ -215,10 +215,30 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
     for (const heshbon of mutzar.querySelectorAll('HeshbonOPolisa')) {
       const policyNumber = getText(heshbon, 'MISPAR-POLISA-O-HESHBON') ?? ''
 
-      const tracks = [...heshbon.querySelectorAll('PerutMasluleiHashkaa')].map((m) => ({
+      // The same track appears once per contribution type — merge rows by track name
+      const trackRows = [...heshbon.querySelectorAll('PerutMasluleiHashkaa')].map((m) => ({
         name: getText(m, 'SHEM-MASLUL-HASHKAA'),
         value: getNumber(m, 'SCHUM-TZVIRA-BAMASLUL'),
+        depositPercent: getNumber(m, 'ACHUZ-HAFKADA-LEHASHKAA'),
+        returnNet: getNumber(m, 'TSUA-NETO'),
+        feeFromDeposit: getNumber(m, 'SHEUR-DMEI-NIHUL-HAFKADA'),
+        feeFromAccumulation: getNumber(m, 'SHEUR-DMEI-NIHUL-HISACHON'),
       }))
+      const trackByName = new Map<string, (typeof trackRows)[number]>()
+      for (const row of trackRows) {
+        const key = row.name ?? `#${trackByName.size}`
+        const existing = trackByName.get(key)
+        if (!existing) {
+          trackByName.set(key, { ...row })
+        } else {
+          existing.value = (existing.value ?? 0) + (row.value ?? 0)
+          existing.depositPercent = (existing.depositPercent ?? 0) + (row.depositPercent ?? 0)
+          existing.returnNet = existing.returnNet ?? row.returnNet
+          existing.feeFromDeposit = existing.feeFromDeposit ?? row.feeFromDeposit
+          existing.feeFromAccumulation = existing.feeFromAccumulation ?? row.feeFromAccumulation
+        }
+      }
+      const tracks = [...trackByName.values()]
       const currentValue = tracks.reduce((sum, t) => sum + (t.value ?? 0), 0) || null
 
       const planName = getText(heshbon, 'SHEM-TOCHNIT')
