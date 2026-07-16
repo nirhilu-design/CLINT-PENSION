@@ -89,6 +89,7 @@ export interface Policy {
   beneficiaries: Beneficiary[]
   managersGeneration: ManagersGeneration | null
   hasGuaranteedFactor: boolean // מקדם קצבה מובטח (MEKADEM-MOVTACH-LEPRISHA)
+  survivorsWaiver: boolean | null // ויתור על כיסוי שאירים בקרן פנסיה
   sourceFileName: string
 }
 

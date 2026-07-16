@@ -287,6 +287,13 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
         managersGeneration:
           productType === 'managers' ? classifyManagersGeneration(openDate) : null,
         hasGuaranteedFactor: (getNumber(yitra, 'MEKADEM-MOVTACH-LEPRISHA') ?? 0) > 0,
+        survivorsWaiver: (() => {
+          // VITUR-KISUY-BITUCHI: 1=waived, 2=not waived; SUG-VITOR-SHAERIM > 0 also indicates waiver
+          const vitur = getText(heshbon, 'VITUR-KISUY-BITUCHI')
+          const sugVitor = getNumber(heshbon, 'SUG-VITOR-SHAERIM')
+          if (vitur === null && sugVitor === null) return null
+          return vitur === '1' || (sugVitor !== null && sugVitor > 0)
+        })(),
         sourceFileName: fileName,
       })
     }
