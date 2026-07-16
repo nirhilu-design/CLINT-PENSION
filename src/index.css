@@ -1,11 +1,28 @@
 @import "tailwindcss";
 
+:root {
+  /* Brand — deep financial navy with a teal accent */
+  --brand-900: #0c1f38;
+  --brand-800: #123054;
+  --brand-700: #1a4270;
+  --brand-600: #235a92;
+  --accent-600: #0e9484;
+  --accent-500: #16ab99;
+  --paper: #f4f6f9;
+}
+
 html {
   direction: rtl;
 }
 
 body {
-  font-family: "Segoe UI", "Heebo", Arial, sans-serif;
-  background-color: #f5f7fa;
-  color: #1a2233;
+  font-family: "Heebo", "Segoe UI", Arial, sans-serif;
+  background-color: var(--paper);
+  color: #17233a;
+  font-feature-settings: "tnum";
+}
+
+/* Numbers align in tables and KPIs */
+.tabular {
+  font-variant-numeric: tabular-nums;
 }

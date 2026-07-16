@@ -32,8 +32,8 @@ function YesNoQuestion({
       onClick={() => onChange(value === selected ? null : selected)}
       className={`px-4 py-1.5 rounded-lg border text-sm transition ${
         value === selected
-          ? 'bg-blue-600 border-blue-600 text-white'
-          : 'bg-white border-slate-300 text-slate-600 hover:border-blue-400'
+          ? 'bg-[#123054] border-[#123054] text-white'
+          : 'bg-white border-slate-300 text-slate-600 hover:border-[#235a92]/60'
       }`}
     >
       {text}
@@ -204,7 +204,7 @@ export default function SupplementaryFormPage() {
         <div className="flex gap-3">
           <button
             onClick={submit}
-            className="flex-1 rounded-xl bg-blue-600 text-white font-semibold py-3 hover:bg-blue-700"
+            className="flex-1 rounded-xl bg-gradient-to-l from-[#123054] to-[#1a4270] text-white font-semibold py-3 hover:opacity-95"
           >
             המשך לניתוח
           </button>

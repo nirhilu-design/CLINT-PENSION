@@ -110,7 +110,7 @@ export default function ProductPage() {
     <button
       key={p.policyNumber}
       onClick={() => dispatch({ type: 'OPEN_POLICY', policyNumber: p.policyNumber })}
-      className="w-full rounded-xl bg-white border border-slate-200 p-4 text-right hover:border-blue-400 hover:shadow flex justify-between items-center"
+      className="w-full rounded-xl bg-white border border-slate-200 p-4 text-right hover:border-[#235a92]/50 hover:shadow flex justify-between items-center"
     >
       <div>
         <div className="font-semibold text-slate-800">{p.productName ?? p.policyNumber}</div>
@@ -125,7 +125,7 @@ export default function ProductPage() {
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <nav className="text-sm text-slate-400 mb-4">
-        <button onClick={() => dispatch({ type: 'GO_DASHBOARD' })} className="text-blue-600 hover:underline">
+        <button onClick={() => dispatch({ type: 'GO_DASHBOARD' })} className="text-[#1a4270] hover:underline">
           דשבורד
         </button>
         <span className="mx-1.5">‹</span>

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useApp } from './hooks/useAppState'
 import UploadPage from './pages/UploadPage'
 import SupplementaryFormPage from './pages/SupplementaryFormPage'
@@ -13,6 +14,11 @@ export default function App() {
   const selectedPolicy = state.analysis?.policies.find(
     (p) => p.policyNumber === state.selectedPolicyNumber,
   )
+
+  // SPA screen changes keep the previous scroll position — reset it
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [state.step, state.selectedProduct])
 
   const showNavbar = ['dashboard', 'product', 'summary'].includes(state.step)
 
