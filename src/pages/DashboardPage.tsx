@@ -8,6 +8,17 @@ import FindingCard from '../components/FindingCard'
 
 const PRODUCT_ORDER: ProductType[] = ['pension', 'managers', 'gemel', 'gemelInvestment', 'education', 'life', 'incomeProtection']
 
+const productIcons: Record<ProductType, string> = {
+  pension: '🏛️',
+  managers: '📋',
+  gemel: '🏦',
+  gemelInvestment: '📈',
+  education: '🎓',
+  life: '🕊️',
+  incomeProtection: '🩺',
+  unknown: '❔',
+}
+
 export default function DashboardPage() {
   const { state, dispatch } = useApp()
   const analysis = state.analysis!
@@ -31,32 +42,24 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      <header className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">התיק הפנסיוני של {client.fullName}</h1>
-          <p className="text-sm text-slate-500">ת.ז. {client.id}</p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => dispatch({ type: 'GO_SUMMARY' })}
-            className="rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700"
-          >
-            סיכום מנהלים
-          </button>
-          <button
-            onClick={() => dispatch({ type: 'RESET' })}
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-100"
-          >
-            ניתוח חדש
-          </button>
-        </div>
+      <header className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-800">התיק הפנסיוני של {client.fullName}</h1>
+        <p className="text-sm text-slate-500 mt-0.5">
+          תמונת מצב מרוכזת מ-{policies.length} פוליסות · נכון לדיווח האחרון בקבצים
+        </p>
       </header>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <KpiCard label="סך נכסים" value={formatCurrency(totalAssets)} />
-        <KpiCard label="קצבה חודשית צפויה" value={formatCurrency(totalPension)} sub="סיכום מהדיווחים בקבצים" />
-        <KpiCard label="מספר מוצרים" value={String(productTypes.size)} />
-        <KpiCard label="מספר פוליסות" value={String(policies.length)} />
+        <KpiCard label="סך נכסים" value={formatCurrency(totalAssets)} icon="💰" accent="blue" />
+        <KpiCard
+          label="קצבה חודשית צפויה"
+          value={formatCurrency(totalPension)}
+          sub="סיכום מהדיווחים בקבצים"
+          icon="📅"
+          accent="emerald"
+        />
+        <KpiCard label="מספר מוצרים" value={String(productTypes.size)} icon="📦" accent="violet" />
+        <KpiCard label="מספר פוליסות" value={String(policies.length)} icon="📄" accent="slate" />
       </div>
 
       <div className="grid md:grid-cols-2 gap-4 mb-6">
@@ -89,20 +92,28 @@ export default function DashboardPage() {
                 key={t}
                 disabled={!has}
                 onClick={() => dispatch({ type: 'OPEN_PRODUCT', productType: t })}
-                className={`rounded-xl border p-4 text-right transition ${
+                className={`group rounded-xl border p-4 text-right transition ${
                   has
-                    ? 'bg-white border-slate-200 hover:border-blue-400 hover:shadow'
+                    ? 'bg-white border-slate-200 hover:border-blue-400 hover:shadow-md hover:-translate-y-0.5'
                     : 'bg-slate-50 border-slate-100 text-slate-300 cursor-default'
                 }`}
               >
-                <div className="font-semibold">{productTypeLabels[t]}</div>
+                <div className="flex items-center gap-2">
+                  <span className={has ? '' : 'grayscale opacity-40'}>{productIcons[t]}</span>
+                  <span className="font-semibold">{productTypeLabels[t]}</span>
+                </div>
                 {has ? (
                   <>
-                    <div className="text-xl font-bold mt-1 text-slate-800">{formatCurrency(value)}</div>
-                    <div className="text-xs text-slate-400 mt-0.5">{productPolicies.length} פוליסות</div>
+                    <div className="text-xl font-bold mt-1.5 text-slate-800">{formatCurrency(value)}</div>
+                    <div className="flex items-center justify-between mt-0.5">
+                      <span className="text-xs text-slate-400">{productPolicies.length} פוליסות</span>
+                      <span className="text-xs text-blue-500 opacity-0 group-hover:opacity-100 transition">
+                        לפירוט ←
+                      </span>
+                    </div>
                   </>
                 ) : (
-                  <div className="text-xs mt-1">אין מוצר מסוג זה</div>
+                  <div className="text-xs mt-1.5">אין מוצר מסוג זה</div>
                 )}
               </button>
             )

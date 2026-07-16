@@ -8,15 +8,18 @@ export default function ExecutiveSummaryPage() {
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
-      <button
-        onClick={() => dispatch({ type: 'GO_DASHBOARD' })}
-        className="text-sm text-blue-600 hover:underline mb-4"
-      >
-        → חזרה לדשבורד
-      </button>
+      <nav className="text-sm text-slate-400 mb-4">
+        <button onClick={() => dispatch({ type: 'GO_DASHBOARD' })} className="text-blue-600 hover:underline">
+          דשבורד
+        </button>
+        <span className="mx-1.5">‹</span>
+        <span className="text-slate-600">סיכום מנהלים</span>
+      </nav>
 
       <h1 className="text-2xl font-bold text-slate-800 mb-1">סיכום מנהלים</h1>
-      <p className="text-sm text-slate-500 mb-6">{client.fullName} · ת.ז. {client.id}</p>
+      <p className="text-sm text-slate-500 mb-6">
+        {client.fullName} · ת.ז. {client.id} · הופק {new Date(analysis.createdAt).toLocaleDateString('he-IL')}
+      </p>
 
       <section className="mb-6">
         <h2 className="text-lg font-bold text-slate-800 mb-3">ממצאים עיקריים</h2>

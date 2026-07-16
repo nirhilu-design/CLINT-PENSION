@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useApp } from '../hooks/useAppState'
 import { parseFiles, XmlParseError } from '../services/analysisService'
+import StepsIndicator from '../components/StepsIndicator'
 
 export default function UploadPage() {
   const { state, dispatch } = useApp()
@@ -30,7 +31,8 @@ export default function UploadPage() {
     <div className="min-h-screen flex items-center justify-center p-6">
       <div className="w-full max-w-xl text-center">
         <h1 className="text-3xl font-bold text-slate-800 mb-2">מערכת ניתוח פנסיוני</h1>
-        <p className="text-slate-500 mb-8">העלאת קבצי XML מהמסלקה הפנסיונית לניתוח מרוכז של התיק</p>
+        <p className="text-slate-500 mb-6">העלאת קבצי XML מהמסלקה הפנסיונית לניתוח מרוכז של התיק</p>
+        <StepsIndicator current={1} />
 
         <div
           onDragOver={(e) => {
@@ -64,10 +66,24 @@ export default function UploadPage() {
         {busy && <p className="mt-4 text-blue-600">קורא את הקבצים…</p>}
 
         {state.error && (
-          <div className="mt-4 rounded-lg border border-red-300 bg-red-50 p-4 text-red-700 text-sm">
+          <div className="mt-4 rounded-lg border border-red-300 bg-red-50 p-4 text-red-700 text-sm text-right">
             {state.error}
           </div>
         )}
+
+        <div className="mt-8 grid grid-cols-3 gap-3 text-center">
+          {[
+            ['🔒', 'פרטי בלבד', 'הקבצים מנותחים בדפדפן ואינם נשלחים לשום שרת'],
+            ['🧩', 'תמונה מאוחדת', 'כל המוצרים הפנסיוניים והביטוחיים במקום אחד'],
+            ['💡', 'הארות, לא המלצות', 'המערכת מציפה נקודות לתשומת לב — לא מחליפה בעל רישיון'],
+          ].map(([icon, title, text]) => (
+            <div key={title} className="rounded-xl bg-white border border-slate-200 p-3">
+              <div className="text-xl">{icon}</div>
+              <div className="text-sm font-semibold text-slate-700 mt-1">{title}</div>
+              <div className="text-xs text-slate-400 mt-0.5 leading-relaxed">{text}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )

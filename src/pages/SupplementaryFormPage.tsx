@@ -3,6 +3,7 @@ import { useApp } from '../hooks/useAppState'
 import { buildAnalysis, emptySupplementary } from '../services/analysisService'
 import type { BenchmarkSource, FeeAgreement, FundBenchmark } from '../models/types'
 import { productTypeLabels } from '../models/labels'
+import StepsIndicator from '../components/StepsIndicator'
 
 const sourceLabels: Record<BenchmarkSource, string> = {
   gemelnet: 'גמל-נט',
@@ -101,6 +102,7 @@ export default function SupplementaryFormPage() {
   return (
     <div className="min-h-screen p-6 flex justify-center">
       <div className="w-full max-w-2xl">
+        <StepsIndicator current={2} />
         <h1 className="text-2xl font-bold text-slate-800 mb-1">מידע משלים</h1>
         <p className="text-slate-500 mb-6">
           {client && `לקוח: ${client.fullName} (${client.id}) · `}

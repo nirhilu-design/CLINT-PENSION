@@ -124,12 +124,13 @@ export default function ProductPage() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <button
-        onClick={() => dispatch({ type: 'GO_DASHBOARD' })}
-        className="text-sm text-blue-600 hover:underline mb-4"
-      >
-        → חזרה לדשבורד
-      </button>
+      <nav className="text-sm text-slate-400 mb-4">
+        <button onClick={() => dispatch({ type: 'GO_DASHBOARD' })} className="text-blue-600 hover:underline">
+          דשבורד
+        </button>
+        <span className="mx-1.5">‹</span>
+        <span className="text-slate-600">{productTypeLabels[productType]}</span>
+      </nav>
 
       <h1 className="text-2xl font-bold text-slate-800 mb-4">{productTypeLabels[productType]}</h1>
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Finding, Policy } from '../models/types'
 import { coverageTypeLabels, productTypeLabels } from '../models/labels'
 import { formatCurrency, formatDate, formatPercent } from '../utils/format'
@@ -39,21 +39,44 @@ export default function PolicyDrawer({
   onClose: () => void
 }) {
   const [findingsOpen, setFindingsOpen] = useState(true)
+  const [entered, setEntered] = useState(false)
   const policyFindings = findings.filter((f) => f.policyNumber === policy.policyNumber)
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setEntered(true))
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [onClose])
 
   return (
     <div className="fixed inset-0 z-40">
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <aside className="absolute top-0 left-0 h-full w-full max-w-md bg-white shadow-xl overflow-y-auto p-5">
-        <div className="flex items-center justify-between mb-4">
+      <div
+        className={`absolute inset-0 bg-black/30 transition-opacity duration-200 ${entered ? 'opacity-100' : 'opacity-0'}`}
+        onClick={onClose}
+      />
+      <aside
+        className={`absolute top-0 left-0 h-full w-full max-w-md bg-white shadow-xl overflow-y-auto transition-transform duration-200 ${
+          entered ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-slate-100 px-5 py-3.5 flex items-center justify-between z-10">
           <div>
             <h2 className="text-lg font-bold text-slate-800">{policy.productName ?? productTypeLabels[policy.productType]}</h2>
             <p className="text-sm text-slate-500">{policy.managingCompany}</p>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl leading-none" aria-label="סגירה">
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg grid place-items-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 text-xl"
+            aria-label="סגירה"
+          >
             ×
           </button>
         </div>
+        <div className="p-5">
 
         <Section title="פרטי פוליסה">
           <Row label="מספר פוליסה / חשבון" value={policy.policyNumber || '—'} />
@@ -157,6 +180,7 @@ export default function PolicyDrawer({
             </div>
           )}
         </section>
+        </div>
       </aside>
     </div>
   )

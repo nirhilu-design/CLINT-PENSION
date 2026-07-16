@@ -5,6 +5,7 @@ import DashboardPage from './pages/DashboardPage'
 import ProductPage from './pages/ProductPage'
 import ExecutiveSummaryPage from './pages/ExecutiveSummaryPage'
 import PolicyDrawer from './components/PolicyDrawer'
+import Navbar from './components/Navbar'
 
 export default function App() {
   const { state, dispatch } = useApp()
@@ -13,8 +14,11 @@ export default function App() {
     (p) => p.policyNumber === state.selectedPolicyNumber,
   )
 
+  const showNavbar = ['dashboard', 'product', 'summary'].includes(state.step)
+
   return (
     <>
+      {showNavbar && <Navbar />}
       {state.step === 'upload' && <UploadPage />}
       {state.step === 'form' && <SupplementaryFormPage />}
       {state.step === 'dashboard' && state.analysis && <DashboardPage />}
