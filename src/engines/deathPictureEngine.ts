@@ -9,10 +9,14 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
   const findings = []
   const active = policies.filter((p) => p.status !== 'inactive')
 
-  const monthlySurvivors = active
-    .flatMap((p) => p.coverages)
-    .filter((c) => c.type === 'survivors')
+  const survivorCoverages = active.flatMap((p) => p.coverages).filter((c) => c.type === 'survivors')
+  const widowMonthly = survivorCoverages
+    .filter((c) => c.name?.includes('אלמן'))
     .reduce((sum, c) => sum + (c.amount ?? 0), 0)
+  const orphanMonthly = survivorCoverages
+    .filter((c) => c.name?.includes('יתום'))
+    .reduce((sum, c) => sum + (c.amount ?? 0), 0)
+  const monthlySurvivors = widowMonthly + orphanMonthly
 
   const deathLumpSum = active
     .flatMap((p) => p.coverages)
@@ -20,12 +24,19 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
     .reduce((sum, c) => sum + (c.amount ?? 0), 0)
 
   const capitalAssets = active
-    .filter((p) => p.productType === 'gemel' || p.productType === 'education')
+    .filter((p) => ['gemel', 'gemelInvestment', 'education'].includes(p.productType))
     .reduce((sum, p) => sum + (p.currentValue ?? 0), 0)
 
   const parts: string[] = []
-  if (monthlySurvivors > 0) parts.push(`קצבת שאירים חודשית: ${formatCurrency(monthlySurvivors)}`)
-  if (deathLumpSum > 0) parts.push(`סכום ביטוח חד-פעמי למקרה מוות: ${formatCurrency(deathLumpSum)}`)
+  if (deathLumpSum > 0) {
+    parts.push(`קיים ביטוח חד-פעמי למקרה פטירה בסך ${formatCurrency(deathLumpSum)}`)
+  }
+  if (widowMonthly > 0 || orphanMonthly > 0) {
+    const survivorParts: string[] = []
+    if (widowMonthly > 0) survivorParts.push(`${formatCurrency(widowMonthly)} לאלמן/ה`)
+    if (orphanMonthly > 0) survivorParts.push(`${formatCurrency(orphanMonthly)} ליתום (במידה וקיימים)`)
+    parts.push(`פיצוי חודשי מקרן הפנסיה: ${survivorParts.join(' וכן ')}`)
+  }
   if (capitalAssets > 0) parts.push(`נכסים הוניים (גמל והשתלמות): ${formatCurrency(capitalAssets)}`)
 
   if (parts.length === 0) {

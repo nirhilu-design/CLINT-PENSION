@@ -91,15 +91,29 @@ function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
           policyNumber,
         })
       }
-      const survivorsAmount = getNumber(pensionCover, 'KITZBAT-SHEERIM-LEALMAN-O-ALMANA')
-      if (survivorsAmount !== null) {
+      // Survivor pensions, itemized per beneficiary type (widow/orphan/dependent parent)
+      const widowAmount = getNumber(pensionCover, 'KITZBAT-SHEERIM-LEALMAN-O-ALMANA')
+      if (widowAmount !== null) {
         coverages.push({
           type: 'survivors',
-          name,
-          amount: survivorsAmount,
+          name: 'קצבת שאירים לאלמן/ה',
+          amount: widowAmount,
           percent: getNumber(pensionCover, 'SHIUR-KISUY-ALMAN-O-ALMANA'),
           coveredSalary,
           cost: getNumber(pensionCover, 'ALUT-KISUY-SHEERIM'),
+          status: 'active',
+          policyNumber,
+        })
+      }
+      const orphanAmount = getNumber(pensionCover, 'KITZBAT-SHEERIM-LEYATOM')
+      if (orphanAmount !== null) {
+        coverages.push({
+          type: 'survivors',
+          name: 'קצבת שאירים ליתום',
+          amount: orphanAmount,
+          percent: getNumber(pensionCover, 'SHIUR-KISUY-YATOM'),
+          coveredSalary,
+          cost: null,
           status: 'active',
           policyNumber,
         })

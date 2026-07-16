@@ -65,12 +65,17 @@ function productKpis(productType: ProductType, policies: Policy[]): Kpi[] {
       ]
     }
     case 'life': {
-      const deathCover = policies.flatMap((p) => p.coverages).filter((c) => c.type === 'death')
-        .reduce((s, c) => s + (c.amount ?? 0), 0)
-      return [
-        { label: 'כיסוי למקרה מוות', value: formatCurrency(deathCover) },
-        { label: 'מספר פוליסות', value: String(policies.length) },
+      const deathCovers = policies.flatMap((p) => p.coverages).filter((c) => c.type === 'death')
+      const deathCover = deathCovers.reduce((s, c) => s + (c.amount ?? 0), 0)
+      const premium = deathCovers.reduce((s, c) => s + (c.cost ?? 0), 0)
+      const kpis: Kpi[] = [
+        { label: 'כיסוי למקרה מוות (ריסק)', value: formatCurrency(deathCover) },
+        { label: 'פרמיה חודשית', value: formatCurrency(premium) },
       ]
+      if (total > 0) {
+        kpis.push({ label: 'רכיב חיסכון', value: formatCurrency(total), sub: 'צבירה בפוליסה' })
+      }
+      return kpis
     }
     case 'incomeProtection': {
       const covers = policies.flatMap((p) => p.coverages).filter((c) => c.type === 'disability')

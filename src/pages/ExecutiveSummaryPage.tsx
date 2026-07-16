@@ -31,6 +31,22 @@ export default function ExecutiveSummaryPage() {
         )}
       </section>
 
+      {(() => {
+        const clientInfo = analysis.findings.filter(
+          (f) => f.level === 'client' && f.severity === 'info' && f.category !== 'limitation',
+        )
+        return clientInfo.length > 0 ? (
+          <section className="mb-6">
+            <h2 className="text-lg font-bold text-slate-800 mb-3">תמונה מרוכזת</h2>
+            <div className="space-y-2">
+              {clientInfo.map((f) => (
+                <FindingCard key={f.id} finding={f} />
+              ))}
+            </div>
+          </section>
+        ) : null
+      })()}
+
       <section className="mb-6">
         <h2 className="text-lg font-bold text-slate-800 mb-3">נקודות חוזק</h2>
         <ul className="space-y-1.5">
