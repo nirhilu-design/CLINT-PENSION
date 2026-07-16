@@ -205,14 +205,16 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
       const hasDeathCoverage = coverages.some((c) => c.type === 'death' || c.type === 'survivors')
       const productType = mapProductType(sugMutzar, (currentValue ?? 0) > 0, hasDeathCoverage)
 
-      // Fees: SUG-HOTZAA 1 = from deposit, 2 = from accumulation
+      // Fees: SUG-HOTZAA 1 = from accumulation, 2 = from deposit
+      // (verified against sample files: hishtalmut reports 0.60% under code 1,
+      // matching the track-level SHEUR-DMEI-NIHUL-HISACHON)
       let feeFromDeposit: number | null = null
       let feeFromAccumulation: number | null = null
       for (const fee of heshbon.querySelectorAll('PerutMivneDmeiNihul')) {
         const sug = getText(fee, 'SUG-HOTZAA')
         const value = getNumber(fee, 'SHEUR-DMEI-NIHUL')
-        if (sug === '1' && feeFromDeposit === null) feeFromDeposit = value
-        if (sug === '2' && feeFromAccumulation === null) feeFromAccumulation = value
+        if (sug === '1' && feeFromAccumulation === null) feeFromAccumulation = value
+        if (sug === '2' && feeFromDeposit === null) feeFromDeposit = value
       }
 
       const yitra = heshbon.querySelector('YitraLefiGilPrisha')

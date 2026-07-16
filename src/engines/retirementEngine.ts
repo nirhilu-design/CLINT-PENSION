@@ -72,6 +72,25 @@ export const retirementEngine: Engine = ({ policies }) => {
     )
   }
 
+  // Frozen (inactive) pension funds: no insurance coverage, often higher fees
+  for (const p of policies.filter(
+    (p) => (p.productType === 'pension' || p.productType === 'gemel') && p.status === 'inactive' && (p.currentValue ?? 0) > 0,
+  )) {
+    findings.push(
+      makeFinding({
+        category: 'retirement',
+        level: 'policy',
+        severity: 'attention',
+        title: 'חשבון לא פעיל (מוקפא) עם צבירה',
+        description:
+          `בחשבון ${p.policyNumber} (${p.managingCompany ?? ''}) קיימת צבירה של ${formatCurrency(p.currentValue)} ללא הפקדות שוטפות. ` +
+          'בחשבון מוקפא אין כיסוי ביטוחי ולעיתים דמי הניהול גבוהים יותר. מומלץ לבחון איחוד חשבונות.',
+        productType: p.productType,
+        policyNumber: p.policyNumber,
+      }),
+    )
+  }
+
   // Managers classification review (information only)
   for (const p of policies.filter((p) => p.productType === 'managers' && p.managersGeneration)) {
     findings.push(

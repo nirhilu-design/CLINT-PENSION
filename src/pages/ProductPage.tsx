@@ -1,9 +1,12 @@
 import { useApp } from '../hooks/useAppState'
-import { productTypeLabels } from '../models/labels'
+import { coverageTypeLabels, productTypeLabels } from '../models/labels'
 import type { Policy, ProductType } from '../models/types'
 import { formatCurrency, formatPercent } from '../utils/format'
 import KpiCard from '../components/KpiCard'
 import FindingCard from '../components/FindingCard'
+
+/** Products whose screen shows a dedicated insurance-coverages section */
+const COVERAGE_PRODUCTS: ProductType[] = ['pension', 'managers', 'life', 'incomeProtection']
 
 /** Product-specific KPI definitions per PRD Product Discovery sections */
 function productKpis(productType: ProductType, policies: Policy[]) {
@@ -61,8 +64,29 @@ export default function ProductPage() {
   const analysis = state.analysis!
   const productType = state.selectedProduct!
   const policies = analysis.policies.filter((p) => p.productType === productType)
+  const activePolicies = policies.filter((p) => p.status !== 'inactive')
+  const frozenPolicies = policies.filter((p) => p.status === 'inactive')
+  const coverages = policies.flatMap((p) =>
+    p.coverages.map((c) => ({ ...c, managingCompany: p.managingCompany })),
+  )
   const productFindings = analysis.findings.filter(
     (f) => f.productType === productType || policies.some((p) => p.policyNumber === f.policyNumber),
+  )
+
+  const policyRow = (p: Policy) => (
+    <button
+      key={p.policyNumber}
+      onClick={() => dispatch({ type: 'OPEN_POLICY', policyNumber: p.policyNumber })}
+      className="w-full rounded-xl bg-white border border-slate-200 p-4 text-right hover:border-blue-400 hover:shadow flex justify-between items-center"
+    >
+      <div>
+        <div className="font-semibold text-slate-800">{p.productName ?? p.policyNumber}</div>
+        <div className="text-xs text-slate-400 mt-0.5">
+          {p.managingCompany} · פוליסה {p.policyNumber}
+        </div>
+      </div>
+      <div className="text-lg font-bold text-slate-700">{formatCurrency(p.currentValue)}</div>
+    </button>
   )
 
   return (
@@ -83,26 +107,55 @@ export default function ProductPage() {
       </div>
 
       <section className="mb-6">
-        <h2 className="text-lg font-bold text-slate-800 mb-3">פוליסות</h2>
-        <div className="space-y-2">
-          {policies.map((p) => (
-            <button
-              key={p.policyNumber}
-              onClick={() => dispatch({ type: 'OPEN_POLICY', policyNumber: p.policyNumber })}
-              className="w-full rounded-xl bg-white border border-slate-200 p-4 text-right hover:border-blue-400 hover:shadow flex justify-between items-center"
-            >
-              <div>
-                <div className="font-semibold text-slate-800">{p.productName ?? p.policyNumber}</div>
-                <div className="text-xs text-slate-400 mt-0.5">
-                  {p.managingCompany} · פוליסה {p.policyNumber}
-                  {p.status === 'inactive' && ' · לא פעילה'}
-                </div>
-              </div>
-              <div className="text-lg font-bold text-slate-700">{formatCurrency(p.currentValue)}</div>
-            </button>
-          ))}
-        </div>
+        <h2 className="text-lg font-bold text-slate-800 mb-3">פוליסות פעילות</h2>
+        {activePolicies.length === 0 ? (
+          <p className="text-sm text-slate-400">אין פוליסות פעילות</p>
+        ) : (
+          <div className="space-y-2">{activePolicies.map(policyRow)}</div>
+        )}
       </section>
+
+      {frozenPolicies.length > 0 && (
+        <section className="mb-6">
+          <h2 className="text-lg font-bold text-slate-800 mb-1">חשבונות לא פעילים (מוקפאים)</h2>
+          <p className="text-xs text-slate-400 mb-3">חשבונות ללא הפקדות שוטפות — ללא כיסוי ביטוחי</p>
+          <div className="space-y-2 opacity-80">{frozenPolicies.map(policyRow)}</div>
+        </section>
+      )}
+
+      {COVERAGE_PRODUCTS.includes(productType) && (
+        <section className="mb-6">
+          <h2 className="text-lg font-bold text-slate-800 mb-3">כיסויים ביטוחיים</h2>
+          {coverages.length === 0 ? (
+            <p className="text-sm text-slate-400">לא דווחו כיסויים ביטוחיים במוצר זה</p>
+          ) : (
+            <div className="rounded-xl bg-white border border-slate-200 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-500">
+                    <th className="text-right font-medium p-3">סוג כיסוי</th>
+                    <th className="text-right font-medium p-3">סכום / קצבה</th>
+                    <th className="text-right font-medium p-3">שיעור</th>
+                    <th className="text-right font-medium p-3">עלות חודשית</th>
+                    <th className="text-right font-medium p-3">פוליסה</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {coverages.map((c, i) => (
+                    <tr key={i} className="border-t border-slate-100">
+                      <td className="p-3 font-medium text-slate-700">{coverageTypeLabels[c.type]}</td>
+                      <td className="p-3">{formatCurrency(c.amount)}</td>
+                      <td className="p-3">{c.percent !== null ? formatPercent(c.percent, 0) : '—'}</td>
+                      <td className="p-3">{formatCurrency(c.cost)}</td>
+                      <td className="p-3 text-slate-400">{c.policyNumber}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
 
       <section>
         <h2 className="text-lg font-bold text-slate-800 mb-3">ממצאים</h2>
