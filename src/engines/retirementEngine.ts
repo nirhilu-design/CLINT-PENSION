@@ -99,17 +99,19 @@ export const retirementEngine: Engine = ({ policies }) => {
     const isNewGuaranteedFactorEra = gen === '2001-06-to-2004' || gen === '2004-to-2013'
 
     if (isNewGuaranteedFactorEra && p.hasGuaranteedFactor) {
-      // House logic: post-6/2001 guaranteed factors usually don't justify their cost
+      // Observation only: the value of a 2001-2013 factor depends on age and
+      // the full picture (near retirement it may even gain importance) —
+      // the system highlights, it does not judge.
       findings.push(
         makeFinding({
-          category: 'retirement',
+          category: 'insight',
           level: 'policy',
-          severity: 'attention',
-          title: 'מקדם מובטח מדור 2001–2013 — כדאי לבדוק כדאיות',
+          severity: 'info',
+          title: 'קיים מקדם קצבה מובטח מדור 2001–2013',
           description:
             `בפוליסה ${p.policyNumber} (${generationLabels[gen]}) קיים מקדם קצבה מובטח. ` +
-            'במקדמים מדור זה העלות הגלומה לרוב גבוהה ביחס לתועלת. ' +
-            'מומלץ לבחון את העלות מול התועלת בהתאם לגיל ולתמונה הכוללת.',
+            'בפוליסות מדור זה גלומה עלות עבור הבטחת המקדם, ושוויה בפועל תלוי בגיל, בוותק ובתמונה הכוללת של התיק — ' +
+            'נקודה שחשוב להכיר בבחינת הפוליסה.',
           productType: p.productType,
           policyNumber: p.policyNumber,
         }),

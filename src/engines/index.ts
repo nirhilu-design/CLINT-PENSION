@@ -8,6 +8,7 @@ import { incomeProtectionEngine } from './incomeProtectionEngine'
 import { deathPictureEngine } from './deathPictureEngine'
 import { dataQualityEngine } from './dataQualityEngine'
 import { savingsEngine } from './savingsEngine'
+import { managersInsightEngine } from './managersInsightEngine'
 
 export { buildExecutiveSummary } from './executiveSummaryEngine'
 
@@ -20,6 +21,7 @@ const engines: Engine[] = [
   deathPictureEngine,
   dataQualityEngine,
   savingsEngine,
+  managersInsightEngine,
 ]
 
 export function runEngines(input: EngineInput): Finding[] {

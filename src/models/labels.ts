@@ -26,6 +26,7 @@ export const findingCategoryLabels: Record<FindingCategory, string> = {
   death: 'תמונת מוות',
   dataQuality: 'איכות נתונים',
   information: 'מידע',
+  insight: 'הארה',
   limitation: 'מגבלת ניתוח',
 }
 

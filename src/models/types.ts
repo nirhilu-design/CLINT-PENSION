@@ -96,6 +96,7 @@ export type FindingCategory =
   | 'death'
   | 'dataQuality'
   | 'information'
+  | 'insight' // הארה — observation for the client, never a recommendation
   | 'limitation'
 
 export type FindingLevel = 'analysis' | 'client' | 'product' | 'policy' | 'coverage'
