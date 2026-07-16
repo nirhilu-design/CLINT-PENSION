@@ -2,7 +2,7 @@
 // No automatic transfer recommendations — soft wording only.
 
 import type { Engine } from './engineTypes'
-import { makeFinding } from './engineTypes'
+import { makeFinding, salaryFromPolicies } from './engineTypes'
 import { isBlockedByStopIssue } from './stopIssueEngine'
 import { formatCurrency } from '../utils/format'
 
@@ -13,7 +13,7 @@ const generationLabels: Record<string, string> = {
   '2013-plus': '2013 ואילך',
 }
 
-export const retirementEngine: Engine = ({ policies, supplementary }) => {
+export const retirementEngine: Engine = ({ policies }) => {
   const findings = []
 
   const pensionable = policies.filter(
@@ -38,7 +38,7 @@ export const retirementEngine: Engine = ({ policies, supplementary }) => {
       }),
     )
 
-    const salary = supplementary.monthlySalary
+    const salary = salaryFromPolicies(policies)
     if (salary && salary > 0) {
       const ratio = Math.round((totalExpected / salary) * 100)
       if (ratio < 70) {
@@ -49,7 +49,7 @@ export const retirementEngine: Engine = ({ policies, supplementary }) => {
             severity: 'attention',
             title: 'הקצבה הצפויה נמוכה ביחס לשכר',
             description:
-              `הקצבה הצפויה מהווה כ-${ratio}% מהשכר הנוכחי (${formatCurrency(salary)}). ` +
+              `הקצבה הצפויה מהווה כ-${ratio}% מהשכר המבוטח המדווח בקבצים (${formatCurrency(salary)}). ` +
               'מומלץ לבחון את היקף החיסכון הפנסיוני ואת רמת ההפקדות.',
           }),
         )

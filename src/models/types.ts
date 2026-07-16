@@ -130,8 +130,11 @@ export interface FundBenchmark {
 }
 
 export interface SupplementaryInfo {
-  monthlySalary: number | null
-  targetRetirementAge: number | null
+  // Smart context questions that sharpen the insurance/death-picture analysis.
+  // null = not answered; analysis proceeds without guessing.
+  hasChildrenUnder21: boolean | null
+  hasSpouse: boolean | null
+  hasOtherMaterialAssets: boolean | null
   feeAgreements: FeeAgreement[]
   benchmarks: FundBenchmark[]
 }

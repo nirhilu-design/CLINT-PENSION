@@ -8,7 +8,13 @@ import { runEngines, buildExecutiveSummary } from '../engines'
 export { XmlParseError }
 
 export function emptySupplementary(): SupplementaryInfo {
-  return { monthlySalary: null, targetRetirementAge: null, feeAgreements: [], benchmarks: [] }
+  return {
+    hasChildrenUnder21: null,
+    hasSpouse: null,
+    hasOtherMaterialAssets: null,
+    feeAgreements: [],
+    benchmarks: [],
+  }
 }
 
 /** Parse all uploaded XML files. Throws XmlParseError on invalid input or multiple client IDs. */

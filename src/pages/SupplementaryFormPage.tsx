@@ -16,13 +16,47 @@ function sourceForProduct(productType: string): BenchmarkSource {
   return 'gemelnet'
 }
 
+function YesNoQuestion({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: boolean | null
+  onChange: (v: boolean | null) => void
+}) {
+  const option = (selected: boolean, text: string) => (
+    <button
+      type="button"
+      onClick={() => onChange(value === selected ? null : selected)}
+      className={`px-4 py-1.5 rounded-lg border text-sm transition ${
+        value === selected
+          ? 'bg-blue-600 border-blue-600 text-white'
+          : 'bg-white border-slate-300 text-slate-600 hover:border-blue-400'
+      }`}
+    >
+      {text}
+    </button>
+  )
+  return (
+    <div className="flex items-center justify-between gap-4 py-2.5 border-t border-slate-100 first:border-t-0">
+      <span className="text-sm text-slate-700">{label}</span>
+      <div className="flex gap-2 shrink-0">
+        {option(true, 'כן')}
+        {option(false, 'לא')}
+      </div>
+    </div>
+  )
+}
+
 export default function SupplementaryFormPage() {
   const { state, dispatch } = useApp()
   const policies = state.parsedFiles.flatMap((f) => f.policies)
   const client = state.parsedFiles[0]?.client
 
-  const [salary, setSalary] = useState('')
-  const [retirementAge, setRetirementAge] = useState('')
+  const [childrenUnder21, setChildrenUnder21] = useState<boolean | null>(null)
+  const [spouse, setSpouse] = useState<boolean | null>(null)
+  const [otherAssets, setOtherAssets] = useState<boolean | null>(null)
   const [fees, setFees] = useState<Record<string, { deposit: string; accum: string }>>({})
   const [benchmarks, setBenchmarks] = useState<Record<string, { ret: string; sharpe: string }>>({})
 
@@ -34,8 +68,9 @@ export default function SupplementaryFormPage() {
 
   function submit() {
     const supplementary = emptySupplementary()
-    supplementary.monthlySalary = num(salary)
-    supplementary.targetRetirementAge = num(retirementAge)
+    supplementary.hasChildrenUnder21 = childrenUnder21
+    supplementary.hasSpouse = spouse
+    supplementary.hasOtherMaterialAssets = otherAssets
 
     supplementary.feeAgreements = Object.entries(fees)
       .map(([policyNumber, v]): FeeAgreement => ({
@@ -73,29 +108,21 @@ export default function SupplementaryFormPage() {
         </p>
 
         <div className="rounded-xl bg-white border border-slate-200 p-5 mb-4">
-          <h2 className="font-semibold text-slate-700 mb-3">פרטים כלליים</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <label className="text-sm text-slate-600">
-              שכר חודשי ברוטו (₪)
-              <input
-                type="number"
-                value={salary}
-                onChange={(e) => setSalary(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 p-2"
-                placeholder="למשל 15000"
-              />
-            </label>
-            <label className="text-sm text-slate-600">
-              גיל פרישה מתוכנן
-              <input
-                type="number"
-                value={retirementAge}
-                onChange={(e) => setRetirementAge(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 p-2"
-                placeholder="למשל 67"
-              />
-            </label>
-          </div>
+          <h2 className="font-semibold text-slate-700 mb-1">שאלות רקע לניתוח</h2>
+          <p className="text-xs text-slate-400 mb-3">
+            התשובות משמשות לבחינת הצורך בכיסויים ביטוחיים (שאירים, ביטוח חיים). אפשר לדלג — הניתוח לא ינחש.
+          </p>
+          <YesNoQuestion
+            label="האם יש ילדים מתחת לגיל 21?"
+            value={childrenUnder21}
+            onChange={setChildrenUnder21}
+          />
+          <YesNoQuestion label="האם יש בן/בת זוג?" value={spouse} onChange={setSpouse} />
+          <YesNoQuestion
+            label="האם קיימים נכסים פיננסיים מהותיים נוספים (נדל״ן, תיק השקעות, חסכונות)?"
+            value={otherAssets}
+            onChange={setOtherAssets}
+          />
         </div>
 
         <div className="rounded-xl bg-white border border-slate-200 p-5 mb-4">
