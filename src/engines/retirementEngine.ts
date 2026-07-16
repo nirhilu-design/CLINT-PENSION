@@ -91,21 +91,44 @@ export const retirementEngine: Engine = ({ policies }) => {
     )
   }
 
-  // Managers classification review (information only)
-  for (const p of policies.filter((p) => p.productType === 'managers' && p.managersGeneration)) {
-    findings.push(
-      makeFinding({
-        category: 'retirement',
-        level: 'policy',
-        severity: 'info',
-        title: 'סיווג דור ביטוח המנהלים',
-        description:
-          `פוליסה ${p.policyNumber} שייכת לדור: ${generationLabels[p.managersGeneration!]}. ` +
-          'מומלץ לבחון את משמעות הדור על תנאי הקצבה.',
-        productType: p.productType,
-        policyNumber: p.policyNumber,
-      }),
-    )
+  // Managers classification review
+  for (const p of policies.filter(
+    (p) => p.productType === 'managers' && p.managersGeneration && !isBlockedByStopIssue(p),
+  )) {
+    const gen = p.managersGeneration!
+    const isNewGuaranteedFactorEra = gen === '2001-06-to-2004' || gen === '2004-to-2013'
+
+    if (isNewGuaranteedFactorEra && p.hasGuaranteedFactor) {
+      // House logic: post-6/2001 guaranteed factors usually don't justify their cost
+      findings.push(
+        makeFinding({
+          category: 'retirement',
+          level: 'policy',
+          severity: 'attention',
+          title: 'מקדם מובטח מדור 2001–2013 — כדאי לבדוק כדאיות',
+          description:
+            `בפוליסה ${p.policyNumber} (${generationLabels[gen]}) קיים מקדם קצבה מובטח. ` +
+            'במקדמים מדור זה העלות הגלומה לרוב גבוהה ביחס לתועלת. ' +
+            'מומלץ לבחון את העלות מול התועלת בהתאם לגיל ולתמונה הכוללת.',
+          productType: p.productType,
+          policyNumber: p.policyNumber,
+        }),
+      )
+    } else {
+      findings.push(
+        makeFinding({
+          category: 'retirement',
+          level: 'policy',
+          severity: 'info',
+          title: 'סיווג דור ביטוח המנהלים',
+          description:
+            `פוליסה ${p.policyNumber} שייכת לדור: ${generationLabels[gen]}` +
+            (p.hasGuaranteedFactor ? '. קיים מקדם קצבה מובטח.' : '. ללא מקדם קצבה מובטח.'),
+          productType: p.productType,
+          policyNumber: p.policyNumber,
+        }),
+      )
+    }
   }
 
   return findings

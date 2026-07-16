@@ -4,6 +4,7 @@ import type { Policy, ProductType } from '../models/types'
 import { formatCurrency, formatPercent } from '../utils/format'
 import KpiCard from '../components/KpiCard'
 import FindingCard from '../components/FindingCard'
+import { isBlockedByStopIssue } from '../engines/stopIssueEngine'
 
 /** Products whose screen shows a dedicated insurance-coverages section */
 const COVERAGE_PRODUCTS: ProductType[] = ['pension', 'managers', 'life', 'incomeProtection']
@@ -24,12 +25,15 @@ function productKpis(productType: ProductType, policies: Policy[]) {
         { label: 'קצבה צפויה', value: formatCurrency(expectedPension) },
         { label: 'דמי ניהול מצבירה (ממוצע)', value: formatPercent(avgFeeAccum) },
       ]
-    case 'managers':
+    case 'managers': {
+      const anyGuaranteed = policies.some((p) => p.hasGuaranteedFactor)
       return [
         { label: 'צבירה', value: formatCurrency(total) },
         { label: 'קצבה צפויה', value: formatCurrency(expectedPension) },
+        { label: 'מקדם מובטח', value: anyGuaranteed ? 'קיים' : 'לא קיים' },
         { label: 'דמי ניהול (ממוצע)', value: formatPercent(avgFeeAccum) },
       ]
+    }
     case 'gemel':
     case 'education':
       return [
@@ -64,8 +68,9 @@ export default function ProductPage() {
   const analysis = state.analysis!
   const productType = state.selectedProduct!
   const policies = analysis.policies.filter((p) => p.productType === productType)
-  const activePolicies = policies.filter((p) => p.status !== 'inactive')
-  const frozenPolicies = policies.filter((p) => p.status === 'inactive')
+  const blockedPolicies = policies.filter(isBlockedByStopIssue)
+  const activePolicies = policies.filter((p) => p.status !== 'inactive' && !isBlockedByStopIssue(p))
+  const frozenPolicies = policies.filter((p) => p.status === 'inactive' && !isBlockedByStopIssue(p))
   const coverages = policies.flatMap((p) =>
     p.coverages.map((c) => ({ ...c, managingCompany: p.managingCompany })),
   )
@@ -120,6 +125,19 @@ export default function ProductPage() {
           <h2 className="text-lg font-bold text-slate-800 mb-1">חשבונות לא פעילים (מוקפאים)</h2>
           <p className="text-xs text-slate-400 mb-3">חשבונות ללא הפקדות שוטפות — ללא כיסוי ביטוחי</p>
           <div className="space-y-2 opacity-80">{frozenPolicies.map(policyRow)}</div>
+        </section>
+      )}
+
+      {blockedPolicies.length > 0 && (
+        <section className="mb-6">
+          <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 mb-3">
+            <div className="font-semibold text-amber-800">מוצר היסטורי — נדרשת בחינה פרטנית</div>
+            <p className="text-sm text-amber-700 mt-1">
+              הפוליסות הבאות נפתחו לפני יוני 2001 (דור מקדמים היסטורי עם תנאים מובטחים).
+              המערכת מציגה נתונים בסיסיים בלבד ואינה מריצה עליהן ניתוח אוטומטי.
+            </p>
+          </div>
+          <div className="space-y-2">{blockedPolicies.map(policyRow)}</div>
         </section>
       )}
 

@@ -68,6 +68,9 @@ export default function PolicyDrawer({
           <Row label="קצבה חודשית צפויה" value={formatCurrency(policy.expectedPension)} />
           <Row label="צבירה צפויה לפרישה" value={formatCurrency(policy.expectedAccumulationAtRetirement)} />
           <Row label="שכר מבוטח" value={formatCurrency(policy.coveredSalary)} />
+          {policy.productType === 'managers' && (
+            <Row label="מקדם קצבה מובטח" value={policy.hasGuaranteedFactor ? 'קיים' : 'לא קיים'} />
+          )}
           <Row label='דמי ניהול מהפקדה' value={formatPercent(policy.fees.fromDeposit)} />
           <Row label='דמי ניהול מצבירה' value={formatPercent(policy.fees.fromAccumulation)} />
           <Row label="תשואה נטו" value={formatPercent(policy.netReturn)} />

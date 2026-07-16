@@ -3,11 +3,14 @@
 
 import type { Engine } from './engineTypes'
 import { makeFinding } from './engineTypes'
+import { isBlockedByStopIssue } from './stopIssueEngine'
 
 export const dataQualityEngine: Engine = ({ policies }) => {
   const findings = []
 
   for (const p of policies) {
+    // Stop-issue policies are excluded from analysis — no data-quality findings
+    if (isBlockedByStopIssue(p)) continue
     const missingCritical: string[] = []
     if (!p.policyNumber) missingCritical.push('מספר פוליסה')
     if (p.productType === 'unknown') missingCritical.push('סוג מוצר')

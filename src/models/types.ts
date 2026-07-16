@@ -83,6 +83,7 @@ export interface Policy {
   contributions: Contribution[]
   beneficiaries: Beneficiary[]
   managersGeneration: ManagersGeneration | null
+  hasGuaranteedFactor: boolean // מקדם קצבה מובטח (MEKADEM-MOVTACH-LEPRISHA)
   sourceFileName: string
 }
 

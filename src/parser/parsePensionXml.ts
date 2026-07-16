@@ -245,6 +245,7 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
         beneficiaries: parseBeneficiaries(heshbon),
         managersGeneration:
           productType === 'managers' ? classifyManagersGeneration(openDate) : null,
+        hasGuaranteedFactor: (getNumber(yitra, 'MEKADEM-MOVTACH-LEPRISHA') ?? 0) > 0,
         sourceFileName: fileName,
       })
     }
