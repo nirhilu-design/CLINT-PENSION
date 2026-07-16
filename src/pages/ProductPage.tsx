@@ -5,12 +5,19 @@ import { formatCurrency, formatPercent } from '../utils/format'
 import KpiCard from '../components/KpiCard'
 import FindingCard from '../components/FindingCard'
 import { isBlockedByStopIssue } from '../engines/stopIssueEngine'
+import { isEducationFundLiquid } from '../utils/liquidity'
 
 /** Products whose screen shows a dedicated insurance-coverages section */
 const COVERAGE_PRODUCTS: ProductType[] = ['pension', 'managers', 'life', 'incomeProtection']
 
+interface Kpi {
+  label: string
+  value: string
+  sub?: string
+}
+
 /** Product-specific KPI definitions per PRD Product Discovery sections */
-function productKpis(productType: ProductType, policies: Policy[]) {
+function productKpis(productType: ProductType, policies: Policy[]): Kpi[] {
   const total = policies.reduce((s, p) => s + (p.currentValue ?? 0), 0)
   const expectedPension = policies.reduce((s, p) => s + (p.expectedPension ?? 0), 0)
   const avgFeeAccum = (() => {
@@ -35,12 +42,28 @@ function productKpis(productType: ProductType, policies: Policy[]) {
       ]
     }
     case 'gemel':
-    case 'education':
       return [
-        { label: 'צבירה', value: formatCurrency(total) },
+        { label: 'צבירה (מיועדת לקצבה)', value: formatCurrency(total) },
         { label: 'מספר חשבונות', value: String(policies.length) },
         { label: 'דמי ניהול מצבירה (ממוצע)', value: formatPercent(avgFeeAccum) },
       ]
+    case 'gemelInvestment':
+      return [
+        { label: 'צבירה', value: formatCurrency(total) },
+        { label: 'סכום נזיל', value: formatCurrency(total), sub: 'נזיל בכל עת' },
+        { label: 'דמי ניהול מצבירה (ממוצע)', value: formatPercent(avgFeeAccum) },
+      ]
+    case 'education': {
+      const liquid = policies
+        .filter((p) => isEducationFundLiquid(p) === true)
+        .reduce((s, p) => s + (p.currentValue ?? 0), 0)
+      return [
+        { label: 'צבירה', value: formatCurrency(total) },
+        { label: 'סכום נזיל', value: formatCurrency(liquid) },
+        { label: 'סכום לא נזיל', value: formatCurrency(total - liquid) },
+        { label: 'דמי ניהול מצבירה (ממוצע)', value: formatPercent(avgFeeAccum) },
+      ]
+    }
     case 'life': {
       const deathCover = policies.flatMap((p) => p.coverages).filter((c) => c.type === 'death')
         .reduce((s, c) => s + (c.amount ?? 0), 0)
@@ -107,7 +130,7 @@ export default function ProductPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
         {productKpis(productType, policies).map((kpi) => (
-          <KpiCard key={kpi.label} label={kpi.label} value={kpi.value} />
+          <KpiCard key={kpi.label} label={kpi.label} value={kpi.value} sub={kpi.sub} />
         ))}
       </div>
 

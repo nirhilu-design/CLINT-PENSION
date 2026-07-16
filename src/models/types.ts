@@ -4,6 +4,7 @@ export type ProductType =
   | 'pension'
   | 'managers'
   | 'gemel'
+  | 'gemelInvestment'
   | 'education'
   | 'life'
   | 'incomeProtection'

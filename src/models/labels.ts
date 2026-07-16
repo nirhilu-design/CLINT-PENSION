@@ -4,6 +4,7 @@ export const productTypeLabels: Record<ProductType, string> = {
   pension: 'קרן פנסיה',
   managers: 'ביטוח מנהלים',
   gemel: 'קופת גמל',
+  gemelInvestment: 'גמל להשקעה',
   education: 'קרן השתלמות',
   life: 'ביטוח חיים',
   incomeProtection: 'אובדן כושר עבודה',

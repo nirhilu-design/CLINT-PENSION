@@ -6,7 +6,7 @@ import KpiCard from '../components/KpiCard'
 import PieChartCard from '../components/PieChartCard'
 import FindingCard from '../components/FindingCard'
 
-const PRODUCT_ORDER: ProductType[] = ['pension', 'managers', 'gemel', 'education', 'life', 'incomeProtection']
+const PRODUCT_ORDER: ProductType[] = ['pension', 'managers', 'gemel', 'gemelInvestment', 'education', 'life', 'incomeProtection']
 
 export default function DashboardPage() {
   const { state, dispatch } = useApp()

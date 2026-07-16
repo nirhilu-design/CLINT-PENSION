@@ -21,12 +21,18 @@ export interface ParsedFile {
   policies: Policy[]
 }
 
-function mapProductType(sugMutzar: string | null, hasSavings: boolean, hasDeathCoverage: boolean): ProductType {
+function mapProductType(
+  sugMutzar: string | null,
+  hasSavings: boolean,
+  hasDeathCoverage: boolean,
+  planName: string | null,
+): ProductType {
   switch (sugMutzar) {
     case '2':
       return 'pension'
     case '3':
-      return 'gemel'
+      // גמל להשקעה is a separate product (always liquid); identified by plan name
+      return planName?.includes('להשקעה') ? 'gemelInvestment' : 'gemel'
     case '4':
       return 'education'
     case '1':
@@ -201,9 +207,10 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
       }))
       const currentValue = tracks.reduce((sum, t) => sum + (t.value ?? 0), 0) || null
 
+      const planName = getText(heshbon, 'SHEM-TOCHNIT')
       const coverages = parseCoverages(heshbon, policyNumber)
       const hasDeathCoverage = coverages.some((c) => c.type === 'death' || c.type === 'survivors')
-      const productType = mapProductType(sugMutzar, (currentValue ?? 0) > 0, hasDeathCoverage)
+      const productType = mapProductType(sugMutzar, (currentValue ?? 0) > 0, hasDeathCoverage, planName)
 
       // Fees: SUG-HOTZAA 1 = from accumulation, 2 = from deposit
       // (verified against sample files: hishtalmut reports 0.60% under code 1,
@@ -227,7 +234,7 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
       policies.push({
         policyNumber,
         productType,
-        productName: getText(heshbon, 'SHEM-TOCHNIT'),
+        productName: planName,
         managingCompany,
         mofid: mofidFromKidodAchid(getText(heshbon, 'KIDOD-ACHID')),
         openDate,
