@@ -10,7 +10,7 @@ import type {
   Policy,
   ProductType,
 } from '../models/types'
-import { getNumber, getText, mofidFromKidodAchid, parseDate } from './xmlUtils'
+import { getNumber, getText, mofidFromKidodAchid, normalizeClientId, parseDate } from './xmlUtils'
 import { beneficiaryRelationLabels } from '../models/labels'
 
 export class XmlParseError extends Error {}
@@ -58,7 +58,7 @@ function parseClient(yeshutLakoach: Element): Client {
   const lastName = getText(yeshutLakoach, 'SHEM-MISHPACHA')
   const min = getText(yeshutLakoach, 'MIN')
   return {
-    id: getText(yeshutLakoach, 'MISPAR-ZIHUY-LAKOACH') ?? '',
+    id: normalizeClientId(getText(yeshutLakoach, 'MISPAR-ZIHUY-LAKOACH')),
     firstName,
     lastName,
     fullName: [firstName, lastName].filter(Boolean).join(' '),
