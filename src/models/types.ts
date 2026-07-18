@@ -145,6 +145,10 @@ export interface SupplementaryInfo {
   hasChildrenUnder21: boolean | null
   hasSpouse: boolean | null
   hasOtherMaterialAssets: boolean | null
+  // Follow-up values, shown when hasOtherMaterialAssets is true
+  otherAssetsRealEstateValue: number | null
+  otherAssetsPortfolioValue: number | null
+  otherAssetsLiquidValue: number | null
   employmentStatus: EmploymentStatus | null
   currentGrossSalary: number | null
   familyReliesOnIncome: boolean | null
