@@ -1,44 +1,28 @@
-*, *::before, *::after { box-sizing: border-box; }
+@import "tailwindcss";
 
 :root {
-  --color-bg:           #EDECEA;
-  --color-surface:      #FFFFFF;
-  --color-border:       #E0DDD9;
-  --color-navy:         #1B2B5E;
-  --color-primary:      #E63C5F;
-  --color-primary-dark: #C82E4F;
-  --color-text:         #1A1A2E;
-  --color-text-muted:   #6B7280;
-  --color-ok:           #16A34A;
-  --color-ok-bg:        #F0FDF4;
-  --color-warn:         #D97706;
-  --color-warn-bg:      #FFFBEB;
-  --color-danger:       #DC2626;
-  --color-danger-bg:    #FEF2F2;
-  --color-info:         #0369A1;
-  --color-info-bg:      #F0F9FF;
-  --color-return:       #16A34A;
-  font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+  /* Brand — deep financial navy with a teal accent */
+  --brand-900: #0c1f38;
+  --brand-800: #123054;
+  --brand-700: #1a4270;
+  --brand-600: #235a92;
+  --accent-600: #0e9484;
+  --accent-500: #16ab99;
+  --paper: #f4f6f9;
+}
+
+html {
+  direction: rtl;
 }
 
 body {
-  margin: 0;
-  background: var(--color-bg);
-  color: var(--color-text);
-  direction: rtl;
-  font-size: 14px;
-  line-height: 1.5;
+  font-family: "Heebo", "Segoe UI", Arial, sans-serif;
+  background-color: var(--paper);
+  color: #17233a;
+  font-feature-settings: "tnum";
 }
 
-button { cursor: pointer; font-family: inherit; }
-
-/* Badges */
-.badge {
-  display: inline-flex; align-items: center;
-  padding: 2px 10px; border-radius: 999px;
-  font-size: 12px; font-weight: 600;
+/* Numbers align in tables and KPIs */
+.tabular {
+  font-variant-numeric: tabular-nums;
 }
-.badge-active   { background: #DCFCE7; color: #16A34A; }
-.badge-inactive { background: #F1F5F9; color: #9CA3AF; }
-.badge-finding  { background: #FEF9C3; color: #854D0E; border: 1px solid #FDE68A; }
-.badge-info     { background: #F1F5F9; color: #374151; border: 1px solid #E5E7EB; }
