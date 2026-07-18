@@ -27,6 +27,18 @@ export function parseDate(raw: string | null): string | null {
   return `${y}-${m}-${d}`
 }
 
+/**
+ * Normalize an Israeli ID number (תעודת זהות) for comparison.
+ * IDs are 9 digits and may arrive with or without leading zeros
+ * (e.g. "012345678" vs "12345678") — pad to 9 digits so the same
+ * person is not treated as two different clients.
+ */
+export function normalizeClientId(id: string | null): string {
+  if (!id) return ''
+  const digits = id.replace(/\D/g, '')
+  return digits ? digits.padStart(9, '0') : ''
+}
+
 /** מספר אוצר derived from KIDOD-ACHID: chars 18-23 (zero-padded fund code) */
 export function mofidFromKidodAchid(kidod: string | null): string | null {
   if (!kidod || kidod.length < 23) return null
