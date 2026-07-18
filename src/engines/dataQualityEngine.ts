@@ -2,11 +2,36 @@
 // Optional fields never fail the analysis.
 
 import type { Engine } from './engineTypes'
-import { makeFinding } from './engineTypes'
+import { makeFinding, salaryFromPolicies } from './engineTypes'
 import { isBlockedByStopIssue } from './stopIssueEngine'
+import { formatCurrency } from '../utils/format'
 
-export const dataQualityEngine: Engine = ({ policies }) => {
+export const dataQualityEngine: Engine = ({ policies, supplementary }) => {
   const findings = []
+
+  // Cross-check: client-stated salary vs the insured salary in the clearinghouse
+  const statedSalary = supplementary.currentGrossSalary
+  const xmlSalary = salaryFromPolicies(policies)
+  if (statedSalary && xmlSalary && xmlSalary > 0) {
+    const diffRatio = Math.abs(statedSalary - xmlSalary) / xmlSalary
+    if (diffRatio > 0.15) {
+      const direction = statedSalary > xmlSalary ? 'גבוה' : 'נמוך'
+      findings.push(
+        makeFinding({
+          category: 'dataQuality',
+          level: 'client',
+          severity: 'attention',
+          title: 'נמצא שוני בין השכר שצוין לשכר המבוטח במסלקה',
+          description:
+            `השכר שציינת (${formatCurrency(statedSalary)}) ${direction} ב-${Math.round(diffRatio * 100)}% ` +
+            `מהשכר המבוטח המדווח בקבצי המסלקה (${formatCurrency(xmlSalary)}). ` +
+            (statedSalary > xmlSalary
+              ? 'ייתכן שההפרשות אינן מעודכנות לשכר הנוכחי — כדאי לבדוק מול המעסיק.'
+              : 'ייתכן שחל שינוי בשכר או שהדיווח בקבצים אינו עדכני — כדאי לוודא את הנתונים.'),
+        }),
+      )
+    }
+  }
 
   for (const p of policies) {
     // Stop-issue policies are excluded from analysis — no data-quality findings

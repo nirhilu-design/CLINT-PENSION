@@ -117,6 +117,27 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
     )
   }
 
+  // Large life-insurance coverage alongside substantial private assets —
+  // the assets already provide a safety net, so the coverage's cost-benefit
+  // is worth a look
+  const statedAssetsTotal =
+    (supplementary.otherAssetsRealEstateValue ?? 0) +
+    (supplementary.otherAssetsPortfolioValue ?? 0) +
+    (supplementary.otherAssetsLiquidValue ?? 0)
+  if (statedAssetsTotal >= 1_000_000 && deathLumpSum >= 500_000) {
+    findings.push(
+      makeFinding({
+        category: 'death',
+        level: 'client',
+        severity: 'attention',
+        title: 'ביטוח חיים גדול לצד נכסים מהותיים',
+        description:
+          `דווחו נכסים בשווי כולל של כ-${formatCurrency(statedAssetsTotal)} לצד כיסוי ביטוח חיים של ${formatCurrency(deathLumpSum)}. ` +
+          'כאשר קיימים נכסים משמעותיים המשמשים רשת ביטחון, כדאי לבדוק את כדאיות היקף הכיסוי ועלותו מול הצורך בפועל.',
+      }),
+    )
+  }
+
   if (supplementary.hasOtherMaterialAssets === true && hasDependents && !hasDeathProtection) {
     const statedTotal =
       (supplementary.otherAssetsRealEstateValue ?? 0) +
