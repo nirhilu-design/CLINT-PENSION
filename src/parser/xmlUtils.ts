@@ -29,14 +29,16 @@ export function parseDate(raw: string | null): string | null {
 
 /**
  * Normalize an Israeli ID number (תעודת זהות) for comparison.
- * IDs are 9 digits and may arrive with or without leading zeros
- * (e.g. "012345678" vs "12345678") — pad to 9 digits so the same
- * person is not treated as two different clients.
+ * The same ID can arrive with different zero-padding across files and
+ * even across records in one file (e.g. "0000000027864610", "027864610",
+ * "27864610"). Strip every leading zero to the significant digits, then
+ * pad back to the canonical 9 digits, so the same person is never treated
+ * as two different clients.
  */
 export function normalizeClientId(id: string | null): string {
   if (!id) return ''
-  const digits = id.replace(/\D/g, '')
-  return digits ? digits.padStart(9, '0') : ''
+  const core = id.replace(/\D/g, '').replace(/^0+/, '')
+  return core ? core.padStart(9, '0') : ''
 }
 
 /** מספר אוצר derived from KIDOD-ACHID: chars 18-23 (zero-padded fund code) */
