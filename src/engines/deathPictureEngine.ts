@@ -67,14 +67,20 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
     supplementary.hasChildrenUnder21 === true || supplementary.hasSpouse === true
 
   if (hasDependents && !hasDeathProtection) {
+    // The family relying on this income makes the missing coverage a real gap
+    const reliesOnIncome = supplementary.familyReliesOnIncome === true
     findings.push(
       makeFinding({
         category: 'death',
         level: 'client',
-        severity: 'attention',
-        title: 'יש תלויים אך לא נמצא כיסוי למקרה מוות',
+        severity: reliesOnIncome ? 'gap' : 'attention',
+        title: reliesOnIncome
+          ? 'נמצא פער: המשפחה מסתמכת על ההכנסה ואין כיסוי למקרה מוות'
+          : 'יש תלויים אך לא נמצא כיסוי למקרה מוות',
         description:
-          'צוין שקיימים ילדים מתחת לגיל 21 או בן/בת זוג, אך במוצרים שנותחו לא נמצא כיסוי שאירים או ביטוח למקרה מוות. ' +
+          'צוין שקיימים ילדים מתחת לגיל 21 או בן/בת זוג' +
+          (reliesOnIncome ? ' ושהמשפחה מסתמכת על ההכנסה שלך, ' : ', ') +
+          'אך במוצרים שנותחו לא נמצא כיסוי שאירים או ביטוח למקרה מוות. ' +
           'מומלץ לבחון את הצורך בכיסוי משפחתי.',
       }),
     )

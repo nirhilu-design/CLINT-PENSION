@@ -2,12 +2,12 @@
 // Policy-level and client-level findings.
 
 import type { Engine } from './engineTypes'
-import { makeFinding, salaryFromPolicies } from './engineTypes'
+import { makeFinding, effectiveSalary } from './engineTypes'
 import { isBlockedByStopIssue } from './stopIssueEngine'
 
 const TARGET_PERCENT = 73
 
-export const incomeProtectionEngine: Engine = ({ policies }) => {
+export const incomeProtectionEngine: Engine = ({ policies, supplementary }) => {
   const findings = []
 
   const disabilityCoverages = policies
@@ -48,9 +48,11 @@ export const incomeProtectionEngine: Engine = ({ policies }) => {
     }
   }
 
-  // Client level: covered salary for disability vs the salary reported in the XML
-  const salary = salaryFromPolicies(policies)
+  // Client level: covered salary for disability vs the actual salary
+  // (client-stated salary wins over the XML-reported insured salary)
+  const salary = effectiveSalary(policies, supplementary)
   if (salary && salary > 0) {
+    const fromClient = supplementary.currentGrossSalary !== null
     const maxCoveredSalary = Math.max(
       ...disabilityCoverages.map(({ coverage }) => coverage.coveredSalary ?? 0),
     )
@@ -60,9 +62,9 @@ export const incomeProtectionEngine: Engine = ({ policies }) => {
           category: 'insurance',
           level: 'client',
           severity: 'gap',
-          title: 'נמצא פער בין השכר המבוטח לאכ"ע לשכר המדווח',
+          title: 'נמצא פער בין השכר המבוטח לאכ"ע לשכר בפועל',
           description:
-            `השכר המבוטח לאובדן כושר עבודה (₪${maxCoveredSalary.toLocaleString()}) נמוך מהשכר המדווח בקבצים ` +
+            `השכר המבוטח לאובדן כושר עבודה (₪${maxCoveredSalary.toLocaleString()}) נמוך מ${fromClient ? 'השכר שציינת' : 'השכר המדווח בקבצים'} ` +
             `(₪${salary.toLocaleString()}). כדאי לבדוק התאמת הכיסוי לשכר הנוכחי.`,
         }),
       )

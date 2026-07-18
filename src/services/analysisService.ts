@@ -12,6 +12,9 @@ export function emptySupplementary(): SupplementaryInfo {
     hasChildrenUnder21: null,
     hasSpouse: null,
     hasOtherMaterialAssets: null,
+    employmentStatus: null,
+    currentGrossSalary: null,
+    familyReliesOnIncome: null,
     feeAgreements: [],
     benchmarks: [],
   }
