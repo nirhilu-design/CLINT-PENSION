@@ -55,15 +55,27 @@ export default function SupplementaryFormPage() {
   const [employment, setEmployment] = useState<EmploymentStatus | null>(null)
   const [salary, setSalary] = useState('')
   const [familyRelies, setFamilyRelies] = useState<boolean | null>(null)
+  const [realEstateValue, setRealEstateValue] = useState('')
+  const [portfolioValue, setPortfolioValue] = useState('')
+  const [liquidValue, setLiquidValue] = useState('')
+
+  function toNum(s: string): number | null {
+    const n = parseFloat(s)
+    return Number.isFinite(n) && n > 0 ? n : null
+  }
 
   function submit() {
     const supplementary = emptySupplementary()
     supplementary.hasChildrenUnder21 = childrenUnder21
     supplementary.hasSpouse = spouse
     supplementary.hasOtherMaterialAssets = otherAssets
+    if (otherAssets === true) {
+      supplementary.otherAssetsRealEstateValue = toNum(realEstateValue)
+      supplementary.otherAssetsPortfolioValue = toNum(portfolioValue)
+      supplementary.otherAssetsLiquidValue = toNum(liquidValue)
+    }
     supplementary.employmentStatus = employment
-    const n = parseFloat(salary)
-    supplementary.currentGrossSalary = Number.isFinite(n) && n > 0 ? n : null
+    supplementary.currentGrossSalary = toNum(salary)
     supplementary.familyReliesOnIncome = familyRelies
 
     const analysis = buildAnalysis(state.parsedFiles, supplementary)
@@ -144,6 +156,45 @@ export default function SupplementaryFormPage() {
             value={otherAssets}
             onChange={setOtherAssets}
           />
+          {otherAssets === true && (
+            <div className="mt-3 rounded-xl bg-[#f4f7fb] border border-slate-200/70 p-4">
+              <p className="text-xs text-slate-500 mb-3">
+                הערכה כללית מספיקה — זה עוזר לנו לראות את התמונה הפיננסית המלאה. אפשר להשאיר שדות ריקים.
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                <label className="text-sm text-slate-600">
+                  שווי נדל״ן (₪)
+                  <input
+                    type="number"
+                    value={realEstateValue}
+                    onChange={(e) => setRealEstateValue(e.target.value)}
+                    placeholder="לא כולל דירת מגורים"
+                    className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm"
+                  />
+                </label>
+                <label className="text-sm text-slate-600">
+                  שווי תיק השקעות (₪)
+                  <input
+                    type="number"
+                    value={portfolioValue}
+                    onChange={(e) => setPortfolioValue(e.target.value)}
+                    placeholder="ני״ע, קרנות"
+                    className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm"
+                  />
+                </label>
+                <label className="text-sm text-slate-600">
+                  כספים חופשיים (₪)
+                  <input
+                    type="number"
+                    value={liquidValue}
+                    onChange={(e) => setLiquidValue(e.target.value)}
+                    placeholder="עו״ש, פיקדונות"
+                    className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm"
+                  />
+                </label>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-3">

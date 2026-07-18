@@ -39,6 +39,19 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
   }
   if (capitalAssets > 0) parts.push(`נכסים הוניים (גמל והשתלמות): ${formatCurrency(capitalAssets)}`)
 
+  // Client-stated assets outside the pension portfolio
+  const statedParts: string[] = []
+  if (supplementary.otherAssetsRealEstateValue) {
+    statedParts.push(`נדל"ן ${formatCurrency(supplementary.otherAssetsRealEstateValue)}`)
+  }
+  if (supplementary.otherAssetsPortfolioValue) {
+    statedParts.push(`תיק השקעות ${formatCurrency(supplementary.otherAssetsPortfolioValue)}`)
+  }
+  if (supplementary.otherAssetsLiquidValue) {
+    statedParts.push(`כספים חופשיים ${formatCurrency(supplementary.otherAssetsLiquidValue)}`)
+  }
+  if (statedParts.length > 0) parts.push(`נכסים נוספים שדווחו: ${statedParts.join(', ')}`)
+
   if (parts.length === 0) {
     findings.push(
       makeFinding({
@@ -105,6 +118,10 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
   }
 
   if (supplementary.hasOtherMaterialAssets === true && hasDependents && !hasDeathProtection) {
+    const statedTotal =
+      (supplementary.otherAssetsRealEstateValue ?? 0) +
+      (supplementary.otherAssetsPortfolioValue ?? 0) +
+      (supplementary.otherAssetsLiquidValue ?? 0)
     findings.push(
       makeFinding({
         category: 'death',
@@ -112,7 +129,9 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
         severity: 'info',
         title: 'נכסים מהותיים אחרים כרשת ביטחון',
         description:
-          'צוין שקיימים נכסים פיננסיים מהותיים נוספים מחוץ לתיק הפנסיוני. ' +
+          (statedTotal > 0
+            ? `דווחו נכסים נוספים מחוץ לתיק הפנסיוני בשווי כולל של כ-${formatCurrency(statedTotal)}. `
+            : 'צוין שקיימים נכסים פיננסיים מהותיים נוספים מחוץ לתיק הפנסיוני. ') +
           'נכסים אלה עשויים להוות חלופה חלקית לכיסוי ביטוחי — מומלץ לבחון את התמונה הכוללת מול בעל רישיון.',
       }),
     )

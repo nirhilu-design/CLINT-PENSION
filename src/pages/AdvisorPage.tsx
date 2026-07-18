@@ -4,10 +4,6 @@ import { buildAnalysis } from '../services/analysisService'
 import type { BenchmarkSource, FeeAgreement, FundBenchmark } from '../models/types'
 import { productTypeLabels } from '../models/labels'
 
-// Simple gate code for the advisor area. Client-side MVP only — this is a
-// visual separation from the client flow, not real authentication.
-const ADVISOR_CODE = '2211'
-
 const sourceLabels: Record<BenchmarkSource, string> = {
   gemelnet: 'גמל-נט',
   pensianet: 'פנסיה-נט',
@@ -26,9 +22,6 @@ export default function AdvisorPage() {
   const policies = analysis.policies
   const supplementary = analysis.supplementary
 
-  const [unlocked, setUnlocked] = useState(false)
-  const [code, setCode] = useState('')
-  const [codeError, setCodeError] = useState(false)
   const [saved, setSaved] = useState(false)
 
   const [fees, setFees] = useState<Record<string, { deposit: string; accum: string }>>(() =>
@@ -87,49 +80,6 @@ export default function AdvisorPage() {
 
   const uniqueMofids = [...new Map(policies.filter((p) => p.mofid).map((p) => [p.mofid!, p])).values()]
 
-  if (!unlocked) {
-    return (
-      <div className="p-6 max-w-sm mx-auto mt-16">
-        <div className="rounded-2xl bg-white border border-slate-200/70 p-6 shadow-sm text-center">
-          <div className="mx-auto w-11 h-11 rounded-xl bg-[#eef3f9] grid place-items-center mb-3">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a4270" strokeWidth="1.8" strokeLinecap="round">
-              <rect x="5" y="10" width="14" height="10" rx="2" />
-              <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-            </svg>
-          </div>
-          <h1 className="font-bold text-slate-800 mb-1">אזור יועץ</h1>
-          <p className="text-sm text-slate-400 mb-4">הזנת נתונים מקצועיים — גישה ליועץ בלבד</p>
-          <input
-            type="password"
-            inputMode="numeric"
-            value={code}
-            onChange={(e) => {
-              setCode(e.target.value)
-              setCodeError(false)
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                if (code === ADVISOR_CODE) setUnlocked(true)
-                else setCodeError(true)
-              }
-            }}
-            placeholder="קוד גישה"
-            className={`w-full rounded-lg border p-2.5 text-center tracking-widest ${
-              codeError ? 'border-rose-400 bg-rose-50' : 'border-slate-300'
-            }`}
-          />
-          {codeError && <p className="text-xs text-rose-500 mt-2">קוד שגוי</p>}
-          <button
-            onClick={() => (code === ADVISOR_CODE ? setUnlocked(true) : setCodeError(true))}
-            className="mt-4 w-full rounded-xl bg-[#123054] text-white font-semibold py-2.5 hover:bg-[#1a4270]"
-          >
-            כניסה
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="p-6 max-w-2xl mx-auto">
       <nav className="text-sm text-slate-400 mb-4">
@@ -146,9 +96,9 @@ export default function AdvisorPage() {
       </p>
 
       <div className="rounded-2xl bg-white border border-slate-200/70 p-5 mb-4 shadow-sm">
-        <h2 className="font-semibold text-slate-700 mb-1">הסכמי דמי ניהול</h2>
+        <h2 className="font-semibold text-slate-700 mb-1">הסכמי דמי ניהול מפעליים</h2>
         <p className="text-xs text-slate-400 mb-3">
-          הסכמים מול היצרן/מעסיק, לפי פוליסה. בדיקת פער מול ההסכם תרוץ רק היכן שהוזן.
+          הסכמים מול היצרן/מעסיק (רובד מפעלי), לפי פוליסה. בדיקת פער מול ההסכם תרוץ רק היכן שהוזן.
         </p>
         {policies.map((p) => (
           <div key={p.policyNumber} className="grid grid-cols-3 gap-3 items-center py-2 border-t border-slate-100 text-sm">
