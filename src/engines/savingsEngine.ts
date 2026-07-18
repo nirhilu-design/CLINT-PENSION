@@ -10,8 +10,9 @@ import {
 } from '../utils/liquidity'
 import { formatCurrency, formatDate } from '../utils/format'
 
-export const savingsEngine: Engine = ({ policies }) => {
+export const savingsEngine: Engine = ({ policies, supplementary }) => {
   const findings = []
+  const selfEmployedOnly = supplementary.employmentStatus === 'selfEmployed'
 
   // Education funds: liquidity status
   for (const p of policies.filter((p) => p.productType === 'education' && (p.currentValue ?? 0) > 0)) {
@@ -45,8 +46,27 @@ export const savingsEngine: Engine = ({ policies }) => {
       )
     }
 
+    // Self-employed: the salaried salary-cap logic doesn't apply — their
+    // benefit is an income-tax deduction up to an annual deposit cap
+    if (selfEmployedOnly && p.status === 'active') {
+      findings.push(
+        makeFinding({
+          category: 'information',
+          level: 'policy',
+          severity: 'info',
+          title: 'קרן השתלמות לעצמאים — הטבת מס שונה',
+          description:
+            `בקרן ${p.policyNumber}: כעצמאי/ת, הטבת המס בהשתלמות ניתנת כניכוי מההכנסה החייבת עד תקרת הפקדה שנתית, ` +
+            'ולא לפי תקרת שכר חודשית. כדאי לבדוק את ניצול התקרה השנתית.',
+          productType: p.productType,
+          policyNumber: p.policyNumber,
+        }),
+      )
+    }
+
     // Contribution basis: full salary vs tax cap + the contributed percents
-    if (p.coveredSalary !== null && p.status === 'active') {
+    // (salaried logic — skipped for self-employed-only clients)
+    if (!selfEmployedOnly && p.coveredSalary !== null && p.status === 'active') {
       const overCap = p.coveredSalary > EDUCATION_FUND_MONTHLY_SALARY_CAP
       const percents = p.contributions
         .filter((c) => c.percent !== null)

@@ -91,6 +91,51 @@ export const retirementEngine: Engine = ({ policies, supplementary }) => {
     )
   }
 
+  // Employee without employer contributions anywhere — worth checking entitlement
+  if (
+    (supplementary.employmentStatus === 'employee' || supplementary.employmentStatus === 'both') &&
+    pensionable.length > 0
+  ) {
+    const hasEmployerContribution = policies.some(
+      (p) =>
+        p.status === 'active' &&
+        p.contributions.some((c) => c.role === 'employer' && (c.percent ?? 0) > 0),
+    )
+    if (!hasEmployerContribution) {
+      findings.push(
+        makeFinding({
+          category: 'retirement',
+          level: 'client',
+          severity: 'attention',
+          title: 'לא זוהו הפרשות מעסיק בקבצים',
+          description:
+            'צוין סטטוס שכיר, אך באף מוצר פעיל לא זוהו הפרשות מעסיק. ' +
+            'כדאי לבדוק שההפרשות מהמעסיק אכן מתבצעות ומדווחות.',
+        }),
+      )
+    }
+  }
+
+  // Not working: coverages survive only a limited period without deposits
+  if (supplementary.employmentStatus === 'notWorking') {
+    const hasCoverages = policies.some(
+      (p) => p.status === 'active' && p.coverages.length > 0,
+    )
+    if (hasCoverages) {
+      findings.push(
+        makeFinding({
+          category: 'insurance',
+          level: 'client',
+          severity: 'attention',
+          title: 'ללא עבודה כיום — שמירת הכיסויים הביטוחיים מוגבלת בזמן',
+          description:
+            'צוין שאינך עובד/ת כיום. ללא הפקדות שוטפות, הכיסויים הביטוחיים בקרן הפנסיה נשמרים לתקופה מוגבלת בלבד (הסדר ריסק זמני). ' +
+            'מומלץ לבחון את המשך הכיסוי מול הקרן.',
+        }),
+      )
+    }
+  }
+
   // Frozen (inactive) pension funds: no insurance coverage, often higher fees
   for (const p of policies.filter(
     (p) => (p.productType === 'pension' || p.productType === 'gemel') && p.status === 'inactive' && (p.currentValue ?? 0) > 0,

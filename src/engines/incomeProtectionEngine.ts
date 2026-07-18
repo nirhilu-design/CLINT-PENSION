@@ -14,15 +14,22 @@ export const incomeProtectionEngine: Engine = ({ policies, supplementary }) => {
     .filter((p) => !isBlockedByStopIssue(p) && p.status === 'active')
     .flatMap((p) => p.coverages.filter((c) => c.type === 'disability').map((c) => ({ policy: p, coverage: c })))
 
+  // Family relying on this income raises the stakes of every IP gap
+  const familyRelies = supplementary.familyReliesOnIncome === true
+
   if (disabilityCoverages.length === 0) {
     findings.push(
       makeFinding({
         category: 'insurance',
         level: 'client',
-        severity: 'attention',
-        title: 'לא נמצא כיסוי אובדן כושר עבודה',
+        severity: familyRelies ? 'gap' : 'attention',
+        title: familyRelies
+          ? 'נמצא פער: המשפחה מסתמכת על ההכנסה ואין כיסוי אובדן כושר עבודה'
+          : 'לא נמצא כיסוי אובדן כושר עבודה',
         description:
-          'במוצרים שנותחו לא אותר כיסוי לאובדן כושר עבודה. מומלץ לבחון האם קיים כיסוי כזה במוצרים נוספים.',
+          'במוצרים שנותחו לא אותר כיסוי לאובדן כושר עבודה' +
+          (familyRelies ? ', בעוד צוין שהמשפחה מסתמכת על ההכנסה שלך' : '') +
+          '. מומלץ לבחון האם קיים כיסוי כזה במוצרים נוספים.',
       }),
     )
     return findings
@@ -36,7 +43,7 @@ export const incomeProtectionEngine: Engine = ({ policies, supplementary }) => {
         makeFinding({
           category: 'insurance',
           level: 'policy',
-          severity: 'attention',
+          severity: familyRelies ? 'gap' : 'attention',
           title: 'שיעור כיסוי אכ"ע נמוך מהיעד',
           description:
             `בפוליסה ${policy.policyNumber} שיעור הכיסוי לאובדן כושר עבודה הוא ${coverage.percent.toFixed(0)}% ` +
