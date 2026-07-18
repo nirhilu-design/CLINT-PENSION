@@ -2,7 +2,7 @@
 // No automatic transfer recommendations — soft wording only.
 
 import type { Engine } from './engineTypes'
-import { makeFinding, salaryFromPolicies } from './engineTypes'
+import { makeFinding, effectiveSalary } from './engineTypes'
 import { isBlockedByStopIssue } from './stopIssueEngine'
 import { formatCurrency } from '../utils/format'
 
@@ -13,7 +13,7 @@ const generationLabels: Record<string, string> = {
   '2013-plus': '2013 ואילך',
 }
 
-export const retirementEngine: Engine = ({ policies }) => {
+export const retirementEngine: Engine = ({ policies, supplementary }) => {
   const findings = []
 
   const pensionable = policies.filter(
@@ -38,8 +38,9 @@ export const retirementEngine: Engine = ({ policies }) => {
       }),
     )
 
-    const salary = salaryFromPolicies(policies)
+    const salary = effectiveSalary(policies, supplementary)
     if (salary && salary > 0) {
+      const fromClient = supplementary.currentGrossSalary !== null
       const ratio = Math.round((totalExpected / salary) * 100)
       if (ratio < 70) {
         findings.push(
@@ -49,12 +50,30 @@ export const retirementEngine: Engine = ({ policies }) => {
             severity: 'attention',
             title: 'הקצבה הצפויה נמוכה ביחס לשכר',
             description:
-              `הקצבה הצפויה מהווה כ-${ratio}% מהשכר המבוטח המדווח בקבצים (${formatCurrency(salary)}). ` +
+              `הקצבה הצפויה מהווה כ-${ratio}% מ${fromClient ? 'השכר שציינת' : 'השכר המבוטח המדווח בקבצים'} (${formatCurrency(salary)}). ` +
               'מומלץ לבחון את היקף החיסכון הפנסיוני ואת רמת ההפקדות.',
           }),
         )
       }
     }
+
+  }
+
+  // Self-employed: mandatory pension applies — flag when no active pension-type product
+  if (
+    (supplementary.employmentStatus === 'selfEmployed' || supplementary.employmentStatus === 'both') &&
+    pensionable.length === 0
+  ) {
+    findings.push(
+      makeFinding({
+        category: 'retirement',
+        level: 'client',
+        severity: 'attention',
+        title: 'עצמאי ללא מוצר פנסיוני פעיל בתיק',
+        description:
+          'צוין סטטוס עצמאי, אך בקבצים לא זוהה מוצר פנסיוני פעיל. על עצמאים חלה חובת הפקדה לפנסיה — כדאי לבדוק האם קיים מוצר שלא הועלה.',
+      }),
+    )
   }
 
   // Pension products missing expected pension → limitation, not a guess

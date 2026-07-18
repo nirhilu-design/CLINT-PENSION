@@ -17,6 +17,14 @@ export function salaryFromPolicies(policies: Policy[]): number | null {
   return salaries.length ? Math.max(...salaries) : null
 }
 
+/** Client-stated gross salary wins over the XML-derived insured salary. */
+export function effectiveSalary(
+  policies: Policy[],
+  supplementary: { currentGrossSalary: number | null },
+): number | null {
+  return supplementary.currentGrossSalary ?? salaryFromPolicies(policies)
+}
+
 let counter = 0
 export function makeFinding(finding: Omit<Finding, 'id'>): Finding {
   counter += 1

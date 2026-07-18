@@ -137,12 +137,19 @@ export interface FundBenchmark {
   sharpe: number | null
 }
 
+export type EmploymentStatus = 'employee' | 'selfEmployed' | 'both' | 'notWorking'
+
 export interface SupplementaryInfo {
-  // Smart context questions that sharpen the insurance/death-picture analysis.
+  // --- Client-provided context (smart questions) ---
   // null = not answered; analysis proceeds without guessing.
   hasChildrenUnder21: boolean | null
   hasSpouse: boolean | null
   hasOtherMaterialAssets: boolean | null
+  employmentStatus: EmploymentStatus | null
+  currentGrossSalary: number | null
+  familyReliesOnIncome: boolean | null
+
+  // --- Advisor-provided data (admin area, not client-facing) ---
   feeAgreements: FeeAgreement[]
   benchmarks: FundBenchmark[]
 }
