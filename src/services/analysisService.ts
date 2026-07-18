@@ -20,6 +20,8 @@ export function emptySupplementary(): SupplementaryInfo {
     familyReliesOnIncome: null,
     feeAgreements: [],
     benchmarks: [],
+    treasuryFunds: [],
+    treasuryAllocations: [],
   }
 }
 

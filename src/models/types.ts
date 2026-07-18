@@ -139,6 +139,34 @@ export interface FundBenchmark {
 
 export type EmploymentStatus = 'employee' | 'selfEmployed' | 'both' | 'notWorking'
 
+// Parsed rows from official treasury bulk files (גמל-נט kupot_58/59 etc.),
+// filtered to the mofids present in the client's portfolio.
+export interface TreasuryFundData {
+  mofid: string
+  name: string | null
+  managingCompany: string | null
+  avgFeeFromAccumulation: number | null // SHIUR_DMEI_NIHUL_AHARON
+  avgFeeFromDeposit: number | null // SHIUR_D_NIHUL_AHARON_HAFKADOT
+  return12m: number | null // TSUA_MITZTABERET_LETKUFA
+  return3yAnnualized: number | null
+  return5yAnnualized: number | null
+  stdDev36m: number | null
+  sharpe: number | null // SHARP_RIBIT_HASRAT_SIKUN
+  liquidityRatio: number | null
+  periodTo: string | null // AD_TKUFAT_DIVUACH (yyyymm)
+}
+
+export interface AssetAllocationGroup {
+  name: string
+  percent: number
+}
+
+export interface TreasuryAllocation {
+  mofid: string
+  period: string | null
+  groups: AssetAllocationGroup[]
+}
+
 export interface SupplementaryInfo {
   // --- Client-provided context (smart questions) ---
   // null = not answered; analysis proceeds without guessing.
@@ -156,6 +184,8 @@ export interface SupplementaryInfo {
   // --- Advisor-provided data (admin area, not client-facing) ---
   feeAgreements: FeeAgreement[]
   benchmarks: FundBenchmark[]
+  treasuryFunds: TreasuryFundData[]
+  treasuryAllocations: TreasuryAllocation[]
 }
 
 // ---- Analysis (root aggregate) ----
