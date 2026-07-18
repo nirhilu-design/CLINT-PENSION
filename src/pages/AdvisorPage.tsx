@@ -1,8 +1,15 @@
 import { useState } from 'react'
 import { useApp } from '../hooks/useAppState'
 import { buildAnalysis } from '../services/analysisService'
-import type { BenchmarkSource, FeeAgreement, FundBenchmark } from '../models/types'
+import type {
+  BenchmarkSource,
+  FeeAgreement,
+  FundBenchmark,
+  TreasuryAllocation,
+  TreasuryFundData,
+} from '../models/types'
 import { productTypeLabels } from '../models/labels'
+import { parseTreasuryXml } from '../parser/parseTreasuryXml'
 
 const sourceLabels: Record<BenchmarkSource, string> = {
   gemelnet: 'גמל-נט',
@@ -23,6 +30,11 @@ export default function AdvisorPage() {
   const supplementary = analysis.supplementary
 
   const [saved, setSaved] = useState(false)
+  const [treasuryFunds, setTreasuryFunds] = useState<TreasuryFundData[]>(supplementary.treasuryFunds)
+  const [treasuryAllocations, setTreasuryAllocations] = useState<TreasuryAllocation[]>(
+    supplementary.treasuryAllocations,
+  )
+  const [uploadLog, setUploadLog] = useState<string[]>([])
 
   const [fees, setFees] = useState<Record<string, { deposit: string; accum: string }>>(() =>
     Object.fromEntries(
@@ -50,8 +62,48 @@ export default function AdvisorPage() {
     return Number.isFinite(n) ? n : null
   }
 
+  async function handleTreasuryFiles(fileList: FileList | null) {
+    if (!fileList || fileList.length === 0) return
+    const portfolioMofids = new Set(policies.map((p) => p.mofid).filter((m): m is string => !!m))
+    const log: string[] = []
+    let nextFunds = [...treasuryFunds]
+    let nextAllocs = [...treasuryAllocations]
+
+    for (const file of fileList) {
+      const text = await file.text()
+      const parsed = parseTreasuryXml(text, file.name, portfolioMofids)
+      if (parsed.type === 'unknown') {
+        log.push(`${file.name}: הפורמט לא זוהה כקובץ נתוני אוצר`)
+        continue
+      }
+      if (parsed.type === 'returns') {
+        nextFunds = [
+          ...nextFunds.filter((f) => !parsed.funds.some((n) => n.mofid === f.mofid)),
+          ...parsed.funds,
+        ]
+        log.push(
+          `${file.name}: קובץ תשואות — נמצאו נתונים עבור ${parsed.matchedMofids.length} מתוך ${portfolioMofids.size} מספרי אוצר בתיק`,
+        )
+      } else {
+        nextAllocs = [
+          ...nextAllocs.filter((a) => !parsed.allocations.some((n) => n.mofid === a.mofid)),
+          ...parsed.allocations,
+        ]
+        log.push(
+          `${file.name}: קובץ אפיקי השקעה — נמצאו נתונים עבור ${parsed.matchedMofids.length} מתוך ${portfolioMofids.size} מספרי אוצר בתיק`,
+        )
+      }
+    }
+
+    setTreasuryFunds(nextFunds)
+    setTreasuryAllocations(nextAllocs)
+    setUploadLog(log)
+  }
+
   function save() {
     const updated = { ...supplementary }
+    updated.treasuryFunds = treasuryFunds
+    updated.treasuryAllocations = treasuryAllocations
     updated.feeAgreements = Object.entries(fees)
       .map(([policyNumber, v]): FeeAgreement => ({
         policyNumber,
@@ -94,6 +146,41 @@ export default function AdvisorPage() {
       <p className="text-slate-500 mb-6 text-sm">
         נתונים מקצועיים שמשפיעים על מנועי הניתוח. שמירה מריצה את הניתוח מחדש.
       </p>
+
+      <div className="rounded-2xl bg-white border border-slate-200/70 p-5 mb-4 shadow-sm">
+        <h2 className="font-semibold text-slate-700 mb-1">קבצי נתוני אוצר — גמל-נט / פנסיה-נט</h2>
+        <p className="text-xs text-slate-400 mb-3">
+          העלאת קבצי ה-XML הרשמיים (תשואות ואפיקי השקעה). המערכת שולפת אוטומטית את הנתונים
+          לפי מספרי האוצר (מ"ה) של הקופות בתיק — תשואות, שארפ, דמי ניהול ממוצעים ואפיקים.
+        </p>
+        <input
+          type="file"
+          accept=".xml,text/xml"
+          multiple
+          onChange={(e) => handleTreasuryFiles(e.target.files)}
+          className="block w-full text-sm text-slate-500 file:ml-3 file:rounded-lg file:border-0 file:bg-[#eef3f9] file:px-4 file:py-2 file:text-sm file:font-medium file:text-[#1a4270] hover:file:bg-[#dfe9f4]"
+        />
+        {uploadLog.map((line, i) => (
+          <p key={i} className="text-xs text-slate-500 mt-2">✓ {line}</p>
+        ))}
+        {(treasuryFunds.length > 0 || treasuryAllocations.length > 0) && (
+          <div className="mt-3 rounded-xl bg-[#f4f7fb] border border-slate-200/70 p-3 text-sm">
+            <div className="font-medium text-slate-700 mb-1.5">נתונים טעונים:</div>
+            {treasuryFunds.map((f) => (
+              <div key={f.mofid} className="text-xs text-slate-500 py-0.5">
+                מ"ה {f.mofid} · {f.name} — תשואה 12ח' {f.return12m?.toFixed(2) ?? '—'}% · שארפ{' '}
+                {f.sharpe?.toFixed(2) ?? '—'} · ד"נ ממוצע {f.avgFeeFromAccumulation?.toFixed(2) ?? '—'}%
+              </div>
+            ))}
+            {treasuryAllocations.map((a) => (
+              <div key={a.mofid} className="text-xs text-slate-500 py-0.5">
+                מ"ה {a.mofid} · אפיקי השקעה: {a.groups.length} קבוצות (מובילים:{' '}
+                {a.groups.slice(0, 2).map((g) => `${g.name} ${g.percent.toFixed(1)}%`).join(', ')})
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="rounded-2xl bg-white border border-slate-200/70 p-5 mb-4 shadow-sm">
         <h2 className="font-semibold text-slate-700 mb-1">הסכמי דמי ניהול מפעליים</h2>

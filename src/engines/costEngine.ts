@@ -51,6 +51,36 @@ export const costEngine: Engine = ({ policies, supplementary }) => {
     }
   }
 
+  // Treasury data check — client's actual fee vs the fund's average fee
+  for (const policy of policies) {
+    if (isBlockedByStopIssue(policy) || policy.status === 'inactive') continue
+    const fund = policy.mofid
+      ? supplementary.treasuryFunds.find((f) => f.mofid === policy.mofid)
+      : undefined
+    if (!fund) continue
+
+    if (
+      fund.avgFeeFromAccumulation !== null &&
+      policy.fees.fromAccumulation !== null &&
+      policy.fees.fromAccumulation > fund.avgFeeFromAccumulation + 0.1
+    ) {
+      findings.push(
+        makeFinding({
+          category: 'cost',
+          level: 'policy',
+          severity: 'attention',
+          title: 'דמי ניהול גבוהים מהממוצע בקופה',
+          description:
+            `בפוליסה ${policy.policyNumber} דמי הניהול מצבירה הם ${policy.fees.fromAccumulation.toFixed(2)}%, ` +
+            `לעומת ממוצע של ${fund.avgFeeFromAccumulation.toFixed(2)}% למצטרפי הקופה (לפי נתוני האוצר). ` +
+            'כדאי לבדוק אפשרות להוזלה.',
+          productType: policy.productType,
+          policyNumber: policy.policyNumber,
+        }),
+      )
+    }
+  }
+
   // Agreement check — only where an agreement was entered
   for (const policy of policies) {
     if (isBlockedByStopIssue(policy)) continue

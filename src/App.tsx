@@ -37,6 +37,9 @@ export default function App() {
         <PolicyDrawer
           policy={selectedPolicy}
           findings={state.analysis.findings}
+          allocation={state.analysis.supplementary.treasuryAllocations.find(
+            (a) => a.mofid === selectedPolicy.mofid,
+          )}
           onClose={() => dispatch({ type: 'CLOSE_POLICY' })}
         />
       )}

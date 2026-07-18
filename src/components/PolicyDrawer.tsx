@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { Finding, Policy } from '../models/types'
+import type { Finding, Policy, TreasuryAllocation } from '../models/types'
 import { coverageTypeLabels, productTypeLabels } from '../models/labels'
 import { formatCurrency, formatDate, formatPercent } from '../utils/format'
 import FindingCard from './FindingCard'
@@ -32,10 +32,12 @@ const contributionLabels: Record<string, string> = {
 export default function PolicyDrawer({
   policy,
   findings,
+  allocation,
   onClose,
 }: {
   policy: Policy
   findings: Finding[]
+  allocation?: TreasuryAllocation
   onClose: () => void
 }) {
   const [findingsOpen, setFindingsOpen] = useState(true)
@@ -129,6 +131,25 @@ export default function PolicyDrawer({
             ))
           )}
         </Section>
+
+        {allocation && allocation.groups.length > 0 && (
+          <Section title='אפיקי השקעה (נתוני אוצר)'>
+            {allocation.groups.map((g) => (
+              <div key={g.name} className="py-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-600">{g.name}</span>
+                  <span className="text-slate-800 font-medium tabular">{g.percent.toFixed(1)}%</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-slate-100 mt-1 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-[#235a92]"
+                    style={{ width: `${Math.min(100, Math.max(0, g.percent))}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </Section>
+        )}
 
         <Section title="כיסויים ביטוחיים">
           {policy.coverages.length === 0 ? (
