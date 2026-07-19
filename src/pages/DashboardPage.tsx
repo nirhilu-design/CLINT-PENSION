@@ -22,6 +22,31 @@ const productTiles: Record<ProductType, { initials: string; classes: string }> =
   unknown: { initials: '?', classes: 'from-slate-400 to-slate-500' },
 }
 
+function SnapshotTile({
+  label,
+  value,
+  sub,
+  ok,
+}: {
+  label: string
+  value: string
+  sub: string
+  ok: boolean
+}) {
+  return (
+    <div className="rounded-2xl bg-white border border-slate-200/70 p-4 shadow-sm">
+      <div className="flex items-center gap-1.5">
+        <span className={`w-2 h-2 rounded-full ${ok ? 'bg-[#16ab99]' : 'bg-slate-300'}`} />
+        <span className="text-xs font-medium text-slate-400">{label}</span>
+      </div>
+      <div className={`mt-1 text-lg font-bold tabular ${ok ? 'text-slate-800' : 'text-slate-400'}`}>
+        {value}
+      </div>
+      <div className="text-[11px] text-slate-400 mt-0.5">{sub}</div>
+    </div>
+  )
+}
+
 function HeroKpi({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="rounded-xl bg-white/[0.07] border border-white/10 px-4 py-3 backdrop-blur-sm">
@@ -51,8 +76,29 @@ export default function DashboardPage() {
     value: policies.filter((p) => p.managingCompany === c).reduce((s, p) => s + (p.currentValue ?? 0), 0),
   })).filter((d) => d.value > 0)
 
-  const centralFindings = sortFindings(findings.filter((f) => f.severity !== 'info')).slice(0, 6)
+  const actionable = sortFindings(findings.filter((f) => f.severity !== 'info'))
+  const centralFindings = actionable.slice(0, 6)
+  const gapCount = actionable.filter((f) => f.severity === 'gap').length
+  const attentionCount = actionable.filter((f) => f.severity === 'attention').length
   const completeness = assessCompleteness(analysis)
+
+  // Insurance coverage snapshot across the portfolio
+  const activePolicies = policies.filter((p) => p.status === 'active')
+  const ipPercents = activePolicies
+    .flatMap((p) => p.coverages.filter((c) => c.type === 'disability'))
+    .map((c) => c.percent)
+    .filter((v): v is number => v !== null)
+  const survivorsMonthly = activePolicies
+    .flatMap((p) => p.coverages.filter((c) => c.type === 'survivors'))
+    .reduce((s, c) => s + (c.amount ?? 0), 0)
+  const deathLump = activePolicies
+    .flatMap((p) => p.coverages.filter((c) => c.type === 'death'))
+    .reduce((s, c) => s + (c.amount ?? 0), 0)
+  const lastDeposit = policies
+    .map((p) => p.lastDepositMonth)
+    .filter(Boolean)
+    .sort()
+    .pop() as string | undefined
 
   return (
     <div>
@@ -72,31 +118,36 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
             <HeroKpi label="סך נכסים" value={formatCurrency(totalAssets)} />
             <HeroKpi label="קצבה חודשית צפויה" value={formatCurrency(totalPension)} sub="סיכום מהדיווחים בקבצים" />
-            <HeroKpi label="מוצרים" value={String(productTypes.size)} />
-            <HeroKpi label="פוליסות" value={String(policies.length)} />
+            <HeroKpi
+              label="מוצרים · פוליסות"
+              value={`${productTypes.size} · ${policies.length}`}
+            />
+            <HeroKpi
+              label="ממצאים לתשומת לב"
+              value={String(actionable.length)}
+              sub={
+                actionable.length > 0
+                  ? [gapCount > 0 ? `${gapCount} פערים` : '', attentionCount > 0 ? `${attentionCount} לבדיקה` : '']
+                      .filter(Boolean)
+                      .join(' · ')
+                  : completeness.complete
+                    ? 'לא נמצאו ממצאים'
+                    : 'הבדיקה חלקית — מידע חסר'
+              }
+            />
           </div>
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-6 -mt-4 pb-10">
-        <div className="grid md:grid-cols-2 gap-4 mb-8">
-          <PieChartCard title="פיזור לפי סוג מוצר" data={byProduct} />
-          <PieChartCard title="פיזור לפי חברה מנהלת" data={byCompany} />
-        </div>
-
+        {/* 1. Attention first */}
         <section className="mb-8">
-          <h2 className="text-lg font-bold text-slate-800 mb-3">תשואות</h2>
-          <ReturnsTable
-            policies={policies}
-            treasuryFunds={analysis.supplementary.treasuryFunds}
-          />
-        </section>
-
-        <section className="mb-8">
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 className="text-lg font-bold text-slate-800">ממצאים מרכזיים</h2>
-            {centralFindings.length > 0 && (
-              <span className="text-xs text-slate-400">{centralFindings.length} ממצאים לתשומת לב</span>
+          <div className="flex items-baseline justify-between mb-3 pt-2">
+            <h2 className="text-lg font-bold text-slate-800">נקודות הדורשות תשומת לב</h2>
+            {actionable.length > centralFindings.length && (
+              <span className="text-xs text-slate-400">
+                מוצגים {centralFindings.length} מתוך {actionable.length} · המלא בסיכום המנהלים
+              </span>
             )}
           </div>
           {centralFindings.length === 0 ? (
@@ -130,6 +181,49 @@ export default function DashboardPage() {
           )}
         </section>
 
+        {/* 2. Coverage & deposits snapshot */}
+        <section className="mb-8">
+          <h2 className="text-lg font-bold text-slate-800 mb-3">כיסויים והפקדות במבט מהיר</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <SnapshotTile
+              label='אובדן כושר עבודה'
+              value={ipPercents.length > 0 ? `${Math.max(...ipPercents).toFixed(0)}%` : 'לא נמצא'}
+              sub={ipPercents.length > 0 ? 'שיעור הכיסוי הגבוה בתיק' : 'לא אותר כיסוי במוצרים שנותחו'}
+              ok={ipPercents.length > 0}
+            />
+            <SnapshotTile
+              label="קצבת שאירים"
+              value={survivorsMonthly > 0 ? formatCurrency(survivorsMonthly) : 'לא נמצא'}
+              sub={survivorsMonthly > 0 ? 'לחודש, מקרן הפנסיה' : 'לא אותר כיסוי שאירים'}
+              ok={survivorsMonthly > 0}
+            />
+            <SnapshotTile
+              label="ביטוח חיים"
+              value={deathLump > 0 ? formatCurrency(deathLump) : 'לא נמצא'}
+              sub={deathLump > 0 ? 'סכום חד-פעמי למקרה מוות' : 'לא אותר ביטוח למקרה מוות'}
+              ok={deathLump > 0}
+            />
+            <SnapshotTile
+              label="הפקדה אחרונה"
+              value={lastDeposit ?? 'לא דווח'}
+              sub={lastDeposit ? 'החודש האחרון שנקלט בתיק' : 'לא דווחו הפקדות בקבצים'}
+              ok={!!lastDeposit}
+            />
+          </div>
+        </section>
+
+        {/* 3. Money distribution */}
+        <div className="grid md:grid-cols-2 gap-4 mb-8">
+          <PieChartCard title="פיזור לפי סוג מוצר" data={byProduct} />
+          <PieChartCard title="פיזור לפי חברה מנהלת" data={byCompany} />
+        </div>
+
+        <section className="mb-8">
+          <h2 className="text-lg font-bold text-slate-800 mb-3">תשואות</h2>
+          <ReturnsTable policies={policies} treasuryFunds={analysis.supplementary.treasuryFunds} />
+        </section>
+
+        {/* 4. Products */}
         <section>
           <h2 className="text-lg font-bold text-slate-800 mb-3">מוצרים</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
