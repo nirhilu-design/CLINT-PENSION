@@ -297,7 +297,18 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
         currentValue,
         coveredSalary: getNumber(heshbon, 'PirteiHaasaka > SACHAR-POLISA'),
         expectedPension: getNumber(yitra, 'KITZVAT-HODSHIT-TZFUYA'),
+        // Monthly pension without future deposits: the reported pension scales
+        // linearly with accumulation (same annuity factor), so we apply the
+        // reported no-deposit/with-deposit accumulation ratio to it.
+        expectedPensionNoDeposits: (() => {
+          const pension = getNumber(yitra, 'KITZVAT-HODSHIT-TZFUYA')
+          const accWith = getNumber(yitra, 'TOTAL-CHISACHON-MITZTABER-TZAFUY')
+          const accWithout = getNumber(yitra, 'TZVIRAT-CHISACHON-CHAZUYA-LELO-PREMIYOT')
+          if (pension === null || !accWith || accWithout === null) return null
+          return Math.round(pension * (accWithout / accWith))
+        })(),
         expectedAccumulationAtRetirement: getNumber(yitra, 'TOTAL-CHISACHON-MITZTABER-TZAFUY'),
+        expectedAccumulationNoDeposits: getNumber(yitra, 'TZVIRAT-CHISACHON-CHAZUYA-LELO-PREMIYOT'),
         retirementAge: getNumber(yitra, 'GIL-PRISHA'),
         fees: { fromDeposit: feeFromDeposit, fromAccumulation: feeFromAccumulation },
         netReturn: getNumber(heshbon, 'Tsua > SHEUR-TSUA-NETO'),

@@ -83,8 +83,10 @@ export interface Policy {
   status: 'active' | 'inactive' | null
   currentValue: number | null
   coveredSalary: number | null
-  expectedPension: number | null // KITZVAT-HODSHIT-TZFUYA
-  expectedAccumulationAtRetirement: number | null
+  expectedPension: number | null // KITZVAT-HODSHIT-TZFUYA — with ongoing deposits
+  expectedPensionNoDeposits: number | null // derived: without future deposits
+  expectedAccumulationAtRetirement: number | null // TOTAL-CHISACHON-MITZTABER-TZAFUY, with deposits
+  expectedAccumulationNoDeposits: number | null // TZVIRAT-CHISACHON-CHAZUYA-LELO-PREMIYOT
   retirementAge: number | null
   fees: FeeStructure
   netReturn: number | null // percent, SHEUR-TSUA-NETO

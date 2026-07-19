@@ -6,6 +6,7 @@ import { formatCurrency, formatDate, formatPercent } from '../utils/format'
 import KpiCard from '../components/KpiCard'
 import FindingCard from '../components/FindingCard'
 import ReturnsTable from '../components/ReturnsTable'
+import AllocationBars, { weightedAllocation } from '../components/AllocationBars'
 import { isBlockedByStopIssue } from '../engines/stopIssueEngine'
 import { isEducationFundLiquid } from '../utils/liquidity'
 
@@ -279,11 +280,26 @@ export default function ProductPage() {
       )}
 
       {tab === 'returns' && (
-        <ReturnsTable
-          policies={policies}
-          treasuryFunds={analysis.supplementary.treasuryFunds}
-          showProductColumn={false}
-        />
+        <div className="space-y-6">
+          <ReturnsTable
+            policies={policies}
+            treasuryFunds={analysis.supplementary.treasuryFunds}
+            showProductColumn={false}
+          />
+          <div>
+            <h3 className="text-base font-bold text-slate-800 mb-3">פירוק אפיקי השקעה</h3>
+            {(() => {
+              const agg = weightedAllocation(policies, analysis.supplementary.treasuryAllocations)
+              return (
+                <AllocationBars
+                  groups={agg.groups}
+                  coveredValue={agg.coveredValue}
+                  totalValue={agg.totalValue}
+                />
+              )
+            })()}
+          </div>
+        </div>
       )}
 
       {tab === 'coverages' && (

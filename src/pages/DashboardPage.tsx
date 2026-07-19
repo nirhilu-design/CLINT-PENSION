@@ -9,6 +9,7 @@ import { sortFindings } from '../engines/findingPriority'
 import { assessCompleteness } from '../services/completenessService'
 import { useState } from 'react'
 import SliceDrawer, { type SliceSelection } from '../components/SliceDrawer'
+import AllocationBars, { weightedAllocation } from '../components/AllocationBars'
 
 const PRODUCT_ORDER: ProductType[] = ['pension', 'managers', 'gemel', 'gemelInvestment', 'education', 'life', 'incomeProtection']
 
@@ -145,7 +146,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 -mt-4 pb-10">
+      <div className="max-w-6xl mx-auto px-6 pt-6 pb-10">
         {/* 1. Attention first */}
         <section className="mb-8">
           <div className="flex items-baseline justify-between mb-3 pt-2">
@@ -240,6 +241,20 @@ export default function DashboardPage() {
             onClose={() => setSlice(null)}
           />
         )}
+
+        <section className="mb-8">
+          <h2 className="text-lg font-bold text-slate-800 mb-3">פירוק אפיקי השקעה (מצרפי)</h2>
+          {(() => {
+            const agg = weightedAllocation(policies, analysis.supplementary.treasuryAllocations)
+            return (
+              <AllocationBars
+                groups={agg.groups}
+                coveredValue={agg.coveredValue}
+                totalValue={agg.totalValue}
+              />
+            )
+          })()}
+        </section>
 
         <section className="mb-8">
           <h2 className="text-lg font-bold text-slate-800 mb-3">תשואות</h2>

@@ -43,6 +43,7 @@ export default function PolicyDrawer({
   const [findingsOpen, setFindingsOpen] = useState(true)
   const [entered, setEntered] = useState(false)
   const policyFindings = findings.filter((f) => f.policyNumber === policy.policyNumber)
+  const isPension = policy.productType === 'pension' || policy.productType === 'managers'
 
   useEffect(() => {
     const raf = requestAnimationFrame(() => setEntered(true))
@@ -61,9 +62,9 @@ export default function PolicyDrawer({
         onClick={onClose}
       />
       <aside
-        className={`absolute top-0 left-0 h-full w-full max-w-md bg-white shadow-xl overflow-y-auto transition-transform duration-200 ${
-          entered ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`absolute top-0 left-0 h-full w-full bg-white shadow-xl overflow-y-auto transition-transform duration-200 ${
+          isPension ? 'max-w-lg' : 'max-w-md'
+        } ${entered ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-slate-100 px-5 py-3.5 flex items-center justify-between z-10">
           <div>
@@ -90,8 +91,44 @@ export default function PolicyDrawer({
 
         <Section title="מידע פיננסי">
           <Row label="יתרה צבורה" value={formatCurrency(policy.currentValue)} />
-          <Row label="קצבה חודשית צפויה" value={formatCurrency(policy.expectedPension)} />
-          <Row label="צבירה צפויה לפרישה" value={formatCurrency(policy.expectedAccumulationAtRetirement)} />
+          {isPension && policy.expectedPension !== null && (
+            <div className="rounded-lg bg-brand-25 border border-slate-200/70 p-3 my-2">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="text-xs font-semibold text-slate-600">קצבה חודשית צפויה בפרישה</span>
+                {policy.retirementAge !== null && (
+                  <span
+                    className="tip text-[11px] text-slate-400"
+                    data-tip={`התחזית מחושבת לגיל פרישה ${policy.retirementAge} לפי נתוני המסלקה`}
+                  >
+                    (גיל {policy.retirementAge})
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-md bg-white border border-slate-200/70 p-2">
+                  <div className="text-[11px] text-slate-400">בהמשך הפקדות</div>
+                  <div className="text-base font-bold text-slate-800 tabular">
+                    {formatCurrency(policy.expectedPension)}
+                  </div>
+                </div>
+                <div className="rounded-md bg-white border border-slate-200/70 p-2">
+                  <div className="text-[11px] text-slate-400">ללא הפקדות נוספות</div>
+                  <div className="text-base font-bold text-slate-800 tabular">
+                    {formatCurrency(policy.expectedPensionNoDeposits)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {!isPension && policy.expectedPension !== null && (
+            <Row label="קצבה חודשית צפויה" value={formatCurrency(policy.expectedPension)} />
+          )}
+          {isPension && (
+            <Row
+              label="צבירה צפויה לפרישה (עם/בלי הפקדות)"
+              value={`${formatCurrency(policy.expectedAccumulationAtRetirement)} / ${formatCurrency(policy.expectedAccumulationNoDeposits)}`}
+            />
+          )}
           <Row label="שכר מבוטח" value={formatCurrency(policy.coveredSalary)} />
           {policy.productType === 'managers' && (
             <Row label="מקדם קצבה מובטח" value={policy.hasGuaranteedFactor ? 'קיים' : 'לא קיים'} />
@@ -116,7 +153,39 @@ export default function PolicyDrawer({
           )}
         </Section>
 
+        {policy.monthlyDeposits.length > 0 && (
+          <Section title="פירוט הפקדות">
+            <p className="text-xs text-slate-400 -mt-1 mb-2">
+              הפקדות חודשיות שדווחו במסלקה, לפי חודש שכר.
+            </p>
+            <div className="space-y-1">
+              {[...policy.monthlyDeposits]
+                .sort((a, b) => b.month.localeCompare(a.month))
+                .map((d) => {
+                  const max = Math.max(...policy.monthlyDeposits.map((x) => x.total))
+                  return (
+                    <div key={d.month} className="text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-slate-600 tabular">{d.month}</span>
+                        <span className="text-slate-800 font-medium tabular">{formatCurrency(d.total)}</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-slate-100 mt-1 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-accent-500"
+                          style={{ width: `${max > 0 ? (d.total / max) * 100 : 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
+            </div>
+          </Section>
+        )}
+
         <Section title="מסלולי השקעה">
+          <p className="text-xs text-slate-400 -mt-1 mb-2">
+            המסלול שבו מנוהל הכסף בקופה, והצבירה המוקצית לכל מסלול.
+          </p>
           {policy.investmentTracks.length === 0 ? (
             <p className="text-sm text-slate-400">לא דווחו מסלולי השקעה</p>
           ) : (
