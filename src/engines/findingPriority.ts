@@ -18,7 +18,8 @@ export function findingPriority(f: Finding): number {
       return 2
     case 'investment':
       return 3
-    // deposits/continuity findings (phase B) will slot here as 4
+    case 'deposits':
+      return 4
     case 'retirement':
       return 5
     case 'dataQuality':

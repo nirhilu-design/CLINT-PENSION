@@ -41,6 +41,12 @@ export const EDUCATION_FUND_MONTHLY_SALARY_CAP = 15712 // תקרת שכר מוט
 // twice the national average wage (2025 ≈ ₪13,316 → cap salary ≈ ₪26,632)
 export const MEKIFA_SALARY_CAP = 26632
 
+// --- Deposits & continuity ---
+// Months allowed between the last received deposit and the file's as-of date
+export const DEPOSIT_RECENCY_MONTHS = 3
+// Salary-months window examined for continuity gaps
+export const DEPOSIT_CONTINUITY_WINDOW_MONTHS = 12
+
 // --- Data quality ---
 export const SALARY_CROSSCHECK_DIFF_RATIO = 0.15 // stated vs insured salary
 

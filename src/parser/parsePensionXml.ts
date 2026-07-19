@@ -7,6 +7,7 @@ import type {
   Contribution,
   Coverage,
   ManagersGeneration,
+  MonthlyDeposit,
   Policy,
   ProductType,
 } from '../models/types'
@@ -258,6 +259,26 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
         if (sug === '2' && feeFromDeposit === null) feeFromDeposit = value
       }
 
+      // Deposits: last deposit + monthly rows (aggregated per salary month)
+      const lastDepositRaw = getText(heshbon, 'PerutPirteiHafkadaAchrona > TAARICH-HAFKADA-ACHARON')
+      const lastDepositMonth =
+        lastDepositRaw && /^\d{6}/.test(lastDepositRaw)
+          ? `${lastDepositRaw.slice(0, 4)}-${lastDepositRaw.slice(4, 6)}`
+          : null
+      const lastDepositTotal = getNumber(heshbon, 'PerutPirteiHafkadaAchrona > TOTAL-HAFKADA')
+
+      const depositsByMonth = new Map<string, number>()
+      for (const row of heshbon.querySelectorAll('PerutHafkadotMetchilatShana')) {
+        const monthRaw = getText(row, 'CHODESH-SACHAR')
+        const amount = getNumber(row, 'SCHUM-HAFKADA-SHESHULAM')
+        if (!monthRaw || !/^\d{6}$/.test(monthRaw) || amount === null) continue
+        const month = `${monthRaw.slice(0, 4)}-${monthRaw.slice(4, 6)}`
+        depositsByMonth.set(month, (depositsByMonth.get(month) ?? 0) + amount)
+      }
+      const monthlyDeposits: MonthlyDeposit[] = [...depositsByMonth.entries()]
+        .map(([month, total]) => ({ month, total }))
+        .sort((a, b) => a.month.localeCompare(b.month))
+
       const yitra = heshbon.querySelector('YitraLefiGilPrisha')
       const openDate = parseDate(
         getText(heshbon, 'TAARICH-HITZTARFUT-MUTZAR') ?? getText(heshbon, 'TAARICH-HITZTARFUT-RISHON'),
@@ -287,6 +308,10 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
         managersGeneration:
           productType === 'managers' ? classifyManagersGeneration(openDate) : null,
         hasGuaranteedFactor: (getNumber(yitra, 'MEKADEM-MOVTACH-LEPRISHA') ?? 0) > 0,
+        reportDate: parseDate(getText(heshbon, 'TAARICH-NECHONUT')),
+        lastDepositMonth,
+        lastDepositTotal,
+        monthlyDeposits,
         survivorsWaiver: (() => {
           // VITUR-KISUY-BITUCHI: 1=waived, 2=not waived; SUG-VITOR-SHAERIM > 0 also indicates waiver
           const vitur = getText(heshbon, 'VITUR-KISUY-BITUCHI')

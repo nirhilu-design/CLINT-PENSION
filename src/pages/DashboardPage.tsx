@@ -1,7 +1,7 @@
 import { useApp } from '../hooks/useAppState'
 import { productTypeLabels } from '../models/labels'
 import type { ProductType } from '../models/types'
-import { formatCurrency } from '../utils/format'
+import { formatCurrency, formatDate } from '../utils/format'
 import PieChartCard from '../components/PieChartCard'
 import FindingCard from '../components/FindingCard'
 import ReturnsTable from '../components/ReturnsTable'
@@ -61,7 +61,13 @@ export default function DashboardPage() {
         <div className="max-w-6xl mx-auto px-6 pt-8 pb-10">
           <h1 className="text-2xl font-bold">התיק הפנסיוני של {client.fullName}</h1>
           <p className="text-sm text-slate-300/80 mt-1">
-            תמונת מצב מרוכזת מ-{policies.length} פוליסות · נכון לדיווח האחרון בקבצים
+            תמונת מצב מרוכזת מ-{policies.length} פוליסות
+            {(() => {
+              const dates = policies.map((p) => p.reportDate).filter(Boolean) as string[]
+              if (dates.length === 0) return ' · תאריך הנתונים לא דווח בקבצים'
+              const latest = dates.sort()[dates.length - 1]
+              return ` · הנתונים נכונים ל-${formatDate(latest)}`
+            })()}
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
             <HeroKpi label="סך נכסים" value={formatCurrency(totalAssets)} />

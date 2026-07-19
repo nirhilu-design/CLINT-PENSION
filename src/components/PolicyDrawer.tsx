@@ -99,6 +99,13 @@ export default function PolicyDrawer({
           <Row label='דמי ניהול מהפקדה' value={formatPercent(policy.fees.fromDeposit)} />
           <Row label='דמי ניהול מצבירה' value={formatPercent(policy.fees.fromAccumulation)} />
           <Row label="תשואה נטו" value={formatPercent(policy.netReturn)} />
+          {policy.lastDepositMonth && (
+            <Row
+              label="הפקדה אחרונה"
+              value={`${formatCurrency(policy.lastDepositTotal)} (${policy.lastDepositMonth})`}
+            />
+          )}
+          {policy.reportDate && <Row label="נכונות הנתונים" value={formatDate(policy.reportDate)} />}
           {policy.contributions.length > 0 && (
             <div className="mt-2 text-sm text-slate-600">
               הפרשות:{' '}
