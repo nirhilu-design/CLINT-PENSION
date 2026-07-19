@@ -5,6 +5,8 @@ import { formatCurrency } from '../utils/format'
 import PieChartCard from '../components/PieChartCard'
 import FindingCard from '../components/FindingCard'
 import ReturnsTable from '../components/ReturnsTable'
+import { sortFindings } from '../engines/findingPriority'
+import { assessCompleteness } from '../services/completenessService'
 
 const PRODUCT_ORDER: ProductType[] = ['pension', 'managers', 'gemel', 'gemelInvestment', 'education', 'life', 'incomeProtection']
 
@@ -49,7 +51,8 @@ export default function DashboardPage() {
     value: policies.filter((p) => p.managingCompany === c).reduce((s, p) => s + (p.currentValue ?? 0), 0),
   })).filter((d) => d.value > 0)
 
-  const centralFindings = findings.filter((f) => f.severity !== 'info').slice(0, 6)
+  const centralFindings = sortFindings(findings.filter((f) => f.severity !== 'info')).slice(0, 6)
+  const completeness = assessCompleteness(analysis)
 
   return (
     <div>
@@ -91,12 +94,32 @@ export default function DashboardPage() {
             )}
           </div>
           {centralFindings.length === 0 ? (
-            <p className="text-sm text-slate-400">לא נמצאו ממצאים הדורשים בדיקה</p>
+            completeness.complete ? (
+              <p className="text-sm text-slate-400">לא נמצאו ממצאים הדורשים בדיקה</p>
+            ) : (
+              <p className="text-sm text-slate-500">
+                לא עלו ממצאים בבדיקות שבוצעו — אך הבדיקה לא הושלמה במלואה בשל מידע חסר (פירוט למטה).
+              </p>
+            )
           ) : (
             <div className="grid md:grid-cols-2 gap-3">
               {centralFindings.map((f) => (
                 <FindingCard key={f.id} finding={f} />
               ))}
+            </div>
+          )}
+
+          {!completeness.complete && (
+            <div className="mt-4 rounded-xl border border-slate-200/70 bg-slate-50/80 p-4">
+              <div className="text-sm font-semibold text-slate-600 mb-1.5">שלמות הנתונים</div>
+              <ul className="space-y-1">
+                {completeness.missing.map((m, i) => (
+                  <li key={i} className="text-xs text-slate-500 flex gap-1.5">
+                    <span className="text-slate-300">•</span>
+                    {m}
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </section>

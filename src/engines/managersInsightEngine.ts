@@ -7,9 +7,7 @@ import type { Engine } from './engineTypes'
 import { makeFinding } from './engineTypes'
 import { isBlockedByStopIssue } from './stopIssueEngine'
 
-// Salary equivalent of the comprehensive pension fund deposit cap:
-// twice the national average wage (2025 ≈ ₪13,316 → cap salary ≈ ₪26,632)
-export const MEKIFA_SALARY_CAP = 26632
+import { MEKIFA_SALARY_CAP } from '../config/thresholds'
 
 export const managersInsightEngine: Engine = ({ policies, supplementary }) => {
   const findings = []

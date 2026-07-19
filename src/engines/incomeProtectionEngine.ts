@@ -5,7 +5,7 @@ import type { Engine } from './engineTypes'
 import { makeFinding, effectiveSalary } from './engineTypes'
 import { isBlockedByStopIssue } from './stopIssueEngine'
 
-const TARGET_PERCENT = 73
+import { IP_TARGET_COVERAGE_PERCENT as TARGET_PERCENT, IP_COVERAGE_PERCENT_SLACK, IP_COVERED_SALARY_RATIO } from '../config/thresholds'
 
 export const incomeProtectionEngine: Engine = ({ policies, supplementary }) => {
   const findings = []
@@ -38,7 +38,7 @@ export const incomeProtectionEngine: Engine = ({ policies, supplementary }) => {
   // Policy level: coverage percent vs target
   for (const { policy, coverage } of disabilityCoverages) {
     if (coverage.percent === null) continue
-    if (coverage.percent < TARGET_PERCENT - 3) {
+    if (coverage.percent < TARGET_PERCENT - IP_COVERAGE_PERCENT_SLACK) {
       findings.push(
         makeFinding({
           category: 'insurance',
@@ -63,7 +63,7 @@ export const incomeProtectionEngine: Engine = ({ policies, supplementary }) => {
     const maxCoveredSalary = Math.max(
       ...disabilityCoverages.map(({ coverage }) => coverage.coveredSalary ?? 0),
     )
-    if (maxCoveredSalary > 0 && maxCoveredSalary < salary * 0.9) {
+    if (maxCoveredSalary > 0 && maxCoveredSalary < salary * IP_COVERED_SALARY_RATIO) {
       findings.push(
         makeFinding({
           category: 'insurance',

@@ -5,6 +5,7 @@ import type { Engine } from './engineTypes'
 import { makeFinding, salaryFromPolicies } from './engineTypes'
 import { isBlockedByStopIssue } from './stopIssueEngine'
 import { formatCurrency } from '../utils/format'
+import { SALARY_CROSSCHECK_DIFF_RATIO } from '../config/thresholds'
 
 export const dataQualityEngine: Engine = ({ policies, supplementary }) => {
   const findings = []
@@ -14,7 +15,7 @@ export const dataQualityEngine: Engine = ({ policies, supplementary }) => {
   const xmlSalary = salaryFromPolicies(policies)
   if (statedSalary && xmlSalary && xmlSalary > 0) {
     const diffRatio = Math.abs(statedSalary - xmlSalary) / xmlSalary
-    if (diffRatio > 0.15) {
+    if (diffRatio > SALARY_CROSSCHECK_DIFF_RATIO) {
       const direction = statedSalary > xmlSalary ? 'גבוה' : 'נמוך'
       findings.push(
         makeFinding({

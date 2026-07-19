@@ -6,6 +6,7 @@ import type { Engine } from './engineTypes'
 import { makeFinding } from './engineTypes'
 import { isBlockedByStopIssue } from './stopIssueEngine'
 import { formatPercent } from '../utils/format'
+import { RETURN_BELOW_BENCHMARK_TOLERANCE } from '../config/thresholds'
 
 export const investmentEngine: Engine = ({ policies, supplementary }) => {
   const findings = []
@@ -27,7 +28,7 @@ export const investmentEngine: Engine = ({ policies, supplementary }) => {
 
     if (benchmarkReturn !== null) {
       const diff = policy.netReturn - benchmarkReturn
-      if (diff < -0.5) {
+      if (diff < -RETURN_BELOW_BENCHMARK_TOLERANCE) {
         findings.push(
           makeFinding({
             category: 'investment',
