@@ -44,6 +44,7 @@ export const costEngine: Engine = ({ policies, supplementary }) => {
           severity: 'attention',
           title: 'דמי ניהול גבוהים מהמקובל בשוק',
           description: `בפוליסה ${policy.policyNumber}: ${high.join('; ')}. כדאי לבדוק אפשרות להוזלה.`,
+          basedOn: `דמי ניהול כפי שדווחו בקובץ המסלקה · ספי שוק מקובלים לפי סוג המוצר`,
           productType: policy.productType,
           policyNumber: policy.policyNumber,
         }),
@@ -74,6 +75,7 @@ export const costEngine: Engine = ({ policies, supplementary }) => {
             `בפוליסה ${policy.policyNumber} דמי הניהול מצבירה הם ${policy.fees.fromAccumulation.toFixed(2)}%, ` +
             `לעומת ממוצע של ${fund.avgFeeFromAccumulation.toFixed(2)}% למצטרפי הקופה (לפי נתוני האוצר). ` +
             'כדאי לבדוק אפשרות להוזלה.',
+          basedOn: `דמי ניהול מדווחים במסלקה מול ממוצע הקופה בקובץ נתוני האוצר (מ"ה ${policy.mofid})`,
           productType: policy.productType,
           policyNumber: policy.policyNumber,
         }),

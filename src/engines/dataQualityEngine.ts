@@ -29,6 +29,7 @@ export const dataQualityEngine: Engine = ({ policies, supplementary }) => {
             (statedSalary > xmlSalary
               ? 'ייתכן שההפרשות אינן מעודכנות לשכר הנוכחי — כדאי לבדוק מול המעסיק.'
               : 'ייתכן שחל שינוי בשכר או שהדיווח בקבצים אינו עדכני — כדאי לוודא את הנתונים.'),
+          basedOn: 'השכר שהוזן בטופס השאלות מול SACHAR-POLISA הגבוה בקבצי המסלקה',
         }),
       )
     }

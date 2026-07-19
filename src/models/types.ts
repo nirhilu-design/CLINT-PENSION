@@ -127,6 +127,8 @@ export interface Finding {
   description: string
   productType?: ProductType
   policyNumber?: string
+  basedOn?: string // the concrete data the finding rests on
+  missingInfo?: string // what is missing to complete this check
 }
 
 // ---- Supplementary info (user-entered, not from XML) ----

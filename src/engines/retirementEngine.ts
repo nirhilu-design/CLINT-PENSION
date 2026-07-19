@@ -86,6 +86,7 @@ export const retirementEngine: Engine = ({ policies, supplementary }) => {
         severity: 'info',
         title: 'לא ניתן לחשב קצבה צפויה',
         description: `בפוליסה ${p.policyNumber} לא דווח נתון קצבה צפויה, ולכן לא נכלל בניתוח הפרישה.`,
+        missingInfo: 'נתון קצבה צפויה (KITZVAT-HODSHIT-TZFUYA) בדיווח היצרן',
         productType: p.productType,
         policyNumber: p.policyNumber,
       }),

@@ -39,6 +39,9 @@ export const investmentEngine: Engine = ({ policies, supplementary }) => {
               `בפוליסה ${policy.policyNumber} התשואה נטו המדווחת היא ${formatPercent(policy.netReturn)} ` +
               `לעומת ${formatPercent(benchmarkReturn)} ב${sourceLabel} (12 חודשים, ברוטו). ` +
               'כדאי לבדוק את התאמת מסלול ההשקעה.',
+            basedOn: treasury
+              ? `תשואת המסלקה מול קובץ נתוני האוצר (מ"ה ${policy.mofid}, לתקופה ${treasury.periodTo ?? '—'})`
+              : 'תשואת המסלקה מול נתוני השוואה שהוזנו ידנית באזור היועץ',
             productType: policy.productType,
             policyNumber: policy.policyNumber,
           }),
@@ -85,6 +88,7 @@ export const investmentEngine: Engine = ({ policies, supplementary }) => {
           description:
             `בפוליסה ${policy.policyNumber} התשואה נטו המדווחת היא ${formatPercent(policy.netReturn)}. ` +
             'לא נמצאו נתוני אוצר עבור מספר האוצר של הקופה ולא הוזנו נתוני השוואה, ולכן לא בוצעה השוואה.',
+          missingInfo: `קובץ נתוני אוצר הכולל את מ"ה ${policy.mofid ?? '(לא זוהה)'} או הזנת נתוני השוואה באזור היועץ`,
           productType: policy.productType,
           policyNumber: policy.policyNumber,
         }),

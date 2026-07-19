@@ -73,6 +73,9 @@ export const incomeProtectionEngine: Engine = ({ policies, supplementary }) => {
           description:
             `השכר המבוטח לאובדן כושר עבודה (₪${maxCoveredSalary.toLocaleString()}) נמוך מ${fromClient ? 'השכר שציינת' : 'השכר המדווח בקבצים'} ` +
             `(₪${salary.toLocaleString()}). כדאי לבדוק התאמת הכיסוי לשכר הנוכחי.`,
+          basedOn: fromClient
+            ? 'השכר המבוטח לנכות בקבצי המסלקה מול השכר שהוזן בטופס'
+            : 'השכר המבוטח לנכות מול השכר המבוטח הגבוה בתיק, שניהם מקבצי המסלקה',
         }),
       )
     }
