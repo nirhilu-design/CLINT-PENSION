@@ -7,6 +7,8 @@ import FindingCard from '../components/FindingCard'
 import ReturnsTable from '../components/ReturnsTable'
 import { sortFindings } from '../engines/findingPriority'
 import { assessCompleteness } from '../services/completenessService'
+import { useState } from 'react'
+import SliceDrawer, { type SliceSelection } from '../components/SliceDrawer'
 
 const PRODUCT_ORDER: ProductType[] = ['pension', 'managers', 'gemel', 'gemelInvestment', 'education', 'life', 'incomeProtection']
 
@@ -68,13 +70,17 @@ export default function DashboardPage() {
 
   const byProduct = PRODUCT_ORDER.filter((t) => productTypes.has(t)).map((t) => ({
     name: productTypeLabels[t],
+    key: t,
     value: policies.filter((p) => p.productType === t).reduce((s, p) => s + (p.currentValue ?? 0), 0),
   })).filter((d) => d.value > 0)
 
   const byCompany = [...new Set(policies.map((p) => p.managingCompany).filter(Boolean))].map((c) => ({
     name: c!,
+    key: c!,
     value: policies.filter((p) => p.managingCompany === c).reduce((s, p) => s + (p.currentValue ?? 0), 0),
   })).filter((d) => d.value > 0)
+
+  const [slice, setSlice] = useState<SliceSelection | null>(null)
 
   const actionable = sortFindings(findings.filter((f) => f.severity !== 'info'))
   const centralFindings = actionable.slice(0, 6)
@@ -214,9 +220,26 @@ export default function DashboardPage() {
 
         {/* 3. Money distribution */}
         <div className="grid md:grid-cols-2 gap-4 mb-8">
-          <PieChartCard title="פיזור לפי סוג מוצר" data={byProduct} />
-          <PieChartCard title="פיזור לפי חברה מנהלת" data={byCompany} />
+          <PieChartCard
+            title="פיזור לפי סוג מוצר"
+            data={byProduct}
+            onSliceClick={(key) => setSlice({ kind: 'product', key })}
+          />
+          <PieChartCard
+            title="פיזור לפי חברה מנהלת"
+            data={byCompany}
+            onSliceClick={(key) => setSlice({ kind: 'company', key })}
+          />
         </div>
+
+        {slice && (
+          <SliceDrawer
+            selection={slice}
+            policies={policies}
+            portfolioTotal={totalAssets}
+            onClose={() => setSlice(null)}
+          />
+        )}
 
         <section className="mb-8">
           <h2 className="text-lg font-bold text-slate-800 mb-3">תשואות</h2>
