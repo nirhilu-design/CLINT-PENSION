@@ -19,8 +19,8 @@ function YesNoQuestion({
       onClick={() => onChange(value === selected ? null : selected)}
       className={`px-4 py-1.5 rounded-lg border text-sm transition ${
         value === selected
-          ? 'bg-[#123054] border-[#123054] text-white'
-          : 'bg-white border-slate-300 text-slate-600 hover:border-[#235a92]/60'
+          ? 'bg-brand-800 border-brand-800 text-white'
+          : 'bg-white border-slate-300 text-slate-600 hover:border-brand-600/60'
       }`}
     >
       {text}
@@ -106,8 +106,8 @@ export default function SupplementaryFormPage() {
                   onClick={() => setEmployment(employment === o.value ? null : o.value)}
                   className={`px-4 py-1.5 rounded-lg border text-sm transition ${
                     employment === o.value
-                      ? 'bg-[#123054] border-[#123054] text-white'
-                      : 'bg-white border-slate-300 text-slate-600 hover:border-[#235a92]/60'
+                      ? 'bg-brand-800 border-brand-800 text-white'
+                      : 'bg-white border-slate-300 text-slate-600 hover:border-brand-600/60'
                   }`}
                 >
                   {o.label}
@@ -157,7 +157,7 @@ export default function SupplementaryFormPage() {
             onChange={setOtherAssets}
           />
           {otherAssets === true && (
-            <div className="mt-3 rounded-xl bg-[#f4f7fb] border border-slate-200/70 p-4">
+            <div className="mt-3 rounded-xl bg-brand-25 border border-slate-200/70 p-4">
               <p className="text-xs text-slate-500 mb-3">
                 הערכה כללית מספיקה — זה עוזר לנו לראות את התמונה הפיננסית המלאה. אפשר להשאיר שדות ריקים.
               </p>
@@ -200,7 +200,7 @@ export default function SupplementaryFormPage() {
         <div className="flex gap-3">
           <button
             onClick={submit}
-            className="flex-1 rounded-xl bg-gradient-to-l from-[#123054] to-[#1a4270] text-white font-semibold py-3 hover:opacity-95"
+            className="flex-1 rounded-xl bg-gradient-to-l from-brand-800 to-brand-700 text-white font-semibold py-3 hover:opacity-95"
           >
             המשך לניתוח
           </button>

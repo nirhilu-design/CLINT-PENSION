@@ -41,6 +41,11 @@ export interface Contribution {
   percent: number | null
 }
 
+export interface MonthlyDeposit {
+  month: string // yyyy-mm (salary month, CHODESH-SACHAR)
+  total: number // sum across contribution types for that month
+}
+
 export interface Beneficiary {
   name: string | null
   relation: string | null
@@ -90,6 +95,10 @@ export interface Policy {
   managersGeneration: ManagersGeneration | null
   hasGuaranteedFactor: boolean // מקדם קצבה מובטח (MEKADEM-MOVTACH-LEPRISHA)
   survivorsWaiver: boolean | null // ויתור על כיסוי שאירים בקרן פנסיה
+  reportDate: string | null // ISO, TAARICH-NECHONUT — the data's as-of date
+  lastDepositMonth: string | null // yyyy-mm, TAARICH-HAFKADA-ACHARON
+  lastDepositTotal: number | null // TOTAL-HAFKADA
+  monthlyDeposits: MonthlyDeposit[] // aggregated PerutHafkadotMetchilatShana
   sourceFileName: string
 }
 
@@ -97,6 +106,7 @@ export type FindingCategory =
   | 'retirement'
   | 'cost'
   | 'investment'
+  | 'deposits'
   | 'insurance'
   | 'death'
   | 'dataQuality'
@@ -117,6 +127,8 @@ export interface Finding {
   description: string
   productType?: ProductType
   policyNumber?: string
+  basedOn?: string // the concrete data the finding rests on
+  missingInfo?: string // what is missing to complete this check
 }
 
 // ---- Supplementary info (user-entered, not from XML) ----

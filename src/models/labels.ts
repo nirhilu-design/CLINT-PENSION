@@ -22,6 +22,7 @@ export const findingCategoryLabels: Record<FindingCategory, string> = {
   retirement: 'פרישה',
   cost: 'עלויות',
   investment: 'השקעות',
+  deposits: 'הפקדות ורציפות',
   insurance: 'ביטוח',
   death: 'תמונת מוות',
   dataQuality: 'איכות נתונים',

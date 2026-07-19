@@ -10,6 +10,7 @@ import type {
 } from '../models/types'
 import { productTypeLabels } from '../models/labels'
 import { parseTreasuryXml } from '../parser/parseTreasuryXml'
+import Spinner from '../components/Spinner'
 
 const sourceLabels: Record<BenchmarkSource, string> = {
   gemelnet: 'גמל-נט',
@@ -35,6 +36,7 @@ export default function AdvisorPage() {
     supplementary.treasuryAllocations,
   )
   const [uploadLog, setUploadLog] = useState<string[]>([])
+  const [parsing, setParsing] = useState(false)
 
   const [fees, setFees] = useState<Record<string, { deposit: string; accum: string }>>(() =>
     Object.fromEntries(
@@ -64,6 +66,8 @@ export default function AdvisorPage() {
 
   async function handleTreasuryFiles(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return
+    setParsing(true)
+    await new Promise((r) => setTimeout(r, 30)) // let the spinner paint before heavy parsing
     const portfolioMofids = new Set(policies.map((p) => p.mofid).filter((m): m is string => !!m))
     const log: string[] = []
     let nextFunds = [...treasuryFunds]
@@ -98,6 +102,7 @@ export default function AdvisorPage() {
     setTreasuryFunds(nextFunds)
     setTreasuryAllocations(nextAllocs)
     setUploadLog(log)
+    setParsing(false)
   }
 
   function save() {
@@ -135,7 +140,7 @@ export default function AdvisorPage() {
   return (
     <div className="p-6 max-w-2xl mx-auto">
       <nav className="text-sm text-slate-400 mb-4">
-        <button onClick={() => dispatch({ type: 'GO_DASHBOARD' })} className="text-[#1a4270] hover:underline">
+        <button onClick={() => dispatch({ type: 'GO_DASHBOARD' })} className="text-brand-700 hover:underline">
           דשבורד
         </button>
         <span className="mx-1.5">‹</span>
@@ -158,13 +163,18 @@ export default function AdvisorPage() {
           accept=".xml,text/xml"
           multiple
           onChange={(e) => handleTreasuryFiles(e.target.files)}
-          className="block w-full text-sm text-slate-500 file:ml-3 file:rounded-lg file:border-0 file:bg-[#eef3f9] file:px-4 file:py-2 file:text-sm file:font-medium file:text-[#1a4270] hover:file:bg-[#dfe9f4]"
+          className="block w-full text-sm text-slate-500 file:ml-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-brand-700 hover:file:bg-brand-50"
         />
+        {parsing && (
+          <div className="mt-2">
+            <Spinner label="מעבד את קובצי הנתונים…" />
+          </div>
+        )}
         {uploadLog.map((line, i) => (
           <p key={i} className="text-xs text-slate-500 mt-2">✓ {line}</p>
         ))}
         {(treasuryFunds.length > 0 || treasuryAllocations.length > 0) && (
-          <div className="mt-3 rounded-xl bg-[#f4f7fb] border border-slate-200/70 p-3 text-sm">
+          <div className="mt-3 rounded-xl bg-brand-25 border border-slate-200/70 p-3 text-sm">
             <div className="font-medium text-slate-700 mb-1.5">נתונים טעונים:</div>
             {treasuryFunds.map((f) => (
               <div key={f.mofid} className="text-xs text-slate-500 py-0.5">
@@ -262,11 +272,11 @@ export default function AdvisorPage() {
       <div className="flex items-center gap-3">
         <button
           onClick={save}
-          className="rounded-xl bg-gradient-to-l from-[#123054] to-[#1a4270] text-white font-semibold py-2.5 px-8 hover:opacity-95"
+          className="rounded-xl bg-gradient-to-l from-brand-800 to-brand-700 text-white font-semibold py-2.5 px-8 hover:opacity-95"
         >
           שמירה והרצת ניתוח מחדש
         </button>
-        {saved && <span className="text-sm text-[#0e9484] font-medium">✓ נשמר — הניתוח עודכן</span>}
+        {saved && <span className="text-sm text-accent-600 font-medium">✓ נשמר — הניתוח עודכן</span>}
       </div>
     </div>
   )

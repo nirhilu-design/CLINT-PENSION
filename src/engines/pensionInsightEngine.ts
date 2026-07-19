@@ -7,7 +7,7 @@ import { makeFinding } from './engineTypes'
 import { isBlockedByStopIssue } from './stopIssueEngine'
 import { formatCurrency } from '../utils/format'
 
-const MAX_DISABILITY_PERCENT = 75
+import { MAX_PENSION_DISABILITY_PERCENT as MAX_DISABILITY_PERCENT } from '../config/thresholds'
 
 export const pensionInsightEngine: Engine = ({ policies, supplementary }) => {
   const findings = []

@@ -5,7 +5,7 @@
 import type { Engine } from './engineTypes'
 import { makeFinding } from './engineTypes'
 import { isBlockedByStopIssue } from './stopIssueEngine'
-import { marketFeeThresholds } from '../utils/feeBenchmarks'
+import { MARKET_FEE_THRESHOLDS, FEE_ABOVE_FUND_AVG_TOLERANCE } from '../config/thresholds'
 
 export const costEngine: Engine = ({ policies, supplementary }) => {
   const findings = []
@@ -13,7 +13,7 @@ export const costEngine: Engine = ({ policies, supplementary }) => {
   // Market threshold check — runs for every policy with fee data
   for (const policy of policies) {
     if (isBlockedByStopIssue(policy) || policy.status === 'inactive') continue
-    const threshold = marketFeeThresholds[policy.productType]
+    const threshold = MARKET_FEE_THRESHOLDS[policy.productType]
     if (!threshold) continue
 
     const high: string[] = []
@@ -44,6 +44,7 @@ export const costEngine: Engine = ({ policies, supplementary }) => {
           severity: 'attention',
           title: 'דמי ניהול גבוהים מהמקובל בשוק',
           description: `בפוליסה ${policy.policyNumber}: ${high.join('; ')}. כדאי לבדוק אפשרות להוזלה.`,
+          basedOn: `דמי ניהול כפי שדווחו בקובץ המסלקה · ספי שוק מקובלים לפי סוג המוצר`,
           productType: policy.productType,
           policyNumber: policy.policyNumber,
         }),
@@ -62,7 +63,7 @@ export const costEngine: Engine = ({ policies, supplementary }) => {
     if (
       fund.avgFeeFromAccumulation !== null &&
       policy.fees.fromAccumulation !== null &&
-      policy.fees.fromAccumulation > fund.avgFeeFromAccumulation + 0.1
+      policy.fees.fromAccumulation > fund.avgFeeFromAccumulation + FEE_ABOVE_FUND_AVG_TOLERANCE
     ) {
       findings.push(
         makeFinding({
@@ -74,6 +75,7 @@ export const costEngine: Engine = ({ policies, supplementary }) => {
             `בפוליסה ${policy.policyNumber} דמי הניהול מצבירה הם ${policy.fees.fromAccumulation.toFixed(2)}%, ` +
             `לעומת ממוצע של ${fund.avgFeeFromAccumulation.toFixed(2)}% למצטרפי הקופה (לפי נתוני האוצר). ` +
             'כדאי לבדוק אפשרות להוזלה.',
+          basedOn: `דמי ניהול מדווחים במסלקה מול ממוצע הקופה בקובץ נתוני האוצר (מ"ה ${policy.mofid})`,
           productType: policy.productType,
           policyNumber: policy.policyNumber,
         }),

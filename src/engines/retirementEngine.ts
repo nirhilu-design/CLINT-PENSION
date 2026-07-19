@@ -3,6 +3,7 @@
 
 import type { Engine } from './engineTypes'
 import { makeFinding, effectiveSalary } from './engineTypes'
+import { PENSION_TO_SALARY_MIN_RATIO } from '../config/thresholds'
 import { isBlockedByStopIssue } from './stopIssueEngine'
 import { formatCurrency } from '../utils/format'
 
@@ -42,7 +43,7 @@ export const retirementEngine: Engine = ({ policies, supplementary }) => {
     if (salary && salary > 0) {
       const fromClient = supplementary.currentGrossSalary !== null
       const ratio = Math.round((totalExpected / salary) * 100)
-      if (ratio < 70) {
+      if (ratio < PENSION_TO_SALARY_MIN_RATIO * 100) {
         findings.push(
           makeFinding({
             category: 'retirement',
@@ -85,6 +86,7 @@ export const retirementEngine: Engine = ({ policies, supplementary }) => {
         severity: 'info',
         title: 'לא ניתן לחשב קצבה צפויה',
         description: `בפוליסה ${p.policyNumber} לא דווח נתון קצבה צפויה, ולכן לא נכלל בניתוח הפרישה.`,
+        missingInfo: 'נתון קצבה צפויה (KITZVAT-HODSHIT-TZFUYA) בדיווח היצרן',
         productType: p.productType,
         policyNumber: p.policyNumber,
       }),

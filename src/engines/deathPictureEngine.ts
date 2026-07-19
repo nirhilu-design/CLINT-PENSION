@@ -4,6 +4,7 @@
 import type { Engine } from './engineTypes'
 import { makeFinding } from './engineTypes'
 import { formatCurrency } from '../utils/format'
+import { LARGE_ASSETS_THRESHOLD, LARGE_LIFE_COVER_THRESHOLD } from '../config/thresholds'
 
 export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
   const findings = []
@@ -124,7 +125,7 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
     (supplementary.otherAssetsRealEstateValue ?? 0) +
     (supplementary.otherAssetsPortfolioValue ?? 0) +
     (supplementary.otherAssetsLiquidValue ?? 0)
-  if (statedAssetsTotal >= 1_000_000 && deathLumpSum >= 500_000) {
+  if (statedAssetsTotal >= LARGE_ASSETS_THRESHOLD && deathLumpSum >= LARGE_LIFE_COVER_THRESHOLD) {
     findings.push(
       makeFinding({
         category: 'death',
