@@ -1,7 +1,8 @@
+import { useState } from 'react'
 import { useApp } from '../hooks/useAppState'
 import { coverageTypeLabels, productTypeLabels } from '../models/labels'
 import type { Policy, ProductType } from '../models/types'
-import { formatCurrency, formatPercent } from '../utils/format'
+import { formatCurrency, formatDate, formatPercent } from '../utils/format'
 import KpiCard from '../components/KpiCard'
 import FindingCard from '../components/FindingCard'
 import ReturnsTable from '../components/ReturnsTable'
@@ -107,6 +108,30 @@ export default function ProductPage() {
     (f) => f.productType === productType || policies.some((p) => p.policyNumber === f.policyNumber),
   )
 
+  const [tab, setTab] = useState<'overview' | 'returns' | 'coverages'>('overview')
+  const tabs: { id: 'overview' | 'returns' | 'coverages'; label: string; count?: number }[] = [
+    { id: 'overview', label: 'סקירה', count: productFindings.length },
+    { id: 'returns', label: 'תשואות' },
+    ...(COVERAGE_PRODUCTS.includes(productType)
+      ? [{ id: 'coverages' as const, label: 'כיסויים', count: coverages.length }]
+      : []),
+  ]
+
+  // Visible per-product missing-data summary
+  const missingData: string[] = []
+  for (const p of policies) {
+    if (isBlockedByStopIssue(p)) continue
+    const miss: string[] = []
+    if (p.fees.fromDeposit === null && p.fees.fromAccumulation === null) miss.push('דמי ניהול')
+    if (p.netReturn === null) miss.push('תשואה')
+    if (!p.openDate) miss.push('תאריך הצטרפות')
+    if (!p.mofid) miss.push('מספר אוצר')
+    if ((productType === 'pension' || productType === 'managers') && p.expectedPension === null) {
+      miss.push('קצבה צפויה')
+    }
+    if (miss.length > 0) miss.length && missingData.push(`פוליסה ${p.policyNumber}: ${miss.join(', ')}`)
+  }
+
   const policyRow = (p: Policy) => (
     <button
       key={p.policyNumber}
@@ -133,60 +158,140 @@ export default function ProductPage() {
         <span className="text-slate-600">{productTypeLabels[productType]}</span>
       </nav>
 
-      <h1 className="text-2xl font-bold text-slate-800 mb-4">{productTypeLabels[productType]}</h1>
+      {/* Product header: identity and status first */}
+      <header className="rounded-2xl bg-white border border-slate-200/70 shadow-sm p-5 mb-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">{productTypeLabels[productType]}</h1>
+            <p className="text-sm text-slate-500 mt-0.5">
+              {[...new Set(policies.map((p) => p.managingCompany).filter(Boolean))].join(' · ') ||
+                'גוף מנהל לא דווח'}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 text-xs">
+            <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
+              {policies.length} פוליסות
+            </span>
+            {activePolicies.length > 0 && (
+              <span className="px-2.5 py-1 rounded-full bg-teal-50 text-teal-700">
+                {activePolicies.length} פעילות
+              </span>
+            )}
+            {frozenPolicies.length > 0 && (
+              <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-500">
+                {frozenPolicies.length} מוקפאות
+              </span>
+            )}
+            {(() => {
+              const dates = policies.map((p) => p.openDate).filter(Boolean) as string[]
+              return dates.length > 0 ? (
+                <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
+                  ותק מ-{formatDate(dates.sort()[0])}
+                </span>
+              ) : null
+            })()}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+          {productKpis(productType, policies).map((kpi) => (
+            <KpiCard key={kpi.label} label={kpi.label} value={kpi.value} sub={kpi.sub} />
+          ))}
+        </div>
+      </header>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-        {productKpis(productType, policies).map((kpi) => (
-          <KpiCard key={kpi.label} label={kpi.label} value={kpi.value} sub={kpi.sub} />
+      {/* Tabs: overview first, secondary detail behind */}
+      <div className="flex gap-1 mb-4 border-b border-slate-200">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition -mb-px ${
+              tab === t.id
+                ? 'bg-white border border-slate-200 border-b-white text-[#1a4270]'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            {t.label}
+            {t.count !== undefined && <span className="text-xs text-slate-400 mr-1.5">({t.count})</span>}
+          </button>
         ))}
       </div>
 
-      <section className="mb-6">
-        <h2 className="text-lg font-bold text-slate-800 mb-3">פוליסות פעילות</h2>
-        {activePolicies.length === 0 ? (
-          <p className="text-sm text-slate-400">אין פוליסות פעילות</p>
-        ) : (
-          <div className="space-y-2">{activePolicies.map(policyRow)}</div>
-        )}
-      </section>
+      {tab === 'overview' && (
+        <>
+          <section className="mb-6">
+            <h2 className="text-base font-bold text-slate-800 mb-3">פוליסות פעילות</h2>
+            {activePolicies.length === 0 ? (
+              <p className="text-sm text-slate-400">אין פוליסות פעילות</p>
+            ) : (
+              <div className="space-y-2">{activePolicies.map(policyRow)}</div>
+            )}
+          </section>
 
-      {frozenPolicies.length > 0 && (
-        <section className="mb-6">
-          <h2 className="text-lg font-bold text-slate-800 mb-1">חשבונות לא פעילים (מוקפאים)</h2>
-          <p className="text-xs text-slate-400 mb-3">חשבונות ללא הפקדות שוטפות — ללא כיסוי ביטוחי</p>
-          <div className="space-y-2 opacity-80">{frozenPolicies.map(policyRow)}</div>
-        </section>
+          {frozenPolicies.length > 0 && (
+            <section className="mb-6">
+              <h2 className="text-base font-bold text-slate-800 mb-1">חשבונות לא פעילים (מוקפאים)</h2>
+              <p className="text-xs text-slate-400 mb-3">חשבונות ללא הפקדות שוטפות — ללא כיסוי ביטוחי</p>
+              <div className="space-y-2 opacity-80">{frozenPolicies.map(policyRow)}</div>
+            </section>
+          )}
+
+          {blockedPolicies.length > 0 && (
+            <section className="mb-6">
+              <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 mb-3">
+                <div className="font-semibold text-amber-800">מוצר היסטורי — נדרשת בחינה פרטנית</div>
+                <p className="text-sm text-amber-700 mt-1">
+                  הפוליסות הבאות נפתחו לפני יוני 2001 (דור מקדמים היסטורי עם תנאים מובטחים).
+                  המערכת מציגה נתונים בסיסיים בלבד ואינה מריצה עליהן ניתוח אוטומטי.
+                </p>
+              </div>
+              <div className="space-y-2">{blockedPolicies.map(policyRow)}</div>
+            </section>
+          )}
+
+          <section className="mb-6">
+            <h2 className="text-base font-bold text-slate-800 mb-3">ממצאים</h2>
+            {productFindings.length === 0 ? (
+              <p className="text-sm text-slate-400">אין ממצאים למוצר זה</p>
+            ) : (
+              <div className="space-y-2">
+                {productFindings.map((f) => (
+                  <FindingCard key={f.id} finding={f} />
+                ))}
+              </div>
+            )}
+          </section>
+
+          {missingData.length > 0 && (
+            <section className="rounded-xl border border-violet-200 bg-violet-50/50 p-4">
+              <h2 className="text-sm font-semibold text-violet-700 mb-1.5">נתונים חסרים במוצר זה</h2>
+              <ul className="space-y-1">
+                {missingData.map((m, i) => (
+                  <li key={i} className="text-xs text-violet-600/80 flex gap-1.5">
+                    <span>•</span>
+                    {m}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </>
       )}
 
-      {blockedPolicies.length > 0 && (
-        <section className="mb-6">
-          <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 mb-3">
-            <div className="font-semibold text-amber-800">מוצר היסטורי — נדרשת בחינה פרטנית</div>
-            <p className="text-sm text-amber-700 mt-1">
-              הפוליסות הבאות נפתחו לפני יוני 2001 (דור מקדמים היסטורי עם תנאים מובטחים).
-              המערכת מציגה נתונים בסיסיים בלבד ואינה מריצה עליהן ניתוח אוטומטי.
-            </p>
-          </div>
-          <div className="space-y-2">{blockedPolicies.map(policyRow)}</div>
-        </section>
-      )}
-
-      <section className="mb-6">
-        <h2 className="text-lg font-bold text-slate-800 mb-3">תשואות</h2>
+      {tab === 'returns' && (
         <ReturnsTable
           policies={policies}
           treasuryFunds={analysis.supplementary.treasuryFunds}
           showProductColumn={false}
         />
-      </section>
+      )}
 
-      {COVERAGE_PRODUCTS.includes(productType) && (
-        <section className="mb-6">
-          <h2 className="text-lg font-bold text-slate-800 mb-3">כיסויים ביטוחיים</h2>
+      {tab === 'coverages' && (
+        <>
           {coverages.length === 0 ? (
             <p className="text-sm text-slate-400">לא דווחו כיסויים ביטוחיים במוצר זה</p>
           ) : (
-            <div className="rounded-xl bg-white border border-slate-200 overflow-hidden">
+            <div className="rounded-xl bg-white border border-slate-200 overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-slate-50 text-slate-500">
@@ -201,31 +306,18 @@ export default function ProductPage() {
                   {coverages.map((c, i) => (
                     <tr key={i} className="border-t border-slate-100">
                       <td className="p-3 font-medium text-slate-700">{coverageTypeLabels[c.type]}</td>
-                      <td className="p-3">{formatCurrency(c.amount)}</td>
-                      <td className="p-3">{c.percent !== null ? formatPercent(c.percent, 0) : '—'}</td>
-                      <td className="p-3">{formatCurrency(c.cost)}</td>
-                      <td className="p-3 text-slate-400">{c.policyNumber}</td>
+                      <td className="p-3 tabular">{formatCurrency(c.amount)}</td>
+                      <td className="p-3 tabular">{c.percent !== null ? formatPercent(c.percent, 0) : '—'}</td>
+                      <td className="p-3 tabular">{formatCurrency(c.cost)}</td>
+                      <td className="p-3 text-slate-400 tabular">{c.policyNumber}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-        </section>
+        </>
       )}
-
-      <section>
-        <h2 className="text-lg font-bold text-slate-800 mb-3">ממצאים</h2>
-        {productFindings.length === 0 ? (
-          <p className="text-sm text-slate-400">אין ממצאים למוצר זה</p>
-        ) : (
-          <div className="space-y-2">
-            {productFindings.map((f) => (
-              <FindingCard key={f.id} finding={f} />
-            ))}
-          </div>
-        )}
-      </section>
     </div>
   )
 }
