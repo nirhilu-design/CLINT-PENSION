@@ -136,7 +136,7 @@ export default function ProductPage() {
     <button
       key={p.policyNumber}
       onClick={() => dispatch({ type: 'OPEN_POLICY', policyNumber: p.policyNumber })}
-      className="w-full rounded-xl bg-white border border-slate-200 p-4 text-right hover:border-[#235a92]/50 hover:shadow flex justify-between items-center"
+      className="w-full rounded-xl bg-white border border-slate-200 p-4 text-right hover:border-brand-600/50 hover:shadow flex justify-between items-center"
     >
       <div>
         <div className="font-semibold text-slate-800">{p.productName ?? p.policyNumber}</div>
@@ -151,7 +151,7 @@ export default function ProductPage() {
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <nav className="text-sm text-slate-400 mb-4">
-        <button onClick={() => dispatch({ type: 'GO_DASHBOARD' })} className="text-[#1a4270] hover:underline">
+        <button onClick={() => dispatch({ type: 'GO_DASHBOARD' })} className="text-brand-700 hover:underline">
           דשבורד
         </button>
         <span className="mx-1.5">‹</span>
@@ -207,7 +207,7 @@ export default function ProductPage() {
             onClick={() => setTab(t.id)}
             className={`px-4 py-2 text-sm font-medium rounded-t-lg transition -mb-px ${
               tab === t.id
-                ? 'bg-white border border-slate-200 border-b-white text-[#1a4270]'
+                ? 'bg-white border border-slate-200 border-b-white text-brand-700'
                 : 'text-slate-500 hover:text-slate-700'
             }`}
           >

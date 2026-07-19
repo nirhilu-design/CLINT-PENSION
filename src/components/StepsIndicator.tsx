@@ -12,9 +12,9 @@ export default function StepsIndicator({ current }: { current: 1 | 2 | 3 }) {
             <span
               className={`w-6 h-6 rounded-full grid place-items-center text-xs font-bold ${
                 state === 'done'
-                  ? 'bg-[#0e9484] text-white'
+                  ? 'bg-accent-600 text-white'
                   : state === 'active'
-                    ? 'bg-[#123054] text-white'
+                    ? 'bg-brand-800 text-white'
                     : 'bg-slate-200 text-slate-500'
               }`}
             >

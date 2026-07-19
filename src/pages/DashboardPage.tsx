@@ -12,9 +12,9 @@ const PRODUCT_ORDER: ProductType[] = ['pension', 'managers', 'gemel', 'gemelInve
 
 // Gradient monogram tiles per product — a calm, non-templated identity
 const productTiles: Record<ProductType, { initials: string; classes: string }> = {
-  pension: { initials: 'פנ', classes: 'from-[#235a92] to-[#1a4270]' },
+  pension: { initials: 'פנ', classes: 'from-brand-600 to-brand-700' },
   managers: { initials: 'מנ', classes: 'from-[#4a3aa7] to-[#372c7d]' },
-  gemel: { initials: 'גמ', classes: 'from-[#0e9484] to-[#0b6f63]' },
+  gemel: { initials: 'גמ', classes: 'from-accent-600 to-[#0b6f63]' },
   gemelInvestment: { initials: 'ג"ה', classes: 'from-[#1baf7a] to-[#12805a]' },
   education: { initials: 'הש', classes: 'from-[#eda100] to-[#c07f00]' },
   life: { initials: 'חי', classes: 'from-[#e87ba4] to-[#c25579]' },
@@ -36,7 +36,7 @@ function SnapshotTile({
   return (
     <div className="rounded-2xl bg-white border border-slate-200/70 p-4 shadow-sm">
       <div className="flex items-center gap-1.5">
-        <span className={`w-2 h-2 rounded-full ${ok ? 'bg-[#16ab99]' : 'bg-slate-300'}`} />
+        <span className={`w-2 h-2 rounded-full ${ok ? 'bg-accent-500' : 'bg-slate-300'}`} />
         <span className="text-xs font-medium text-slate-400">{label}</span>
       </div>
       <div className={`mt-1 text-lg font-bold tabular ${ok ? 'text-slate-800' : 'text-slate-400'}`}>
@@ -103,7 +103,7 @@ export default function DashboardPage() {
   return (
     <div>
       {/* Hero band */}
-      <div className="bg-gradient-to-l from-[#0c1f38] via-[#123054] to-[#173a60] text-white">
+      <div className="bg-gradient-to-l from-brand-900 via-brand-800 to-brand-700 text-white">
         <div className="max-w-6xl mx-auto px-6 pt-8 pb-10">
           <h1 className="text-2xl font-bold">התיק הפנסיוני של {client.fullName}</h1>
           <p className="text-sm text-slate-300/80 mt-1">
@@ -239,7 +239,7 @@ export default function DashboardPage() {
                   onClick={() => dispatch({ type: 'OPEN_PRODUCT', productType: t })}
                   className={`group rounded-2xl border p-4 text-right transition ${
                     has
-                      ? 'bg-white border-slate-200/70 shadow-sm hover:shadow-md hover:border-[#235a92]/40 hover:-translate-y-0.5'
+                      ? 'bg-white border-slate-200/70 shadow-sm hover:shadow-md hover:border-brand-600/40 hover:-translate-y-0.5'
                       : 'bg-slate-50/60 border-slate-100 cursor-default'
                   }`}
                 >
@@ -265,7 +265,7 @@ export default function DashboardPage() {
                   {has && (
                     <div className="flex items-end justify-between mt-3">
                       <div className="text-xl font-bold text-slate-800 tabular">{formatCurrency(value)}</div>
-                      <span className="text-xs text-[#235a92] opacity-0 group-hover:opacity-100 transition">
+                      <span className="text-xs text-brand-600 opacity-0 group-hover:opacity-100 transition">
                         לפירוט ←
                       </span>
                     </div>

@@ -63,7 +63,7 @@ export default function FindingCard({
           {finding.productType && (
             <button
               onClick={() => dispatch({ type: 'OPEN_PRODUCT', productType: finding.productType! })}
-              className="text-xs text-[#1a4270] font-medium hover:underline"
+              className="text-xs text-brand-700 font-medium hover:underline"
             >
               למסך {productTypeLabels[finding.productType]} ←
             </button>
@@ -71,7 +71,7 @@ export default function FindingCard({
           {finding.policyNumber && (
             <button
               onClick={() => dispatch({ type: 'OPEN_POLICY', policyNumber: finding.policyNumber! })}
-              className="text-xs text-[#1a4270] font-medium hover:underline"
+              className="text-xs text-brand-700 font-medium hover:underline"
             >
               לפרטי הפוליסה ←
             </button>

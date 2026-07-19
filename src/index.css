@@ -1,14 +1,16 @@
 @import "tailwindcss";
 
-:root {
-  /* Brand — deep financial navy with a teal accent */
-  --brand-900: #0c1f38;
-  --brand-800: #123054;
-  --brand-700: #1a4270;
-  --brand-600: #235a92;
-  --accent-600: #0e9484;
-  --accent-500: #16ab99;
-  --paper: #f4f6f9;
+/* Brand tokens — the single source of color truth.
+   Tailwind v4 exposes these as utility classes (bg-brand-800, text-accent-600…). */
+@theme {
+  --color-brand-25: #f4f7fb;
+  --color-brand-50: #eef3f9;
+  --color-brand-600: #235a92;
+  --color-brand-700: #1a4270;
+  --color-brand-800: #123054;
+  --color-brand-900: #0c1f38;
+  --color-accent-500: #16ab99;
+  --color-accent-600: #0e9484;
 }
 
 html {
@@ -17,7 +19,7 @@ html {
 
 body {
   font-family: "Heebo", "Segoe UI", Arial, sans-serif;
-  background-color: var(--paper);
+  background-color: #f4f6f9;
   color: #17233a;
   font-feature-settings: "tnum";
 }
@@ -25,4 +27,46 @@ body {
 /* Numbers align in tables and KPIs */
 .tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* Visible keyboard focus everywhere, consistent with the brand */
+:focus-visible {
+  outline: 2px solid var(--color-brand-600);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Lightweight CSS tooltip: <span class="tip" data-tip="..."> */
+.tip {
+  position: relative;
+  cursor: help;
+  border-bottom: 1px dotted #94a3b8;
+}
+.tip:hover::after,
+.tip:focus-visible::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+  width: max-content;
+  max-width: 260px;
+  background: #17233a;
+  color: #fff;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 6px 10px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgb(15 23 42 / 0.2);
+  white-space: normal;
+}
+
+/* Respect users who prefer less motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

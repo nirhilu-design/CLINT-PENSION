@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { useApp } from '../hooks/useAppState'
 import { parseFiles, XmlParseError } from '../services/analysisService'
 import StepsIndicator from '../components/StepsIndicator'
+import Spinner from '../components/Spinner'
 
 export default function UploadPage() {
   const { state, dispatch } = useApp()
@@ -47,10 +48,10 @@ export default function UploadPage() {
           }}
           onClick={() => inputRef.current?.click()}
           className={`cursor-pointer rounded-2xl border-2 border-dashed p-12 transition-colors ${
-            dragOver ? 'border-[#235a92] bg-[#eef3f9]' : 'border-slate-300 bg-white hover:border-[#235a92]/60'
+            dragOver ? 'border-brand-600 bg-brand-50' : 'border-slate-300 bg-white hover:border-brand-600/60'
           }`}
         >
-          <div className="mx-auto mb-4 w-14 h-14 rounded-2xl bg-gradient-to-br from-[#123054] to-[#1a4270] grid place-items-center shadow-md shadow-[#123054]/20">
+          <div className="mx-auto mb-4 w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-800 to-brand-700 grid place-items-center shadow-md shadow-brand-800/20">
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 16V4" />
               <path d="m7 9 5-5 5 5" />
@@ -69,7 +70,11 @@ export default function UploadPage() {
           />
         </div>
 
-        {busy && <p className="mt-4 text-[#1a4270]">קורא את הקבצים…</p>}
+        {busy && (
+          <div className="mt-4 flex justify-center">
+            <Spinner label="קורא ומנתח את הקבצים…" />
+          </div>
+        )}
 
         {state.error && (
           <div className="mt-4 rounded-lg border border-red-300 bg-red-50 p-4 text-red-700 text-sm text-right">
@@ -114,7 +119,7 @@ export default function UploadPage() {
             },
           ].map(({ title, text, path }) => (
             <div key={title} className="rounded-2xl bg-white border border-slate-200/70 p-4 shadow-sm">
-              <div className="mx-auto w-9 h-9 rounded-xl bg-[#eef3f9] grid place-items-center">
+              <div className="mx-auto w-9 h-9 rounded-xl bg-brand-50 grid place-items-center">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a4270" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   {path}
                 </svg>

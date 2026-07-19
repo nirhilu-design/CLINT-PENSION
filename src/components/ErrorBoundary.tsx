@@ -25,7 +25,7 @@ export default class ErrorBoundary extends Component<{ children: ReactNode }, St
           </p>
           <button
             onClick={() => window.location.reload()}
-            className="rounded-xl bg-[#123054] text-white font-semibold py-2.5 px-8 hover:bg-[#1a4270]"
+            className="rounded-xl bg-brand-800 text-white font-semibold py-2.5 px-8 hover:bg-brand-700"
           >
             רענון והתחלה מחדש
           </button>

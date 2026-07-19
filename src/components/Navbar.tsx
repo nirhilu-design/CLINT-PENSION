@@ -17,10 +17,10 @@ export default function Navbar() {
   )
 
   return (
-    <header className="sticky top-0 z-30 bg-[#0c1f38] shadow-md shadow-slate-900/10">
+    <header className="sticky top-0 z-30 bg-brand-900 shadow-md shadow-slate-900/10">
       <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#16ab99] to-[#0e9484] text-white grid place-items-center font-bold text-sm shadow-inner">
+          <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent-500 to-accent-600 text-white grid place-items-center font-bold text-sm shadow-inner">
             פ
           </span>
           <div className="leading-tight">

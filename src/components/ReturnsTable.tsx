@@ -41,11 +41,11 @@ export default function ReturnsTable({
             <th className="text-right font-medium p-3">קופה</th>
             {showProductColumn && <th className="text-right font-medium p-3">מוצר</th>}
             <th className="text-right font-medium p-3">מ"ה</th>
-            <th className="text-right font-medium p-3">תשואה מדווחת (נטו)</th>
-            <th className="text-right font-medium p-3">12 חודשים (אוצר)</th>
+            <th className="text-right font-medium p-3"><span className="tip" data-tip="התשואה כפי שדווחה בקובץ המסלקה — לאחר ניכוי דמי ניהול">תשואה מדווחת (נטו)</span></th>
+            <th className="text-right font-medium p-3"><span className="tip" data-tip="תשואה מצטברת ל-12 חודשים מקובץ נתוני האוצר — ברוטו נומינלי, לפני דמי ניהול">12 חודשים (אוצר)</span></th>
             <th className="text-right font-medium p-3">3 שנים (ממוצע)</th>
             <th className="text-right font-medium p-3">5 שנים (ממוצע)</th>
-            <th className="text-right font-medium p-3">שארפ</th>
+            <th className="text-right font-medium p-3"><span className="tip" data-tip="מדד שארפ: תשואה עודפת ביחס לסיכון (ריבית חסרת סיכון) — גבוה יותר טוב יותר">שארפ</span></th>
           </tr>
         </thead>
         <tbody>

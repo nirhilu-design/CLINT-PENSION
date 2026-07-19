@@ -149,7 +149,7 @@ export default function PolicyDrawer({
                 </div>
                 <div className="h-1.5 rounded-full bg-slate-100 mt-1 overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-[#235a92]"
+                    className="h-full rounded-full bg-brand-600"
                     style={{ width: `${Math.min(100, Math.max(0, g.percent))}%` }}
                   />
                 </div>

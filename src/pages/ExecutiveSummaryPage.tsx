@@ -9,7 +9,7 @@ export default function ExecutiveSummaryPage() {
   return (
     <div className="p-6 max-w-3xl mx-auto">
       <nav className="text-sm text-slate-400 mb-4">
-        <button onClick={() => dispatch({ type: 'GO_DASHBOARD' })} className="text-[#1a4270] hover:underline">
+        <button onClick={() => dispatch({ type: 'GO_DASHBOARD' })} className="text-brand-700 hover:underline">
           דשבורד
         </button>
         <span className="mx-1.5">‹</span>
