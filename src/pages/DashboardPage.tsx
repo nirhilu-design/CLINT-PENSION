@@ -4,6 +4,7 @@ import type { ProductType } from '../models/types'
 import { formatCurrency } from '../utils/format'
 import PieChartCard from '../components/PieChartCard'
 import FindingCard from '../components/FindingCard'
+import ReturnsTable from '../components/ReturnsTable'
 
 const PRODUCT_ORDER: ProductType[] = ['pension', 'managers', 'gemel', 'gemelInvestment', 'education', 'life', 'incomeProtection']
 
@@ -73,6 +74,14 @@ export default function DashboardPage() {
           <PieChartCard title="פיזור לפי סוג מוצר" data={byProduct} />
           <PieChartCard title="פיזור לפי חברה מנהלת" data={byCompany} />
         </div>
+
+        <section className="mb-8">
+          <h2 className="text-lg font-bold text-slate-800 mb-3">תשואות</h2>
+          <ReturnsTable
+            policies={policies}
+            treasuryFunds={analysis.supplementary.treasuryFunds}
+          />
+        </section>
 
         <section className="mb-8">
           <div className="flex items-baseline justify-between mb-3">

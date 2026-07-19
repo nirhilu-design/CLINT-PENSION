@@ -4,6 +4,7 @@ import type { Policy, ProductType } from '../models/types'
 import { formatCurrency, formatPercent } from '../utils/format'
 import KpiCard from '../components/KpiCard'
 import FindingCard from '../components/FindingCard'
+import ReturnsTable from '../components/ReturnsTable'
 import { isBlockedByStopIssue } from '../engines/stopIssueEngine'
 import { isEducationFundLiquid } from '../utils/liquidity'
 
@@ -169,6 +170,15 @@ export default function ProductPage() {
           <div className="space-y-2">{blockedPolicies.map(policyRow)}</div>
         </section>
       )}
+
+      <section className="mb-6">
+        <h2 className="text-lg font-bold text-slate-800 mb-3">תשואות</h2>
+        <ReturnsTable
+          policies={policies}
+          treasuryFunds={analysis.supplementary.treasuryFunds}
+          showProductColumn={false}
+        />
+      </section>
 
       {COVERAGE_PRODUCTS.includes(productType) && (
         <section className="mb-6">
