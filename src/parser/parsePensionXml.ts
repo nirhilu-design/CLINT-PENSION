@@ -41,6 +41,9 @@ function mapProductType(
     case '3':
       // גמל להשקעה is a separate product (always liquid); identified by plan name
       return planName?.includes('להשקעה') ? 'gemelInvestment' : 'gemel'
+    case '9':
+      // גמל להשקעה is reported under its own product code (9)
+      return 'gemelInvestment'
     case '4':
       return 'education'
     case '1':
