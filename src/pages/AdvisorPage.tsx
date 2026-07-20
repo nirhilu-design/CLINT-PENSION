@@ -68,14 +68,23 @@ export default function AdvisorPage() {
     if (!fileList || fileList.length === 0) return
     setParsing(true)
     await new Promise((r) => setTimeout(r, 30)) // let the spinner paint before heavy parsing
-    const portfolioMofids = new Set(policies.map((p) => p.mofid).filter((m): m is string => !!m))
+    // Every fund code and maslul code in the portfolio → canonical fund mofid,
+    // so treasury rows keyed by either identifier resolve to the right policy.
+    const codeToMofid = new Map<string, string>()
+    for (const p of policies) {
+      if (!p.mofid) continue
+      for (const key of p.treasuryKeys.length ? p.treasuryKeys : [p.mofid]) {
+        codeToMofid.set(key, p.mofid)
+      }
+    }
+    const portfolioCount = new Set([...codeToMofid.values()]).size
     const log: string[] = []
     let nextFunds = [...treasuryFunds]
     let nextAllocs = [...treasuryAllocations]
 
     for (const file of fileList) {
       const text = await file.text()
-      const parsed = parseTreasuryXml(text, file.name, portfolioMofids)
+      const parsed = parseTreasuryXml(text, file.name, codeToMofid)
       if (parsed.type === 'unknown') {
         log.push(`${file.name}: הפורמט לא זוהה כקובץ נתוני אוצר`)
         continue
@@ -86,7 +95,7 @@ export default function AdvisorPage() {
           ...parsed.funds,
         ]
         log.push(
-          `${file.name}: קובץ תשואות — נמצאו נתונים עבור ${parsed.matchedMofids.length} מתוך ${portfolioMofids.size} מספרי אוצר בתיק`,
+          `${file.name}: קובץ תשואות — נמצאו נתונים עבור ${parsed.matchedMofids.length} מתוך ${portfolioCount} קופות בתיק`,
         )
       } else {
         nextAllocs = [
@@ -94,7 +103,7 @@ export default function AdvisorPage() {
           ...parsed.allocations,
         ]
         log.push(
-          `${file.name}: קובץ אפיקי השקעה — נמצאו נתונים עבור ${parsed.matchedMofids.length} מתוך ${portfolioMofids.size} מספרי אוצר בתיק`,
+          `${file.name}: קובץ אפיקי השקעה — נמצאו נתונים עבור ${parsed.matchedMofids.length} מתוך ${portfolioCount} קופות בתיק`,
         )
       }
     }

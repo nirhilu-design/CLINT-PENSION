@@ -11,7 +11,14 @@ import type {
   Policy,
   ProductType,
 } from '../models/types'
-import { getNumber, getText, mofidFromKidodAchid, normalizeClientId, parseDate } from './xmlUtils'
+import {
+  getNumber,
+  getText,
+  maslulCodeFromKod,
+  mofidFromKidodAchid,
+  normalizeClientId,
+  parseDate,
+} from './xmlUtils'
 import { beneficiaryRelationLabels } from '../models/labels'
 
 export class XmlParseError extends Error {}
@@ -216,6 +223,11 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
     for (const heshbon of mutzar.querySelectorAll('HeshbonOPolisa')) {
       const policyNumber = getText(heshbon, 'MISPAR-POLISA-O-HESHBON') ?? ''
 
+      // Track (מסלול) codes — treasury files key by these, so collect them all
+      const maslulCodes = [...heshbon.querySelectorAll('PerutMasluleiHashkaa')]
+        .map((m) => maslulCodeFromKod(getText(m, 'KOD-MASLUL-HASHKAA')))
+        .filter((c): c is string => !!c)
+
       // The same track appears once per contribution type — merge rows by track name
       const trackRows = [...heshbon.querySelectorAll('PerutMasluleiHashkaa')].map((m) => ({
         name: getText(m, 'SHEM-MASLUL-HASHKAA'),
@@ -292,6 +304,13 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
         productName: planName,
         managingCompany,
         mofid: mofidFromKidodAchid(getText(heshbon, 'KIDOD-ACHID')),
+        treasuryKeys: [
+          ...new Set(
+            [mofidFromKidodAchid(getText(heshbon, 'KIDOD-ACHID')), ...maslulCodes].filter(
+              (c): c is string => !!c,
+            ),
+          ),
+        ],
         openDate,
         status: statusRaw === '1' ? 'active' : statusRaw ? 'inactive' : null,
         currentValue,

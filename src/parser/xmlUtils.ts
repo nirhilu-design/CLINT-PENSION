@@ -41,6 +41,17 @@ export function normalizeClientId(id: string | null): string {
   return core ? core.padStart(9, '0') : ''
 }
 
+/**
+ * Investment-track (מסלול) code from KOD-MASLUL-HASHKAA: chars 23-30
+ * (zero-padded). Treasury returns files (פנסיה-נט) key by this maslul code,
+ * not by the fund number — e.g. "…002090002187" → "2187".
+ */
+export function maslulCodeFromKod(kod: string | null): string | null {
+  if (!kod || kod.length < 30) return null
+  const code = kod.slice(23, 30).replace(/^0+/, '')
+  return code || null
+}
+
 /** מספר אוצר derived from KIDOD-ACHID: chars 18-23 (zero-padded fund code) */
 export function mofidFromKidodAchid(kidod: string | null): string | null {
   if (!kidod || kidod.length < 23) return null

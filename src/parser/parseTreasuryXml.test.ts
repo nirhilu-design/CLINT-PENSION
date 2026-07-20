@@ -22,7 +22,11 @@ const allocationFile = `<ROWSET><Row>
 </Row></ROWSET>`
 
 describe('parseTreasuryXml', () => {
-  const portfolio = new Set(['1093', '209'])
+  const portfolio = new Map([
+    ['1093', '1093'],
+    ['209', '209'],
+    ['2187', '209'], // maslul code → fund mofid
+  ])
 
   it('detects a returns file and keeps only portfolio mofids', () => {
     const out = parseTreasuryXml(returnsFile, 'kupot_58.xml', portfolio)

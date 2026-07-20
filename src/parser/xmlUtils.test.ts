@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mofidFromKidodAchid, normalizeClientId, parseDate } from './xmlUtils'
+import { maslulCodeFromKod, mofidFromKidodAchid, normalizeClientId, parseDate } from './xmlUtils'
 
 describe('normalizeClientId', () => {
   it('treats every zero-padding of the same ID as one person', () => {
@@ -37,5 +37,15 @@ describe('mofidFromKidodAchid', () => {
   })
   it('returns null for short input', () => {
     expect(mofidFromKidodAchid('123')).toBeNull()
+  })
+})
+
+describe('maslulCodeFromKod', () => {
+  it('extracts the maslul/track code used by treasury returns files', () => {
+    // Phoenix pension track → maslul 2187 (fund is 209)
+    expect(maslulCodeFromKod('513026484000000000002090002187')).toBe('2187')
+  })
+  it('returns null for short input', () => {
+    expect(maslulCodeFromKod('123')).toBeNull()
   })
 })

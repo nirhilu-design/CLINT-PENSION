@@ -26,6 +26,7 @@ function makePolicy(overrides: Partial<Policy> = {}): Policy {
     productName: 'קרן בדיקה',
     managingCompany: 'יצרן',
     mofid: '209',
+    treasuryKeys: ['209'],
     openDate: '2019-12-22',
     status: 'active',
     currentValue: 100000,

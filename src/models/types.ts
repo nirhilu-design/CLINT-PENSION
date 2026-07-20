@@ -78,7 +78,8 @@ export interface Policy {
   productType: ProductType
   productName: string | null
   managingCompany: string | null
-  mofid: string | null // מספר אוצר derived from KIDOD-ACHID
+  mofid: string | null // מספר אוצר (fund code) derived from KIDOD-ACHID
+  treasuryKeys: string[] // fund code + investment-track codes, for matching treasury data
   openDate: string | null // ISO
   status: 'active' | 'inactive' | null
   currentValue: number | null
