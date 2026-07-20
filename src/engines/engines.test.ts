@@ -208,3 +208,46 @@ describe('findingPriority', () => {
     ])
   })
 })
+
+describe('crossChecksEngine', () => {
+  it('flags employee/employer rates below statutory minimums (salaried)', async () => {
+    const { crossChecksEngine } = await import('./crossChecksEngine')
+    const out = crossChecksEngine(
+      input([
+        makePolicy({
+          contributions: [
+            { role: 'employee', percent: 5 },
+            { role: 'employer', percent: 5 },
+          ],
+        }),
+      ]),
+    )
+    expect(out.some((f) => f.title.includes('נמוכים מהמינימום'))).toBe(true)
+  })
+
+  it('is silent at standard rates', async () => {
+    const { crossChecksEngine } = await import('./crossChecksEngine')
+    const out = crossChecksEngine(
+      input([
+        makePolicy({
+          contributions: [
+            { role: 'employee', percent: 6 },
+            { role: 'employer', percent: 6.5 },
+          ],
+        }),
+      ]),
+    )
+    expect(out.filter((f) => f.severity !== 'info')).toHaveLength(0)
+  })
+
+  it('adds a tax-cap review note for the self-employed instead of rate checks', async () => {
+    const { crossChecksEngine } = await import('./crossChecksEngine')
+    const out = crossChecksEngine(
+      input([makePolicy({ contributions: [{ role: 'employee', percent: 5 }] })], {
+        employmentStatus: 'selfEmployed',
+      }),
+    )
+    expect(out.some((f) => f.title.includes('תקרת הטבת מס'))).toBe(true)
+    expect(out.some((f) => f.title.includes('נמוכים מהמינימום'))).toBe(false)
+  })
+})
