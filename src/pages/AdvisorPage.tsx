@@ -5,6 +5,7 @@ import type {
   BenchmarkSource,
   FeeAgreement,
   FundBenchmark,
+  MarketFund,
   TreasuryAllocation,
   TreasuryFundData,
 } from '../models/types'
@@ -37,6 +38,7 @@ export default function AdvisorPage() {
   )
   const [uploadLog, setUploadLog] = useState<string[]>([])
   const [parsing, setParsing] = useState(false)
+  const [marketFunds, setMarketFunds] = useState<MarketFund[]>(supplementary.treasuryMarketFunds)
 
   const [fees, setFees] = useState<Record<string, { deposit: string; accum: string }>>(() =>
     Object.fromEntries(
@@ -81,6 +83,7 @@ export default function AdvisorPage() {
     const log: string[] = []
     let nextFunds = [...treasuryFunds]
     let nextAllocs = [...treasuryAllocations]
+    let nextMarket = [...marketFunds]
 
     for (const file of fileList) {
       const text = await file.text()
@@ -94,6 +97,10 @@ export default function AdvisorPage() {
           ...nextFunds.filter((f) => !parsed.funds.some((n) => n.mofid === f.mofid)),
           ...parsed.funds,
         ]
+        // Keep the market's strongest funds (by Sharpe) for benchmarking
+        nextMarket = [...nextMarket, ...parsed.marketFunds]
+          .sort((a, b) => (b.sharpe ?? 0) - (a.sharpe ?? 0))
+          .slice(0, 300)
         log.push(
           `${file.name}: קובץ תשואות — נמצאו נתונים עבור ${parsed.matchedMofids.length} מתוך ${portfolioCount} קופות בתיק`,
         )
@@ -110,6 +117,7 @@ export default function AdvisorPage() {
 
     setTreasuryFunds(nextFunds)
     setTreasuryAllocations(nextAllocs)
+    setMarketFunds(nextMarket)
     setUploadLog(log)
     setParsing(false)
   }
@@ -118,6 +126,7 @@ export default function AdvisorPage() {
     const updated = { ...supplementary }
     updated.treasuryFunds = treasuryFunds
     updated.treasuryAllocations = treasuryAllocations
+    updated.treasuryMarketFunds = marketFunds
     updated.feeAgreements = Object.entries(fees)
       .map(([policyNumber, v]): FeeAgreement => ({
         policyNumber,

@@ -176,6 +176,16 @@ export interface AssetAllocationGroup {
   percent: number
 }
 
+// A lightweight market data point (any fund/company track) from a treasury
+// returns file, used to benchmark the client's funds against the market.
+export interface MarketFund {
+  name: string | null
+  company: string | null
+  sharpe: number | null
+  return5yAnnualized: number | null
+  stdDev36m: number | null
+}
+
 export interface TreasuryAllocation {
   mofid: string
   period: string | null
@@ -201,6 +211,7 @@ export interface SupplementaryInfo {
   benchmarks: FundBenchmark[]
   treasuryFunds: TreasuryFundData[]
   treasuryAllocations: TreasuryAllocation[]
+  treasuryMarketFunds: MarketFund[] // whole-market funds for issuer/quality benchmarking
 }
 
 // ---- Analysis (root aggregate) ----

@@ -9,7 +9,7 @@
 // the canonical fund mofid), so a match on any of them is stored under the
 // mofid the UI looks up by.
 
-import type { TreasuryAllocation, TreasuryFundData } from '../models/types'
+import type { MarketFund, TreasuryAllocation, TreasuryFundData } from '../models/types'
 
 export type TreasuryFileType = 'returns' | 'allocation' | 'unknown'
 
@@ -18,6 +18,7 @@ export interface TreasuryParseResult {
   fileName: string
   funds: TreasuryFundData[]
   allocations: TreasuryAllocation[]
+  marketFunds: MarketFund[] // every fund/company track in a returns file
   matchedMofids: string[]
 }
 
@@ -54,6 +55,7 @@ export function parseTreasuryXml(
     fileName,
     funds: [],
     allocations: [],
+    marketFunds: [],
     matchedMofids: [],
   }
   if (result.type === 'unknown') return result
@@ -64,6 +66,18 @@ export function parseTreasuryXml(
 
   if (result.type === 'returns') {
     for (const row of rows) {
+      // Collect every row as a market data point (for issuer/quality benchmarking)
+      const sharpe = numTag(row, 'SHARP_RIBIT_HASRAT_SIKUN')
+      if (sharpe !== null) {
+        result.marketFunds.push({
+          name: tag(row, 'SHM_KUPA') ?? tag(row, 'SHM_KRN') ?? tag(row, 'SHEM_GUF'),
+          company: tag(row, 'SHM_HEVRA_MENAHELET') ?? tag(row, 'SHEM_HEVRA') ?? tag(row, 'SHEM_GUF'),
+          sharpe,
+          return5yAnnualized: numTag(row, 'TSUA_SHNATIT_MEMUZAAT_5_SHANIM'),
+          stdDev36m: numTag(row, 'STIAT_TEKEN_36_HODASHIM'),
+        })
+      }
+
       const id = tag(row, 'ID')
       const mofid = id ? codeToMofid.get(id) : undefined
       if (!mofid) continue

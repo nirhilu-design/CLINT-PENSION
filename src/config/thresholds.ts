@@ -50,6 +50,16 @@ export const DEPOSIT_CONTINUITY_WINDOW_MONTHS = 12
 // --- Data quality ---
 export const SALARY_CROSSCHECK_DIFF_RATIO = 0.15 // stated vs insured salary
 
+// --- Issuer exposure & quality (#8) ---
+// Portfolio share with one managing company above which concentration is flagged
+export const ISSUER_CONCENTRATION_SHARE = 0.6
+// Minimum portfolio value before concentration is worth flagging
+export const ISSUER_CONCENTRATION_MIN_VALUE = 100_000
+// Sharpe gap below the market's strong funds that is worth highlighting
+export const SHARPE_BELOW_LEADERS_GAP = 0.15
+// How many market leaders (by Sharpe) to show in the comparison
+export const MARKET_LEADERS_COUNT = 3
+
 // --- Death picture ---
 export const LARGE_ASSETS_THRESHOLD = 1_000_000
 export const LARGE_LIFE_COVER_THRESHOLD = 500_000

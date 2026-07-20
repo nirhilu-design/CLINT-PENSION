@@ -22,6 +22,7 @@ export function emptySupplementary(): SupplementaryInfo {
     benchmarks: [],
     treasuryFunds: [],
     treasuryAllocations: [],
+    treasuryMarketFunds: [],
   }
 }
 
