@@ -31,6 +31,7 @@ function makePolicy(overrides: Partial<Policy> = {}): Policy {
     currentValue: 100000,
     coveredSalary: 14442,
     expectedPension: 4444,
+    expectedPensionNoDeposits: null,
     expectedAccumulationAtRetirement: null,
     retirementAge: 67,
     fees: { fromDeposit: 1.2, fromAccumulation: 0.14 },

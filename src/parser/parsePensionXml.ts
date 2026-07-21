@@ -280,6 +280,23 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
         .sort((a, b) => a.month.localeCompare(b.month))
 
       const yitra = heshbon.querySelector('YitraLefiGilPrisha')
+
+      // The projection may report the monthly pension under more than one
+      // scenario (with vs. without continued deposits). Collect every
+      // KITZVAT-HODSHIT-TZFUYA value: continuing deposits always yields the
+      // higher pension, so the largest is "with deposits" (the figure the
+      // controls check) and the smallest is "without continued deposits".
+      const pensionForecasts = yitra
+        ? [...yitra.querySelectorAll('KITZVAT-HODSHIT-TZFUYA')]
+            .filter((el) => el.getAttribute('xsi:nil') !== 'true')
+            .map((el) => parseFloat((el.textContent ?? '').trim()))
+            .filter((n) => Number.isFinite(n))
+        : []
+      const distinctForecasts = [...new Set(pensionForecasts)].sort((a, b) => b - a)
+      const expectedPension = distinctForecasts[0] ?? null
+      const expectedPensionNoDeposits =
+        distinctForecasts.length >= 2 ? distinctForecasts[distinctForecasts.length - 1] : null
+
       const openDate = parseDate(
         getText(heshbon, 'TAARICH-HITZTARFUT-MUTZAR') ?? getText(heshbon, 'TAARICH-HITZTARFUT-RISHON'),
       )
@@ -296,7 +313,8 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
         status: statusRaw === '1' ? 'active' : statusRaw ? 'inactive' : null,
         currentValue,
         coveredSalary: getNumber(heshbon, 'PirteiHaasaka > SACHAR-POLISA'),
-        expectedPension: getNumber(yitra, 'KITZVAT-HODSHIT-TZFUYA'),
+        expectedPension,
+        expectedPensionNoDeposits,
         expectedAccumulationAtRetirement: getNumber(yitra, 'TOTAL-CHISACHON-MITZTABER-TZAFUY'),
         retirementAge: getNumber(yitra, 'GIL-PRISHA'),
         fees: { fromDeposit: feeFromDeposit, fromAccumulation: feeFromAccumulation },

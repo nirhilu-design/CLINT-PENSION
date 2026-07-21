@@ -83,7 +83,8 @@ export interface Policy {
   status: 'active' | 'inactive' | null
   currentValue: number | null
   coveredSalary: number | null
-  expectedPension: number | null // KITZVAT-HODSHIT-TZFUYA
+  expectedPension: number | null // KITZVAT-HODSHIT-TZFUYA — with continued deposits
+  expectedPensionNoDeposits: number | null // projection assuming deposits stop now
   expectedAccumulationAtRetirement: number | null
   retirementAge: number | null
   fees: FeeStructure

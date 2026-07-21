@@ -50,12 +50,30 @@ function SnapshotTile({
   )
 }
 
-function HeroKpi({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function HeroKpi({
+  label,
+  value,
+  sub,
+  tooltip,
+}: {
+  label: string
+  value: string
+  sub?: string
+  tooltip?: string
+}) {
   return (
-    <div className="rounded-xl bg-white/[0.07] border border-white/10 px-4 py-3 backdrop-blur-sm">
-      <div className="text-xs text-slate-300/90">{label}</div>
+    <div className="group relative rounded-xl bg-white/[0.07] border border-white/10 px-4 py-3 backdrop-blur-sm">
+      <div className="flex items-center gap-1 text-xs text-slate-300/90">
+        <span>{label}</span>
+        {tooltip && <span className="text-slate-400/70 cursor-help">ⓘ</span>}
+      </div>
       <div className="mt-0.5 text-2xl font-bold text-white tabular">{value}</div>
       {sub && <div className="mt-0.5 text-[11px] text-slate-400">{sub}</div>}
+      {tooltip && (
+        <div className="pointer-events-none absolute z-20 top-full mt-2 right-0 w-64 rounded-lg bg-slate-900/95 text-slate-100 text-[11px] leading-relaxed p-2.5 shadow-xl border border-white/10 opacity-0 group-hover:opacity-100 transition">
+          {tooltip}
+        </div>
+      )}
     </div>
   )
 }
@@ -67,6 +85,10 @@ export default function DashboardPage() {
 
   const totalAssets = policies.reduce((s, p) => s + (p.currentValue ?? 0), 0)
   const totalPension = policies.reduce((s, p) => s + (p.expectedPension ?? 0), 0)
+  const hasNoDepositProjection = policies.some((p) => p.expectedPensionNoDeposits !== null)
+  const totalPensionNoDeposits = hasNoDepositProjection
+    ? policies.reduce((s, p) => s + (p.expectedPensionNoDeposits ?? 0), 0)
+    : null
   const productTypes = new Set(policies.map((p) => p.productType))
 
   const byProduct = PRODUCT_ORDER.filter((t) => productTypes.has(t)).map((t) => ({
@@ -122,9 +144,19 @@ export default function DashboardPage() {
               return ` · הנתונים נכונים ל-${formatDate(latest)}`
             })()}
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-6">
             <HeroKpi label="סך נכסים" value={formatCurrency(totalAssets)} />
-            <HeroKpi label="קצבה חודשית צפויה" value={formatCurrency(totalPension)} sub="סיכום מהדיווחים בקבצים" />
+            <HeroKpi
+              label="קצבה עם המשך הפקדות"
+              value={formatCurrency(totalPension)}
+              sub="סיכום מהדיווחים בקבצים"
+              tooltip="הקצבה החודשית הצפויה לגיל הפרישה בהנחה שההפקדות ממשיכות עד הפרישה — ללא פדיון וללא שינוי בשכר. זו הקצבה שהבקרות בודקות."
+            />
+            <HeroKpi
+              label="קצבה ללא המשך הפקדות"
+              value={totalPensionNoDeposits !== null ? formatCurrency(totalPensionNoDeposits) : '—'}
+              sub={totalPensionNoDeposits !== null ? 'ללא הפקדות נוספות מהיום' : 'לא דווח בקבצים'}
+            />
             <HeroKpi
               label="מוצרים · פוליסות"
               value={`${productTypes.size} · ${policies.length}`}

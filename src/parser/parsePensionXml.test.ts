@@ -82,12 +82,34 @@ describe('parsePensionXml', () => {
 
   it('reads expected pension and contributions', () => {
     expect(p.expectedPension).toBe(4444.61)
+    // Single scenario in the file → no "without deposits" figure
+    expect(p.expectedPensionNoDeposits).toBeNull()
     expect(p.contributions).toEqual(
       expect.arrayContaining([
         { role: 'employee', percent: 6 },
         { role: 'employer', percent: 6.5 },
       ]),
     )
+  })
+
+  it('splits with/without continued-deposits projections when both are reported', () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<Mimshak><YeshutYatzran><SHEM-YATZRAN>י</SHEM-YATZRAN><Mutzarim>
+<Mutzar><NetuneiMutzar><SUG-MUTZAR>2</SUG-MUTZAR>
+  <YeshutLakoach><MISPAR-ZIHUY-LAKOACH>027864610</MISPAR-ZIHUY-LAKOACH><SHEM-PRATI>א</SHEM-PRATI><SHEM-MISHPACHA>ב</SHEM-MISHPACHA></YeshutLakoach>
+</NetuneiMutzar>
+<HeshbonotOPolisot><HeshbonOPolisa>
+  <MISPAR-POLISA-O-HESHBON>P1</MISPAR-POLISA-O-HESHBON>
+  <YitraLefiGilPrisha><GIL-PRISHA>67.00</GIL-PRISHA><Kupot>
+    <Kupa><KITZVAT-HODSHIT-TZFUYA>5200.00</KITZVAT-HODSHIT-TZFUYA></Kupa>
+    <Kupa><KITZVAT-HODSHIT-TZFUYA>3100.00</KITZVAT-HODSHIT-TZFUYA></Kupa>
+  </Kupot></YitraLefiGilPrisha>
+</HeshbonOPolisa></HeshbonotOPolisot></Mutzar>
+</Mutzarim></YeshutYatzran></Mimshak>`
+    const { policies } = parsePensionXml(xml, 'dual.xml')
+    // Higher = with continued deposits (checked by the controls); lower = without
+    expect(policies[0].expectedPension).toBe(5200)
+    expect(policies[0].expectedPensionNoDeposits).toBe(3100)
   })
 
   it('rejects different IDs in one file, accepts padded variants of the same ID', () => {
