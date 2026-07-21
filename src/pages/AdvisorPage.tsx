@@ -2,27 +2,14 @@ import { useState } from 'react'
 import { useApp } from '../hooks/useAppState'
 import { buildAnalysis } from '../services/analysisService'
 import type {
-  BenchmarkSource,
   FeeAgreement,
-  FundBenchmark,
   TreasuryAllocation,
   TreasuryFundData,
 } from '../models/types'
 import { productTypeLabels } from '../models/labels'
 import { parseTreasuryXml } from '../parser/parseTreasuryXml'
+import { parseFeeAgreementsXlsx } from '../parser/parseFeeAgreementsXlsx'
 import Spinner from '../components/Spinner'
-
-const sourceLabels: Record<BenchmarkSource, string> = {
-  gemelnet: 'גמל-נט',
-  pensianet: 'פנסיה-נט',
-  bituachnet: 'ביטוח-נט',
-}
-
-function sourceForProduct(productType: string): BenchmarkSource {
-  if (productType === 'pension') return 'pensianet'
-  if (productType === 'managers' || productType === 'life' || productType === 'incomeProtection') return 'bituachnet'
-  return 'gemelnet'
-}
 
 export default function AdvisorPage() {
   const { state, dispatch } = useApp()
@@ -38,30 +25,14 @@ export default function AdvisorPage() {
   const [uploadLog, setUploadLog] = useState<string[]>([])
   const [parsing, setParsing] = useState(false)
 
-  const [fees, setFees] = useState<Record<string, { deposit: string; accum: string }>>(() =>
-    Object.fromEntries(
-      supplementary.feeAgreements.map((a) => [
-        a.policyNumber,
-        {
-          deposit: a.agreedFeeFromDeposit?.toString() ?? '',
-          accum: a.agreedFeeFromAccumulation?.toString() ?? '',
-        },
-      ]),
-    ),
-  )
-  const [benchmarks, setBenchmarks] = useState<Record<string, { ret: string; sharpe: string }>>(() =>
-    Object.fromEntries(
-      supplementary.benchmarks.map((b) => [
-        b.mofid,
-        { ret: b.annualReturn?.toString() ?? '', sharpe: b.sharpe?.toString() ?? '' },
-      ]),
-    ),
-  )
+  // Fee agreements now arrive from an uploaded Excel/CSV rather than manual entry.
+  const [feeAgreements, setFeeAgreements] = useState<FeeAgreement[]>(supplementary.feeAgreements)
+  const [feeLog, setFeeLog] = useState<{ text: string; ok: boolean }[]>([])
+  const [feeParsing, setFeeParsing] = useState(false)
 
-  function num(s: string): number | null {
-    if (!s.trim()) return null
-    const n = parseFloat(s)
-    return Number.isFinite(n) ? n : null
+  const policyLabel = (policyNumber: string) => {
+    const p = policies.find((pp) => pp.policyNumber === policyNumber)
+    return p ? productTypeLabels[p.productType] : 'פוליסה שאינה בתיק'
   }
 
   async function handleTreasuryFiles(fileList: FileList | null) {
@@ -105,37 +76,52 @@ export default function AdvisorPage() {
     setParsing(false)
   }
 
+  async function handleFeeFile(fileList: FileList | null) {
+    if (!fileList || fileList.length === 0) return
+    const file = fileList[0]
+    setFeeParsing(true)
+    await new Promise((r) => setTimeout(r, 30))
+    const portfolioPolicies = new Set(policies.map((p) => p.policyNumber))
+    const buffer = await file.arrayBuffer()
+    const result = await parseFeeAgreementsXlsx(buffer, portfolioPolicies)
+    setFeeParsing(false)
+
+    if (result.error) {
+      setFeeLog([{ text: `${file.name}: ${result.error}`, ok: false }])
+      return
+    }
+
+    setFeeAgreements(result.agreements)
+    const log: { text: string; ok: boolean }[] = [
+      {
+        text: `${file.name}: נקלטו ${result.agreements.length} הסכמים · ${result.matched.length} תואמים לפוליסות בתיק`,
+        ok: true,
+      },
+    ]
+    if (result.unmatched.length > 0) {
+      log.push({
+        text: `${result.unmatched.length} מספרי פוליסה בקובץ אינם בתיק ולא ישמשו את הבדיקה: ${result.unmatched
+          .slice(0, 5)
+          .join(', ')}${result.unmatched.length > 5 ? '…' : ''}`,
+        ok: false,
+      })
+    }
+    setFeeLog(log)
+  }
+
   function save() {
     const updated = { ...supplementary }
     updated.treasuryFunds = treasuryFunds
     updated.treasuryAllocations = treasuryAllocations
-    updated.feeAgreements = Object.entries(fees)
-      .map(([policyNumber, v]): FeeAgreement => ({
-        policyNumber,
-        agreedFeeFromDeposit: num(v.deposit),
-        agreedFeeFromAccumulation: num(v.accum),
-      }))
-      .filter((a) => a.agreedFeeFromDeposit !== null || a.agreedFeeFromAccumulation !== null)
-
-    updated.benchmarks = Object.entries(benchmarks)
-      .map(([mofid, v]): FundBenchmark => {
-        const policy = policies.find((p) => p.mofid === mofid)
-        return {
-          mofid,
-          source: sourceForProduct(policy?.productType ?? 'gemel'),
-          annualReturn: num(v.ret),
-          sharpe: num(v.sharpe),
-        }
-      })
-      .filter((b) => b.annualReturn !== null || b.sharpe !== null)
+    updated.feeAgreements = feeAgreements
+    // benchmarks are preserved as loaded — comparison data comes from the
+    // uploaded treasury files, no longer entered manually here.
 
     const rebuilt = buildAnalysis(state.parsedFiles, updated)
     dispatch({ type: 'ANALYSIS_UPDATED', analysis: rebuilt })
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
   }
-
-  const uniqueMofids = [...new Map(policies.filter((p) => p.mofid).map((p) => [p.mofid!, p])).values()]
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
@@ -192,80 +178,59 @@ export default function AdvisorPage() {
         )}
       </div>
 
-      <div className="rounded-2xl bg-white border border-slate-200/70 p-5 mb-4 shadow-sm">
-        <h2 className="font-semibold text-slate-700 mb-1">הסכמי דמי ניהול מפעליים</h2>
-        <p className="text-xs text-slate-400 mb-3">
-          הסכמים מול היצרן/מעסיק (רובד מפעלי), לפי פוליסה. בדיקת פער מול ההסכם תרוץ רק היכן שהוזן.
-        </p>
-        {policies.map((p) => (
-          <div key={p.policyNumber} className="grid grid-cols-3 gap-3 items-center py-2 border-t border-slate-100 text-sm">
-            <div>
-              <div className="font-medium text-slate-700">{productTypeLabels[p.productType]}</div>
-              <div className="text-xs text-slate-400 tabular">{p.policyNumber}</div>
-            </div>
-            <input
-              type="number"
-              step="0.01"
-              placeholder="% מהפקדה"
-              className="rounded-lg border border-slate-300 p-2"
-              value={fees[p.policyNumber]?.deposit ?? ''}
-              onChange={(e) =>
-                setFees({ ...fees, [p.policyNumber]: { deposit: e.target.value, accum: fees[p.policyNumber]?.accum ?? '' } })
-              }
-            />
-            <input
-              type="number"
-              step="0.01"
-              placeholder="% מצבירה"
-              className="rounded-lg border border-slate-300 p-2"
-              value={fees[p.policyNumber]?.accum ?? ''}
-              onChange={(e) =>
-                setFees({ ...fees, [p.policyNumber]: { deposit: fees[p.policyNumber]?.deposit ?? '', accum: e.target.value } })
-              }
-            />
-          </div>
-        ))}
-      </div>
-
       <div className="rounded-2xl bg-white border border-slate-200/70 p-5 mb-6 shadow-sm">
-        <h2 className="font-semibold text-slate-700 mb-1">נתוני השוואה — גמל-נט / פנסיה-נט / ביטוח-נט</h2>
+        <h2 className="font-semibold text-slate-700 mb-1">הסכמי דמי ניהול — קובץ אקסל</h2>
         <p className="text-xs text-slate-400 mb-3">
-          לפי מספר אוצר, מהאתרים הרשמיים. משמש את מנוע ההשקעות להשוואת תשואות.
+          העלאת קובץ Excel/CSV עם ההסכמים. הקובץ צריך לכלול עמודת "מספר פוליסה" ולפחות אחת
+          מעמודות דמי הניהול — "מהפקדה" ו/או "מצבירה". בדיקת הפער מול ההסכם תרוץ לפי הפוליסות שיזוהו.
         </p>
-        {uniqueMofids.length === 0 ? (
-          <p className="text-sm text-slate-400">לא זוהו מספרי אוצר בקבצים</p>
-        ) : (
-          uniqueMofids.map((p) => (
-            <div key={p.mofid} className="grid grid-cols-3 gap-3 items-center py-2 border-t border-slate-100 text-sm">
-              <div>
-                <div className="font-medium text-slate-700">
-                  מספר אוצר {p.mofid}{' '}
-                  <span className="text-xs text-slate-400">({sourceLabels[sourceForProduct(p.productType)]})</span>
-                </div>
-                <div className="text-xs text-slate-400">{p.productName}</div>
-              </div>
-              <input
-                type="number"
-                step="0.01"
-                placeholder="תשואה שנתית %"
-                className="rounded-lg border border-slate-300 p-2"
-                value={benchmarks[p.mofid!]?.ret ?? ''}
-                onChange={(e) =>
-                  setBenchmarks({ ...benchmarks, [p.mofid!]: { ret: e.target.value, sharpe: benchmarks[p.mofid!]?.sharpe ?? '' } })
-                }
-              />
-              <input
-                type="number"
-                step="0.01"
-                placeholder="מדד שארפ"
-                className="rounded-lg border border-slate-300 p-2"
-                value={benchmarks[p.mofid!]?.sharpe ?? ''}
-                onChange={(e) =>
-                  setBenchmarks({ ...benchmarks, [p.mofid!]: { ret: benchmarks[p.mofid!]?.ret ?? '', sharpe: e.target.value } })
-                }
-              />
+        <input
+          type="file"
+          accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
+          onChange={(e) => handleFeeFile(e.target.files)}
+          className="block w-full text-sm text-slate-500 file:ml-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-brand-700 hover:file:bg-brand-50"
+        />
+        {feeParsing && (
+          <div className="mt-2">
+            <Spinner label="מעבד את קובץ ההסכמים…" />
+          </div>
+        )}
+        {feeLog.map((line, i) => (
+          <p key={i} className={`text-xs mt-2 ${line.ok ? 'text-slate-500' : 'text-amber-600'}`}>
+            {line.ok ? '✓' : '⚠'} {line.text}
+          </p>
+        ))}
+        {feeAgreements.length > 0 && (
+          <div className="mt-3 rounded-xl bg-brand-25 border border-slate-200/70 p-3">
+            <div className="font-medium text-slate-700 text-sm mb-1.5">הסכמים טעונים:</div>
+            <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 text-xs text-slate-400 pb-1 border-b border-slate-200/70">
+              <span>פוליסה</span>
+              <span className="tabular">מהפקדה</span>
+              <span className="tabular">מצבירה</span>
             </div>
-          ))
+            {feeAgreements.map((a) => {
+              const inPortfolio = policies.some((p) => p.policyNumber === a.policyNumber)
+              return (
+                <div
+                  key={a.policyNumber}
+                  className={`grid grid-cols-[1fr_auto_auto] gap-x-4 py-1 text-xs ${
+                    inPortfolio ? 'text-slate-600' : 'text-slate-300'
+                  }`}
+                >
+                  <span>
+                    <span className="font-medium">{policyLabel(a.policyNumber)}</span>{' '}
+                    <span className="tabular text-slate-400">{a.policyNumber}</span>
+                  </span>
+                  <span className="tabular">
+                    {a.agreedFeeFromDeposit !== null ? `${a.agreedFeeFromDeposit}%` : '—'}
+                  </span>
+                  <span className="tabular">
+                    {a.agreedFeeFromAccumulation !== null ? `${a.agreedFeeFromAccumulation}%` : '—'}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
         )}
       </div>
 
