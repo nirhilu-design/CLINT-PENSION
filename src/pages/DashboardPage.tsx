@@ -4,7 +4,8 @@ import type { ProductType } from '../models/types'
 import { formatCurrency, formatDate } from '../utils/format'
 import PieChartCard from '../components/PieChartCard'
 import FindingCard from '../components/FindingCard'
-import ReturnsTable from '../components/ReturnsTable'
+import DepositsTableCard from '../components/DepositsTableCard'
+import EquityBarCard from '../components/EquityBarCard'
 import { sortFindings } from '../engines/findingPriority'
 import { assessCompleteness } from '../services/completenessService'
 import { useState } from 'react'
@@ -241,10 +242,10 @@ export default function DashboardPage() {
           />
         )}
 
-        <section className="mb-8">
-          <h2 className="text-lg font-bold text-slate-800 mb-3">תשואות</h2>
-          <ReturnsTable policies={policies} treasuryFunds={analysis.supplementary.treasuryFunds} />
-        </section>
+        <div className="grid md:grid-cols-2 gap-4 mb-8">
+          <DepositsTableCard policies={policies} />
+          <EquityBarCard policies={policies} allocations={analysis.supplementary.treasuryAllocations} />
+        </div>
 
         {/* 4. Products */}
         <section>
