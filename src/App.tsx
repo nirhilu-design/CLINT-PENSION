@@ -7,6 +7,7 @@ import ProductPage from './pages/ProductPage'
 import ExecutiveSummaryPage from './pages/ExecutiveSummaryPage'
 import AdvisorPage from './pages/AdvisorPage'
 import RulesPage from './pages/RulesPage'
+import PersonalDetailsPage from './pages/PersonalDetailsPage'
 import PolicyDrawer from './components/PolicyDrawer'
 import Navbar from './components/Navbar'
 
@@ -22,7 +23,7 @@ export default function App() {
     window.scrollTo(0, 0)
   }, [state.step, state.selectedProduct])
 
-  const showNavbar = ['dashboard', 'product', 'summary', 'advisor', 'rules'].includes(state.step)
+  const showNavbar = ['dashboard', 'product', 'summary', 'advisor', 'rules', 'personal'].includes(state.step)
 
   return (
     <>
@@ -34,6 +35,7 @@ export default function App() {
       {state.step === 'summary' && state.analysis && <ExecutiveSummaryPage />}
       {state.step === 'advisor' && state.analysis && <AdvisorPage />}
       {state.step === 'rules' && state.analysis && <RulesPage />}
+      {state.step === 'personal' && state.analysis && <PersonalDetailsPage />}
 
       {selectedPolicy && state.analysis && (
         <PolicyDrawer

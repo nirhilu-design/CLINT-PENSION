@@ -32,6 +32,7 @@ export default function Navbar() {
           {navButton('דשבורד', state.step === 'dashboard' || state.step === 'product', () =>
             dispatch({ type: 'GO_DASHBOARD' }),
           )}
+          {navButton('פרטים אישיים', state.step === 'personal', () => dispatch({ type: 'GO_PERSONAL' }))}
           {navButton('סיכום מנהלים', state.step === 'summary', () => dispatch({ type: 'GO_SUMMARY' }))}
           {navButton('אזור יועץ', state.step === 'advisor', () => dispatch({ type: 'GO_ADVISOR' }))}
           <span className="w-px h-5 bg-white/15 mx-2" />
