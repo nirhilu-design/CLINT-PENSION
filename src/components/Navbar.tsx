@@ -35,6 +35,8 @@ export default function Navbar() {
           {navButton('סיכום מנהלים', state.step === 'summary', () => dispatch({ type: 'GO_SUMMARY' }))}
           {navButton('אזור יועץ', state.step === 'advisor', () => dispatch({ type: 'GO_ADVISOR' }))}
           <span className="w-px h-5 bg-white/15 mx-2" />
+          {navButton('חוקי בקרה', state.step === 'rules', () => dispatch({ type: 'GO_RULES' }))}
+          <span className="w-px h-5 bg-white/15 mx-2" />
           <button
             onClick={() => dispatch({ type: 'RESET' })}
             className="px-3.5 py-1.5 rounded-full text-sm text-slate-300 hover:text-white hover:bg-white/10 transition"

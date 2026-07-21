@@ -2,7 +2,7 @@ import { createContext, useContext, useReducer, type ReactNode, type Dispatch } 
 import type { Analysis, ProductType, SupplementaryInfo } from '../models/types'
 import type { ParsedFile } from '../parser/parsePensionXml'
 
-export type Step = 'upload' | 'form' | 'dashboard' | 'product' | 'summary' | 'advisor'
+export type Step = 'upload' | 'form' | 'dashboard' | 'product' | 'summary' | 'advisor' | 'rules'
 
 export interface AppState {
   step: Step
@@ -23,6 +23,7 @@ export type AppAction =
   | { type: 'GO_DASHBOARD' }
   | { type: 'GO_SUMMARY' }
   | { type: 'GO_ADVISOR' }
+  | { type: 'GO_RULES' }
   | { type: 'ANALYSIS_UPDATED'; analysis: Analysis }
   | { type: 'RESET' }
 
@@ -55,6 +56,8 @@ function reducer(state: AppState, action: AppAction): AppState {
       return { ...state, step: 'summary', selectedPolicyNumber: null }
     case 'GO_ADVISOR':
       return { ...state, step: 'advisor', selectedPolicyNumber: null }
+    case 'GO_RULES':
+      return { ...state, step: 'rules', selectedProduct: null, selectedPolicyNumber: null }
     case 'ANALYSIS_UPDATED':
       return { ...state, analysis: action.analysis }
     case 'RESET':
