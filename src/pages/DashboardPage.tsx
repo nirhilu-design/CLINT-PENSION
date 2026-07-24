@@ -129,17 +129,17 @@ export default function DashboardPage() {
               return ` · הנתונים נכונים ל-${formatDate(latest)}`
             })()}
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mt-6">
             <HeroKpi label="סך נכסים" value={formatCurrency(totalAssets)} />
             <HeroKpi
               label="קצבה חודשית צפויה"
               value={formatCurrency(totalPensionWithDeposits)}
-              sub={
-                totalPensionWithoutDeposits > 0 &&
-                totalPensionWithoutDeposits !== totalPensionWithDeposits
-                  ? `בהמשך הפקדות · ${formatCurrency(totalPensionWithoutDeposits)} ללא הפקדות`
-                  : 'בהמשך הפקדות'
-              }
+              sub="בהמשך הפקדות"
+            />
+            <HeroKpi
+              label="קצבה חודשית צפויה ללא הפקדות"
+              value={formatCurrency(totalPensionWithoutDeposits)}
+              sub="ללא המשך הפקדות"
             />
             <HeroKpi
               label="מוצרים · פוליסות"

@@ -6,6 +6,7 @@ import type {
   Client,
   Contribution,
   Coverage,
+  CoverageType,
   ManagersGeneration,
   MonthlyDeposit,
   Policy,
@@ -70,6 +71,36 @@ function parseClient(yeshutLakoach: Element): Client {
   }
 }
 
+// Maps SUG-KISUY-BITOCHI (מבנה אחיד, נספח ערכים) to our coverage taxonomy.
+// null = not a risk coverage we surface (premium waiver / pure savings).
+function coverageTypeFromKisuyBituchi(code: string | null): CoverageType | null {
+  switch (code) {
+    case '1': // כיסוי למקרה מוות
+    case '3': // מוות מתאונה
+    case '9': // מוות + אכ"ע (פנסיה ותיקה)
+      return 'death'
+    case '2': // נכות מקצועית
+    case '4': // נכות מתאונה
+    case '5': // אבדן כושר עבודה (אכ"ע)
+      return 'disability'
+    case '7': // מחלות קשות
+    case '10': // אחר
+      return 'other'
+    case '6': // שחרור (ויתור על תשלום פרמיה) — לא כיסוי תשלום
+    case '8': // תוכנית משולבת חיסכון — חיסכון, לא סיכון
+      return null
+    default:
+      return null
+  }
+}
+
+// A coverage is active unless it carries an end date that has already passed.
+function coverageStatusFromEndDate(endRaw: string | null): 'active' | 'inactive' | null {
+  const end = parseDate(endRaw)
+  if (!end) return 'active'
+  return end < new Date().toISOString().slice(0, 10) ? 'inactive' : 'active'
+}
+
 function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
   const coverages: Coverage[] = []
 
@@ -121,21 +152,24 @@ function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
       }
     }
 
-    // Insurance coverage rows (life / income protection / managers riders)
-    for (const pt of kisui.querySelectorAll('PirteiTosafot')) {
-      const amount = getNumber(pt, 'SCHUM-BITUACH')
-      if (amount !== null) {
-        coverages.push({
-          type: 'death',
-          name,
-          amount,
-          percent: null,
-          coveredSalary: null,
-          cost: getNumber(pt, 'ALUT-KISUI'),
-          status: 'active',
-          policyNumber,
-        })
-      }
+    // Insurance-company coverages (managers / life): each PirteiKisuiBeMutzar row
+    // carries SUG-KISUY-BITOCHI identifying what it insures — death, disability,
+    // income protection (אכ"ע), etc. The amount is SCHUM-BITUACH, the premium is
+    // DMEI-BITUAH-LETASHLUM-BAPOAL. (Previously we mis-read PirteiTosafot — a rider
+    // block with no SCHUM-BITUACH — and hard-coded every row as death coverage.)
+    for (const cover of kisui.querySelectorAll('PirteiKisuiBeMutzar')) {
+      const type = coverageTypeFromKisuyBituchi(getText(cover, 'SUG-KISUY-BITOCHI'))
+      if (type === null) continue // savings / premium-waiver rows are not risk covers
+      coverages.push({
+        type,
+        name,
+        amount: getNumber(cover, 'SCHUM-BITUACH'),
+        percent: getNumber(cover, 'ACHUZ-MESACHAR'),
+        coveredSalary: null,
+        cost: getNumber(cover, 'DMEI-BITUAH-LETASHLUM-BAPOAL'),
+        status: coverageStatusFromEndDate(getText(cover, 'TAARICH-TOM-KISUY')),
+        policyNumber,
+      })
     }
   }
 

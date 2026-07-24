@@ -35,7 +35,14 @@ function fixture({ clientId = '027864610', clientId2 = '' } = {}) {
     <SACH-PENSIAT-NECHUT>10790.58</SACH-PENSIAT-NECHUT><SHEUR-KISUY-NECHUT>75.00</SHEUR-KISUY-NECHUT>
     <KITZBAT-SHEERIM-LEALMAN-O-ALMANA>8632.46</KITZBAT-SHEERIM-LEALMAN-O-ALMANA>
     <KITZBAT-SHEERIM-LEYATOM>5754.98</KITZBAT-SHEERIM-LEYATOM>
-  </KisuiBKerenPensia></ZihuiKisui></Kisuim>
+  </KisuiBKerenPensia></ZihuiKisui>
+  <ZihuiKisui><SHEM-KISUI-YATZRAN>אכ"ע</SHEM-KISUI-YATZRAN>
+    <PirteiKisuiBeMutzar><SUG-KISUY-BITOCHI>5</SUG-KISUY-BITOCHI><SCHUM-BITUACH>9000.00</SCHUM-BITUACH><ACHUZ-MESACHAR>75.00</ACHUZ-MESACHAR><DMEI-BITUAH-LETASHLUM-BAPOAL>120.50</DMEI-BITUAH-LETASHLUM-BAPOAL></PirteiKisuiBeMutzar>
+  </ZihuiKisui>
+  <ZihuiKisui><SHEM-KISUI-YATZRAN>ריסק מוות</SHEM-KISUI-YATZRAN>
+    <PirteiKisuiBeMutzar><SUG-KISUY-BITOCHI>1</SUG-KISUY-BITOCHI><SCHUM-BITUACH>500000.00</SCHUM-BITUACH><DMEI-BITUAH-LETASHLUM-BAPOAL>85.00</DMEI-BITUAH-LETASHLUM-BAPOAL></PirteiKisuiBeMutzar>
+    <PirteiKisuiBeMutzar><SUG-KISUY-BITOCHI>8</SUG-KISUY-BITOCHI><SCHUM-BITUACH>12345.00</SCHUM-BITUACH></PirteiKisuiBeMutzar>
+  </ZihuiKisui></Kisuim>
   <PerutMasluleiHashkaa><SCHUM-TZVIRA-BAMASLUL>100000</SCHUM-TZVIRA-BAMASLUL><SHEM-MASLUL-HASHKAA>מסלול א</SHEM-MASLUL-HASHKAA><TSUA-NETO>9.5</TSUA-NETO></PerutMasluleiHashkaa>
   <PerutMasluleiHashkaa><SCHUM-TZVIRA-BAMASLUL>50000</SCHUM-TZVIRA-BAMASLUL><SHEM-MASLUL-HASHKAA>מסלול א</SHEM-MASLUL-HASHKAA></PerutMasluleiHashkaa>
   <YitraLefiGilPrisha><GIL-PRISHA>67.00</GIL-PRISHA><TOTAL-CHISACHON-MITZTABER-TZAFUY>3005476.00</TOTAL-CHISACHON-MITZTABER-TZAFUY><TZVIRAT-CHISACHON-CHAZUYA-LELO-PREMIYOT>779851.41</TZVIRAT-CHISACHON-CHAZUYA-LELO-PREMIYOT><Kupot><Kupa><SCHUM-KITZVAT-ZIKNA>17129.00</SCHUM-KITZVAT-ZIKNA><KITZVAT-HODSHIT-TZFUYA>4444.61</KITZVAT-HODSHIT-TZFUYA></Kupa></Kupot></YitraLefiGilPrisha>
@@ -72,6 +79,21 @@ describe('parsePensionXml', () => {
     expect(survivors.map((s) => s.name)).toEqual(
       expect.arrayContaining(['קצבת שאירים לאלמן/ה', 'קצבת שאירים ליתום']),
     )
+  })
+
+  it('reads insurance coverages by SUG-KISUY-BITOCHI (אכ"ע vs מוות, skips savings)', () => {
+    // אכ"ע (code 5) → disability, with amount, percent and premium
+    const oka = p.coverages.find((c) => c.type === 'disability' && c.name === 'אכ"ע')
+    expect(oka).toBeDefined()
+    expect(oka!.amount).toBe(9000)
+    expect(oka!.percent).toBe(75)
+    expect(oka!.cost).toBe(120.5)
+    // ריסק מוות (code 1) → death
+    const risk = p.coverages.find((c) => c.type === 'death' && c.name === 'ריסק מוות')
+    expect(risk).toBeDefined()
+    expect(risk!.amount).toBe(500000)
+    // savings row (code 8) is not surfaced as a risk coverage
+    expect(p.coverages.some((c) => c.amount === 12345)).toBe(false)
   })
 
   it('aggregates monthly deposits across contribution types', () => {
