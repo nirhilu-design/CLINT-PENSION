@@ -9,7 +9,7 @@ import { sortFindings } from './findingPriority'
 import { makeFinding } from './engineTypes'
 
 const client = {
-  id: '027864610',
+  id: '012345674',
   firstName: 'א',
   lastName: 'ב',
   fullName: 'א ב',
@@ -25,12 +25,12 @@ function makePolicy(overrides: Partial<Policy> = {}): Policy {
     productType: 'pension',
     productName: 'קרן בדיקה',
     managingCompany: 'יצרן',
-    mofid: '209',
+    mofid: '7777',
     openDate: '2019-12-22',
     status: 'active',
     currentValue: 100000,
-    coveredSalary: 14442,
-    expectedPensionWithDeposits: 4444,
+    coveredSalary: 14000,
+    expectedPensionWithDeposits: 9000,
     expectedPensionWithoutDeposits: null,
     expectedAccumulationWithDeposits: null,
     expectedAccumulationWithoutDeposits: null,
@@ -124,7 +124,7 @@ describe('costEngine', () => {
       input([makePolicy({ fees: { fromDeposit: null, fromAccumulation: 0.6 } })], {
         treasuryFunds: [
           {
-            mofid: '209',
+            mofid: '7777',
             name: 'קרן',
             managingCompany: null,
             avgFeeFromAccumulation: 0.2,
@@ -150,7 +150,7 @@ describe('incomeProtectionEngine', () => {
     name: null,
     amount: 9000,
     percent: 60,
-    coveredSalary: 14442,
+    coveredSalary: 14000,
     cost: 60,
     status: 'active' as const,
     policyNumber: 'P1',

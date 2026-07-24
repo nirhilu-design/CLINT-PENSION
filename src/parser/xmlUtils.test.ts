@@ -3,9 +3,9 @@ import { mofidFromKidodAchid, normalizeClientId, parseDate } from './xmlUtils'
 
 describe('normalizeClientId', () => {
   it('treats every zero-padding of the same ID as one person', () => {
-    expect(normalizeClientId('0000000027864610')).toBe('027864610')
-    expect(normalizeClientId('027864610')).toBe('027864610')
-    expect(normalizeClientId('27864610')).toBe('027864610')
+    expect(normalizeClientId('0000000012345674')).toBe('012345674')
+    expect(normalizeClientId('012345674')).toBe('012345674')
+    expect(normalizeClientId('12345674')).toBe('012345674')
   })
 
   it('keeps distinct IDs distinct', () => {
@@ -30,10 +30,10 @@ describe('parseDate', () => {
 })
 
 describe('mofidFromKidodAchid', () => {
-  it('extracts the fund code verified against real files', () => {
-    // Altshuler hishtalmut → 1093, Phoenix pension → 209
-    expect(mofidFromKidodAchid('513173393000000000010930000000')).toBe('1093')
-    expect(mofidFromKidodAchid('513026484000000000002090000000')).toBe('209')
+  it('extracts the fund code from the KIDOD-ACHID (positions 19-23)', () => {
+    // Synthetic codes: the middle segment holds the fund number (מספר אוצר)
+    expect(mofidFromKidodAchid('000000000000000000070010000000')).toBe('7001')
+    expect(mofidFromKidodAchid('000000000000000000077770000000')).toBe('7777')
   })
   it('returns null for short input', () => {
     expect(mofidFromKidodAchid('123')).toBeNull()
