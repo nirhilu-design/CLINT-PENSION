@@ -31,6 +31,15 @@ function numTag(row: string, name: string): number | null {
   return Number.isFinite(n) ? n : null
 }
 
+// First non-empty value among several candidate tag names.
+function firstTag(row: string, names: string[]): string | null {
+  for (const n of names) {
+    const v = tag(row, n)
+    if (v !== null) return v
+  }
+  return null
+}
+
 const MAIN_GROUPS_LABEL = '9 קבוצות'
 
 export function parseTreasuryXml(
@@ -62,7 +71,7 @@ export function parseTreasuryXml(
     const F = isCompanies
       ? {
           id: 'ID_GUF',
-          name: 'SHEM_GUF',
+          names: ['SHEM_GUF'],
           company: null,
           feeAccum: 'SHIUR_D_NIHUL_NECHASIM',
           feeDeposit: 'SHIUR_D_NIHUL_HAFKADOT',
@@ -70,7 +79,8 @@ export function parseTreasuryXml(
         }
       : {
           id: 'ID',
-          name: 'SHM_KUPA',
+          // fund name: SHM_KUPA in gemel/השתלמות files, SHM_KRN in pension (פנסיה-נט)
+          names: ['SHM_KUPA', 'SHM_KRN'],
           company: 'SHM_HEVRA_MENAHELET',
           feeAccum: 'SHIUR_DMEI_NIHUL_AHARON',
           feeDeposit: 'SHIUR_D_NIHUL_AHARON_HAFKADOT',
@@ -82,7 +92,7 @@ export function parseTreasuryXml(
       matched.add(id)
       result.funds.push({
         mofid: id,
-        name: tag(row, F.name),
+        name: firstTag(row, F.names),
         managingCompany: F.company ? tag(row, F.company) : null,
         avgFeeFromAccumulation: numTag(row, F.feeAccum),
         avgFeeFromDeposit: numTag(row, F.feeDeposit),

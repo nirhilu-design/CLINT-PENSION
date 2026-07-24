@@ -67,6 +67,24 @@ describe('parseTreasuryXml', () => {
     })
   })
 
+  it('parses the pension (פנסיה-נט) returns format: uppercase ROW, ID, SHM_KRN name', () => {
+    const pensionFile = `<ROWSET><ROW>
+      <ID>1589</ID><SHM_KRN>מיטב פנסיה מקיפה</SHM_KRN><SHM_HEVRA_MENAHELET>מיטב</SHM_HEVRA_MENAHELET>
+      <TSUA_MITZTABERET_LETKUFA>23.56</TSUA_MITZTABERET_LETKUFA>
+      <SHARP_RIBIT_HASRAT_SIKUN>1.16</SHARP_RIBIT_HASRAT_SIKUN>
+      <AD_TKUFAT_DIVUACH>202606</AD_TKUFAT_DIVUACH>
+    </ROW></ROWSET>`
+    const out = parseTreasuryXml(pensionFile, 'PensiaNet_15.xml', new Set(['1589']))
+    expect(out.type).toBe('returns')
+    expect(out.funds[0]).toMatchObject({
+      mofid: '1589',
+      name: 'מיטב פנסיה מקיפה',
+      managingCompany: 'מיטב',
+      return12m: 23.56,
+      sharpe: 1.16,
+    })
+  })
+
   it('reports unknown format', () => {
     expect(parseTreasuryXml('<foo/>', 'x.xml', portfolio).type).toBe('unknown')
   })
