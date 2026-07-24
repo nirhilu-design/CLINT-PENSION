@@ -65,7 +65,15 @@ export default function DashboardPage() {
   const { policies, findings, client } = analysis
 
   const totalAssets = policies.reduce((s, p) => s + (p.currentValue ?? 0), 0)
-  const totalPension = policies.reduce((s, p) => s + (p.expectedPension ?? 0), 0)
+  // קצבה חודשית חזויה: תרחיש "בהמשך הפקדות" כמספר הראשי, "ללא הפקדות" כרצפה
+  const totalPensionWithDeposits = policies.reduce(
+    (s, p) => s + (p.expectedPensionWithDeposits ?? p.expectedPensionWithoutDeposits ?? 0),
+    0,
+  )
+  const totalPensionWithoutDeposits = policies.reduce(
+    (s, p) => s + (p.expectedPensionWithoutDeposits ?? 0),
+    0,
+  )
   const productTypes = new Set(policies.map((p) => p.productType))
 
   const byProduct = PRODUCT_ORDER.filter((t) => productTypes.has(t)).map((t) => ({
@@ -123,7 +131,16 @@ export default function DashboardPage() {
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
             <HeroKpi label="סך נכסים" value={formatCurrency(totalAssets)} />
-            <HeroKpi label="קצבה חודשית צפויה" value={formatCurrency(totalPension)} sub="סיכום מהדיווחים בקבצים" />
+            <HeroKpi
+              label="קצבה חודשית צפויה"
+              value={formatCurrency(totalPensionWithDeposits)}
+              sub={
+                totalPensionWithoutDeposits > 0 &&
+                totalPensionWithoutDeposits !== totalPensionWithDeposits
+                  ? `בהמשך הפקדות · ${formatCurrency(totalPensionWithoutDeposits)} ללא הפקדות`
+                  : 'בהמשך הפקדות'
+              }
+            />
             <HeroKpi
               label="מוצרים · פוליסות"
               value={`${productTypes.size} · ${policies.length}`}

@@ -296,8 +296,16 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
         status: statusRaw === '1' ? 'active' : statusRaw ? 'inactive' : null,
         currentValue,
         coveredSalary: getNumber(heshbon, 'PirteiHaasaka > SACHAR-POLISA'),
-        expectedPension: getNumber(yitra, 'KITZVAT-HODSHIT-TZFUYA'),
-        expectedAccumulationAtRetirement: getNumber(yitra, 'TOTAL-CHISACHON-MITZTABER-TZAFUY'),
+        // קצבה חודשית חזויה: עם המשך הפקדות מול ללא הפקדות (שני שדות נפרדים בדיווח)
+        expectedPensionWithDeposits: getNumber(yitra, 'SCHUM-KITZVAT-ZIKNA'),
+        expectedPensionWithoutDeposits: getNumber(yitra, 'KITZVAT-HODSHIT-TZFUYA'),
+        // צבירה חזויה לפרישה: עם/ללא הפקדות (עם נפילה חזרה לשדות ה-LEKITZBA המפורשים)
+        expectedAccumulationWithDeposits:
+          getNumber(yitra, 'TOTAL-CHISACHON-MITZTABER-TZAFUY') ??
+          getNumber(yitra, 'TOTAL-SCHUM-MTZBR-TZAFUY-LEGIL-PRISHA-MECHUSHAV-LEKITZBA-IM-PREMIYOT'),
+        expectedAccumulationWithoutDeposits:
+          getNumber(yitra, 'TZVIRAT-CHISACHON-CHAZUYA-LELO-PREMIYOT') ??
+          getNumber(yitra, 'TOTAL-SCHUM-MITZVTABER-TZFUY-LEGIL-PRISHA-MECHUSHAV-HAMEYOAD-LEKITZBA-LELO-PREMIYOT'),
         retirementAge: getNumber(yitra, 'GIL-PRISHA'),
         fees: { fromDeposit: feeFromDeposit, fromAccumulation: feeFromAccumulation },
         netReturn: getNumber(heshbon, 'Tsua > SHEUR-TSUA-NETO'),

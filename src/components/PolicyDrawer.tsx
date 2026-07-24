@@ -90,8 +90,10 @@ export default function PolicyDrawer({
 
         <Section title="מידע פיננסי">
           <Row label="יתרה צבורה" value={formatCurrency(policy.currentValue)} />
-          <Row label="קצבה חודשית צפויה" value={formatCurrency(policy.expectedPension)} />
-          <Row label="צבירה צפויה לפרישה" value={formatCurrency(policy.expectedAccumulationAtRetirement)} />
+          <Row label="קצבה חודשית צפויה (בהמשך הפקדות)" value={formatCurrency(policy.expectedPensionWithDeposits)} />
+          <Row label="קצבה חודשית צפויה (ללא הפקדות)" value={formatCurrency(policy.expectedPensionWithoutDeposits)} />
+          <Row label="צבירה צפויה לפרישה (בהמשך הפקדות)" value={formatCurrency(policy.expectedAccumulationWithDeposits)} />
+          <Row label="צבירה צפויה לפרישה (ללא הפקדות)" value={formatCurrency(policy.expectedAccumulationWithoutDeposits)} />
           <Row label="שכר מבוטח" value={formatCurrency(policy.coveredSalary)} />
           {policy.productType === 'managers' && (
             <Row label="מקדם קצבה מובטח" value={policy.hasGuaranteedFactor ? 'קיים' : 'לא קיים'} />

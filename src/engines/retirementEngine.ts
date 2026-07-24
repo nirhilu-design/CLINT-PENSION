@@ -24,9 +24,19 @@ export const retirementEngine: Engine = ({ policies, supplementary }) => {
       p.status === 'active',
   )
 
-  // Aggregate expected pension
-  const withPension = pensionable.filter((p) => p.expectedPension !== null)
-  const totalExpected = withPension.reduce((sum, p) => sum + (p.expectedPension ?? 0), 0)
+  // Aggregate expected pension. The realistic figure for an active saver assumes
+  // continued deposits; the "no further deposits" figure is the conservative floor.
+  const hasPensionData = (p: (typeof pensionable)[number]) =>
+    p.expectedPensionWithDeposits !== null || p.expectedPensionWithoutDeposits !== null
+  const primaryPension = (p: (typeof pensionable)[number]) =>
+    p.expectedPensionWithDeposits ?? p.expectedPensionWithoutDeposits ?? 0
+
+  const withPension = pensionable.filter(hasPensionData)
+  const totalExpected = withPension.reduce((sum, p) => sum + primaryPension(p), 0)
+  const totalWithoutDeposits = withPension.reduce(
+    (sum, p) => sum + (p.expectedPensionWithoutDeposits ?? 0),
+    0,
+  )
 
   if (withPension.length > 0) {
     findings.push(
@@ -35,7 +45,11 @@ export const retirementEngine: Engine = ({ policies, supplementary }) => {
         level: 'client',
         severity: 'info',
         title: 'קצבה חודשית צפויה בפרישה',
-        description: `סך הקצבה החודשית הצפויה מהמוצרים הפנסיוניים הפעילים: ${formatCurrency(totalExpected)}.`,
+        description:
+          `סך הקצבה החודשית הצפויה מהמוצרים הפנסיוניים הפעילים בהמשך הפקדות: ${formatCurrency(totalExpected)}` +
+          (totalWithoutDeposits > 0
+            ? ` · ללא המשך הפקדות: ${formatCurrency(totalWithoutDeposits)}.`
+            : '.'),
       }),
     )
 
@@ -78,7 +92,7 @@ export const retirementEngine: Engine = ({ policies, supplementary }) => {
   }
 
   // Pension products missing expected pension → limitation, not a guess
-  for (const p of pensionable.filter((p) => p.expectedPension === null)) {
+  for (const p of pensionable.filter((p) => !hasPensionData(p))) {
     findings.push(
       makeFinding({
         category: 'limitation',

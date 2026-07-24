@@ -38,7 +38,7 @@ function fixture({ clientId = '027864610', clientId2 = '' } = {}) {
   </KisuiBKerenPensia></ZihuiKisui></Kisuim>
   <PerutMasluleiHashkaa><SCHUM-TZVIRA-BAMASLUL>100000</SCHUM-TZVIRA-BAMASLUL><SHEM-MASLUL-HASHKAA>מסלול א</SHEM-MASLUL-HASHKAA><TSUA-NETO>9.5</TSUA-NETO></PerutMasluleiHashkaa>
   <PerutMasluleiHashkaa><SCHUM-TZVIRA-BAMASLUL>50000</SCHUM-TZVIRA-BAMASLUL><SHEM-MASLUL-HASHKAA>מסלול א</SHEM-MASLUL-HASHKAA></PerutMasluleiHashkaa>
-  <YitraLefiGilPrisha><GIL-PRISHA>67.00</GIL-PRISHA><Kupot><Kupa><KITZVAT-HODSHIT-TZFUYA>4444.61</KITZVAT-HODSHIT-TZFUYA></Kupa></Kupot></YitraLefiGilPrisha>
+  <YitraLefiGilPrisha><GIL-PRISHA>67.00</GIL-PRISHA><TOTAL-CHISACHON-MITZTABER-TZAFUY>3005476.00</TOTAL-CHISACHON-MITZTABER-TZAFUY><TZVIRAT-CHISACHON-CHAZUYA-LELO-PREMIYOT>779851.41</TZVIRAT-CHISACHON-CHAZUYA-LELO-PREMIYOT><Kupot><Kupa><SCHUM-KITZVAT-ZIKNA>17129.00</SCHUM-KITZVAT-ZIKNA><KITZVAT-HODSHIT-TZFUYA>4444.61</KITZVAT-HODSHIT-TZFUYA></Kupa></Kupot></YitraLefiGilPrisha>
 </HeshbonOPolisa></HeshbonotOPolisot></Mutzar>
 ${secondMutzar}
 </Mutzarim></YeshutYatzran></Mimshak>`
@@ -81,7 +81,11 @@ describe('parsePensionXml', () => {
   })
 
   it('reads expected pension and contributions', () => {
-    expect(p.expectedPension).toBe(4444.61)
+    // בהמשך הפקדות מול ללא הפקדות — שני שדות נפרדים בדיווח
+    expect(p.expectedPensionWithDeposits).toBe(17129)
+    expect(p.expectedPensionWithoutDeposits).toBe(4444.61)
+    expect(p.expectedAccumulationWithDeposits).toBe(3005476)
+    expect(p.expectedAccumulationWithoutDeposits).toBe(779851.41)
     expect(p.contributions).toEqual(
       expect.arrayContaining([
         { role: 'employee', percent: 6 },

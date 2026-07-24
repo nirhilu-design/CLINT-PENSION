@@ -21,7 +21,18 @@ interface Kpi {
 /** Product-specific KPI definitions per PRD Product Discovery sections */
 function productKpis(productType: ProductType, policies: Policy[]): Kpi[] {
   const total = policies.reduce((s, p) => s + (p.currentValue ?? 0), 0)
-  const expectedPension = policies.reduce((s, p) => s + (p.expectedPension ?? 0), 0)
+  const pensionWithDeposits = policies.reduce(
+    (s, p) => s + (p.expectedPensionWithDeposits ?? p.expectedPensionWithoutDeposits ?? 0),
+    0,
+  )
+  const pensionWithoutDeposits = policies.reduce(
+    (s, p) => s + (p.expectedPensionWithoutDeposits ?? 0),
+    0,
+  )
+  const pensionSub =
+    pensionWithoutDeposits > 0 && pensionWithoutDeposits !== pensionWithDeposits
+      ? `${formatCurrency(pensionWithoutDeposits)} ללא הפקדות`
+      : undefined
   const avgFeeAccum = (() => {
     const vals = policies.map((p) => p.fees.fromAccumulation).filter((v): v is number => v !== null)
     return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null
@@ -31,14 +42,14 @@ function productKpis(productType: ProductType, policies: Policy[]): Kpi[] {
     case 'pension':
       return [
         { label: 'צבירה', value: formatCurrency(total) },
-        { label: 'קצבה צפויה', value: formatCurrency(expectedPension) },
+        { label: 'קצבה צפויה (בהמשך הפקדות)', value: formatCurrency(pensionWithDeposits), sub: pensionSub },
         { label: 'דמי ניהול מצבירה (ממוצע)', value: formatPercent(avgFeeAccum) },
       ]
     case 'managers': {
       const anyGuaranteed = policies.some((p) => p.hasGuaranteedFactor)
       return [
         { label: 'צבירה', value: formatCurrency(total) },
-        { label: 'קצבה צפויה', value: formatCurrency(expectedPension) },
+        { label: 'קצבה צפויה (בהמשך הפקדות)', value: formatCurrency(pensionWithDeposits), sub: pensionSub },
         { label: 'מקדם מובטח', value: anyGuaranteed ? 'קיים' : 'לא קיים' },
         { label: 'דמי ניהול (ממוצע)', value: formatPercent(avgFeeAccum) },
       ]
@@ -126,7 +137,11 @@ export default function ProductPage() {
     if (p.netReturn === null) miss.push('תשואה')
     if (!p.openDate) miss.push('תאריך הצטרפות')
     if (!p.mofid) miss.push('מספר אוצר')
-    if ((productType === 'pension' || productType === 'managers') && p.expectedPension === null) {
+    if (
+      (productType === 'pension' || productType === 'managers') &&
+      p.expectedPensionWithDeposits === null &&
+      p.expectedPensionWithoutDeposits === null
+    ) {
       miss.push('קצבה צפויה')
     }
     if (miss.length > 0) miss.length && missingData.push(`פוליסה ${p.policyNumber}: ${miss.join(', ')}`)
