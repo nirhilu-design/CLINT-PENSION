@@ -21,8 +21,21 @@ const allocationFile = `<ROWSET><Row>
   <SHM_SUG_NECHES>חשיפה למניות</SHM_SUG_NECHES><ACHUZ_SUG_NECHES>50</ACHUZ_SUG_NECHES>
 </Row></ROWSET>`
 
+// Companies (hevrot / ביטוח-נט) format: uppercase <ROW>, ID_GUF/SHEM_GUF field names
+const companiesFile = `<ROWSET><ROW>
+  <ID_GUF>108</ID_GUF><SHEM_GUF>מנהלים כללי</SHEM_GUF>
+  <SHIUR_D_NIHUL_NECHASIM>0.82</SHIUR_D_NIHUL_NECHASIM><SHIUR_D_NIHUL_HAFKADOT>1.10</SHIUR_D_NIHUL_HAFKADOT>
+  <TSUA_MITZ_LE_TKUFA>13</TSUA_MITZ_LE_TKUFA>
+  <TSUA_SHNATIT_MEMUZAAT_3_SHANIM>12.55</TSUA_SHNATIT_MEMUZAAT_3_SHANIM>
+  <STIAT_TEKEN_36_HODASHIM>1.54</STIAT_TEKEN_36_HODASHIM>
+  <SHARP_RIBIT_HASRAT_SIKUN>1.11</SHARP_RIBIT_HASRAT_SIKUN>
+  <AD_TKUFAT_DIVUACH>202606</AD_TKUFAT_DIVUACH>
+</ROW><ROW>
+  <ID_GUF>9999</ID_GUF><SHEM_GUF>לא בתיק</SHEM_GUF><TSUA_MITZ_LE_TKUFA>4</TSUA_MITZ_LE_TKUFA>
+</ROW></ROWSET>`
+
 describe('parseTreasuryXml', () => {
-  const portfolio = new Set(['1093', '209'])
+  const portfolio = new Set(['1093', '209', '108'])
 
   it('detects a returns file and keeps only portfolio mofids', () => {
     const out = parseTreasuryXml(returnsFile, 'kupot_58.xml', portfolio)
@@ -36,6 +49,22 @@ describe('parseTreasuryXml', () => {
     expect(out.type).toBe('allocation')
     expect(out.allocations).toHaveLength(1)
     expect(out.allocations[0].groups).toEqual([{ name: 'מניות', percent: 28.27 }])
+  })
+
+  it('parses the companies (hevrot / מנהלים) returns format with uppercase ROW', () => {
+    const out = parseTreasuryXml(companiesFile, 'hevrot_25.xml', portfolio)
+    expect(out.type).toBe('returns')
+    expect(out.funds).toHaveLength(1)
+    expect(out.funds[0]).toMatchObject({
+      mofid: '108',
+      name: 'מנהלים כללי',
+      avgFeeFromAccumulation: 0.82,
+      avgFeeFromDeposit: 1.1,
+      return12m: 13,
+      return3yAnnualized: 12.55,
+      sharpe: 1.11,
+      periodTo: '202606',
+    })
   })
 
   it('reports unknown format', () => {
