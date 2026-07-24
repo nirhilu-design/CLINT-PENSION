@@ -168,11 +168,13 @@ export default function PolicyDrawer({
               <div key={i} className="rounded-lg border border-slate-200 p-2.5 mb-2 text-sm">
                 <div className="font-medium text-slate-700">{coverageTypeLabels[c.type]}</div>
                 {c.name && <div className="text-xs text-slate-500 mt-0.5">{c.name}</div>}
-                <div className="flex flex-wrap gap-x-4 mt-1 text-slate-600">
-                  <span>סכום: {formatCurrency(c.amount)}</span>
-                  {c.percent !== null && <span>שיעור: {formatPercent(c.percent, 0)}</span>}
-                  {c.cost !== null && <span>עלות חודשית: {formatCurrency(c.cost)}</span>}
+                <div className="flex flex-wrap items-baseline gap-x-3 mt-1 text-slate-700">
+                  <span>סכום ביטוח: {formatCurrency(c.amount)}</span>
+                  {c.percent !== null && <span className="text-xs text-slate-500">שיעור: {formatPercent(c.percent, 0)}</span>}
                 </div>
+                {c.cost !== null && (
+                  <div className="mt-0.5 text-slate-600">עלות חודשית: {formatCurrency(c.cost)}</div>
+                )}
               </div>
             ))
           )}

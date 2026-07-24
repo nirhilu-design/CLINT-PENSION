@@ -29,15 +29,27 @@ function mapProductType(
   hasDeathCoverage: boolean,
   planName: string | null,
 ): ProductType {
+  // SUG-MUTZAR value list per the מבנה אחיד (נספח ערכים):
+  // 1=ביטוח חיים משולב חיסכון, 2=קרן פנסיה, 3=קופת גמל, 4=קרן השתלמות,
+  // 5=חיסכון טהור, 6=סיכון טהור (ריסק/אכ"ע), 7=ביטוח חיים משכנתא,
+  // 8=סיכון טהור קולקטיב, 9=קופת גמל להשקעה, 10=חיסכון לכל ילד.
   switch (sugMutzar) {
     case '2':
       return 'pension'
-    case '3':
-      // גמל להשקעה is a separate product (always liquid); identified by plan name
-      return planName?.includes('להשקעה') ? 'gemelInvestment' : 'gemel'
     case '4':
       return 'education'
-    case '1':
+    case '9':
+      return 'gemelInvestment'
+    case '3':
+      // גמל להשקעה also shows up under code 3 for some issuers; identify by plan name
+      return planName?.includes('להשקעה') ? 'gemelInvestment' : 'gemel'
+    case '10':
+      return 'gemel' // חיסכון לכל ילד — a gemel savings account
+    case '1': // ביטוח חיים משולב חיסכון
+    case '5': // פוליסת חיסכון טהור
+    case '6': // פוליסת סיכון טהור (ריסק מוות ו/או אכ"ע)
+    case '7': // ביטוח חיים משכנתא
+    case '8': // פוליסת סיכון טהור קולקטיב
       // Insurance products: distinguish by content
       if (hasSavings) return 'managers'
       if (hasDeathCoverage) return 'life'
@@ -181,10 +193,12 @@ function parseContributions(heshbon: Element): Contribution[] {
   for (const h of heshbon.querySelectorAll('PerutHafrashotLePolisa')) {
     const sug = getText(h, 'SUG-HAFRASHA')
     const percent = getNumber(h, 'ACHUZ-HAFRASHA')
+    // SUG-HAFRASHA: 1=פיצויים, 2=תגמולים עובד, 3=תגמולים מעביד, 6=שונות עובד,
+    // 7=שונות מעביד, 8=קה"ש עובד, 9=קה"ש מעביד.
     const role =
-      sug === '2' || sug === '8'
+      sug === '2' || sug === '8' || sug === '6'
         ? 'employee'
-        : sug === '3' || sug === '9'
+        : sug === '3' || sug === '9' || sug === '7'
           ? 'employer'
           : sug === '1'
             ? 'severance'
@@ -199,14 +213,18 @@ function parseBeneficiaries(heshbon: Element): Beneficiary[] {
   for (const mutav of heshbon.querySelectorAll('Mutav')) {
     const first = getText(mutav, 'SHEM-PRATI-MUTAV')
     const last = getText(mutav, 'SHEM-MISHPACHA-MUTAV')
-    const relationCode = getText(mutav, 'SUG-ZIHUY-MUTAV') ?? getText(mutav, 'KIRVAT-MUTAV')
+    // SUG-ZIHUY-MUTAV is the beneficiary identity type (פרטי / תאגיד / יורשים חוקיים…),
+    // per the מבנה אחיד — the standard carries no kinship field. Code 7 = "no
+    // beneficiaries set by the client", so it is not a real beneficiary row.
+    const relationCode = getText(mutav, 'SUG-ZIHUY-MUTAV')
+    if (relationCode === '7') continue
     const name = [first, last].filter(Boolean).join(' ') || null
     const relation = relationCode ? (beneficiaryRelationLabels[relationCode] ?? relationCode) : null
     if (name || relation) {
       beneficiaries.push({
         name,
         relation,
-        allocationPercent: getNumber(mutav, 'ACHUZ-HALUKA'),
+        allocationPercent: getNumber(mutav, 'ACHUZ-MUTAV'),
       })
     }
   }

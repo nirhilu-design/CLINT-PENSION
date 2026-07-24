@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { parsePensionXml, XmlParseError } from './parsePensionXml'
 
 // Compact fixture mirroring the real clearinghouse structure
-function fixture({ clientId = '027864610', clientId2 = '' } = {}) {
+function fixture({ clientId = '027864610', clientId2 = '', sugMutzar = '2' } = {}) {
   const secondMutzar = clientId2
     ? `<Mutzar><NetuneiMutzar><SUG-MUTZAR>4</SUG-MUTZAR>
         <YeshutLakoach><MISPAR-ZIHUY-LAKOACH>${clientId2}</MISPAR-ZIHUY-LAKOACH><SHEM-PRATI>ב</SHEM-PRATI><SHEM-MISHPACHA>ב</SHEM-MISHPACHA></YeshutLakoach>
@@ -11,7 +11,7 @@ function fixture({ clientId = '027864610', clientId2 = '' } = {}) {
     : ''
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Mimshak><YeshutYatzran><SHEM-YATZRAN>יצרן בדיקה</SHEM-YATZRAN><Mutzarim>
-<Mutzar><NetuneiMutzar><SUG-MUTZAR>2</SUG-MUTZAR>
+<Mutzar><NetuneiMutzar><SUG-MUTZAR>${sugMutzar}</SUG-MUTZAR>
   <YeshutLakoach><MISPAR-ZIHUY-LAKOACH>${clientId}</MISPAR-ZIHUY-LAKOACH><SHEM-PRATI>א</SHEM-PRATI><SHEM-MISHPACHA>ב</SHEM-MISHPACHA><TAARICH-LEYDA>19930515</TAARICH-LEYDA></YeshutLakoach>
 </NetuneiMutzar>
 <HeshbonotOPolisot><HeshbonOPolisa>
@@ -43,6 +43,9 @@ function fixture({ clientId = '027864610', clientId2 = '' } = {}) {
     <PirteiKisuiBeMutzar><SUG-KISUY-BITOCHI>1</SUG-KISUY-BITOCHI><SCHUM-BITUACH>500000.00</SCHUM-BITUACH><DMEI-BITUAH-LETASHLUM-BAPOAL>85.00</DMEI-BITUAH-LETASHLUM-BAPOAL></PirteiKisuiBeMutzar>
     <PirteiKisuiBeMutzar><SUG-KISUY-BITOCHI>8</SUG-KISUY-BITOCHI><SCHUM-BITUACH>12345.00</SCHUM-BITUACH></PirteiKisuiBeMutzar>
   </ZihuiKisui></Kisuim>
+  <Mutav><SUG-ZIHUY-MUTAV>1</SUG-ZIHUY-MUTAV><SHEM-PRATI-MUTAV>דנה</SHEM-PRATI-MUTAV><SHEM-MISHPACHA-MUTAV>כהן</SHEM-MISHPACHA-MUTAV><ACHUZ-MUTAV>60.00</ACHUZ-MUTAV></Mutav>
+  <Mutav><SUG-ZIHUY-MUTAV>3</SUG-ZIHUY-MUTAV><ACHUZ-MUTAV>40.00</ACHUZ-MUTAV></Mutav>
+  <Mutav><SUG-ZIHUY-MUTAV>7</SUG-ZIHUY-MUTAV></Mutav>
   <PerutMasluleiHashkaa><SCHUM-TZVIRA-BAMASLUL>100000</SCHUM-TZVIRA-BAMASLUL><SHEM-MASLUL-HASHKAA>מסלול א</SHEM-MASLUL-HASHKAA><TSUA-NETO>9.5</TSUA-NETO></PerutMasluleiHashkaa>
   <PerutMasluleiHashkaa><SCHUM-TZVIRA-BAMASLUL>50000</SCHUM-TZVIRA-BAMASLUL><SHEM-MASLUL-HASHKAA>מסלול א</SHEM-MASLUL-HASHKAA></PerutMasluleiHashkaa>
   <YitraLefiGilPrisha><GIL-PRISHA>67.00</GIL-PRISHA><TOTAL-CHISACHON-MITZTABER-TZAFUY>3005476.00</TOTAL-CHISACHON-MITZTABER-TZAFUY><TZVIRAT-CHISACHON-CHAZUYA-LELO-PREMIYOT>779851.41</TZVIRAT-CHISACHON-CHAZUYA-LELO-PREMIYOT><Kupot><Kupa><SCHUM-KITZVAT-ZIKNA>17129.00</SCHUM-KITZVAT-ZIKNA><KITZVAT-HODSHIT-TZFUYA>4444.61</KITZVAT-HODSHIT-TZFUYA></Kupa></Kupot></YitraLefiGilPrisha>
@@ -94,6 +97,29 @@ describe('parsePensionXml', () => {
     expect(risk!.amount).toBe(500000)
     // savings row (code 8) is not surfaced as a risk coverage
     expect(p.coverages.some((c) => c.amount === 12345)).toBe(false)
+  })
+
+  it('maps SUG-MUTZAR across all product codes', () => {
+    // 9 = קופת גמל להשקעה → gemelInvestment (previously fell through to unknown)
+    expect(parsePensionXml(fixture({ sugMutzar: '9' }), 'f.xml').policies[0].productType).toBe(
+      'gemelInvestment',
+    )
+    // 10 = חיסכון לכל ילד → gemel
+    expect(parsePensionXml(fixture({ sugMutzar: '10' }), 'f.xml').policies[0].productType).toBe(
+      'gemel',
+    )
+    // 6 = פוליסת סיכון טהור with accumulated savings in fixture → managers
+    expect(parsePensionXml(fixture({ sugMutzar: '6' }), 'f.xml').policies[0].productType).toBe(
+      'managers',
+    )
+  })
+
+  it('parses beneficiaries with correct share and identity type, skipping "none set"', () => {
+    // ACHUZ-MUTAV (not ACHUZ-HALUKA); SUG-ZIHUY-MUTAV identity type, not kinship
+    expect(p.beneficiaries).toEqual([
+      { name: 'דנה כהן', relation: 'פרטי', allocationPercent: 60 },
+      { name: null, relation: 'יורשים חוקיים', allocationPercent: 40 },
+    ])
   })
 
   it('aggregates monthly deposits across contribution types', () => {
