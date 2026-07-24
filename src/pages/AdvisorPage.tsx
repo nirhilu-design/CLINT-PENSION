@@ -64,51 +64,16 @@ export default function AdvisorPage() {
     return Number.isFinite(n) ? n : null
   }
 
-  async function handleTreasuryFiles(fileList: FileList | null) {
-    if (!fileList || fileList.length === 0) return
-    setParsing(true)
-    await new Promise((r) => setTimeout(r, 30)) // let the spinner paint before heavy parsing
-    const portfolioMofids = new Set(policies.map((p) => p.mofid).filter((m): m is string => !!m))
-    const log: string[] = []
-    let nextFunds = [...treasuryFunds]
-    let nextAllocs = [...treasuryAllocations]
-
-    for (const file of fileList) {
-      const text = await file.text()
-      const parsed = parseTreasuryXml(text, file.name, portfolioMofids)
-      if (parsed.type === 'unknown') {
-        log.push(`${file.name}: הפורמט לא זוהה כקובץ נתוני אוצר`)
-        continue
-      }
-      if (parsed.type === 'returns') {
-        nextFunds = [
-          ...nextFunds.filter((f) => !parsed.funds.some((n) => n.mofid === f.mofid)),
-          ...parsed.funds,
-        ]
-        log.push(
-          `${file.name}: קובץ תשואות — נמצאו נתונים עבור ${parsed.matchedMofids.length} מתוך ${portfolioMofids.size} מספרי אוצר בתיק`,
-        )
-      } else {
-        nextAllocs = [
-          ...nextAllocs.filter((a) => !parsed.allocations.some((n) => n.mofid === a.mofid)),
-          ...parsed.allocations,
-        ]
-        log.push(
-          `${file.name}: קובץ אפיקי השקעה — נמצאו נתונים עבור ${parsed.matchedMofids.length} מתוך ${portfolioMofids.size} מספרי אוצר בתיק`,
-        )
-      }
-    }
-
-    setTreasuryFunds(nextFunds)
-    setTreasuryAllocations(nextAllocs)
-    setUploadLog(log)
-    setParsing(false)
-  }
-
-  function save() {
+  // Rebuild the analysis from the current advisor inputs and push it into app state,
+  // so the dashboard/product returns tables reflect it. Treasury funds/allocations
+  // can be overridden by a fresh upload before their setState has flushed.
+  function persist(
+    fundsOverride?: TreasuryFundData[],
+    allocsOverride?: TreasuryAllocation[],
+  ) {
     const updated = { ...supplementary }
-    updated.treasuryFunds = treasuryFunds
-    updated.treasuryAllocations = treasuryAllocations
+    updated.treasuryFunds = fundsOverride ?? treasuryFunds
+    updated.treasuryAllocations = allocsOverride ?? treasuryAllocations
     updated.feeAgreements = Object.entries(fees)
       .map(([policyNumber, v]): FeeAgreement => ({
         policyNumber,
@@ -131,6 +96,59 @@ export default function AdvisorPage() {
 
     const rebuilt = buildAnalysis(state.parsedFiles, updated)
     dispatch({ type: 'ANALYSIS_UPDATED', analysis: rebuilt })
+  }
+
+  async function handleTreasuryFiles(fileList: FileList | null) {
+    if (!fileList || fileList.length === 0) return
+    setParsing(true)
+    await new Promise((r) => setTimeout(r, 30)) // let the spinner paint before heavy parsing
+    const portfolioMofids = new Set(policies.map((p) => p.mofid).filter((m): m is string => !!m))
+    const log: string[] = []
+    let nextFunds = [...treasuryFunds]
+    let nextAllocs = [...treasuryAllocations]
+
+    for (const file of fileList) {
+      const text = await file.text()
+      const parsed = parseTreasuryXml(text, file.name, portfolioMofids)
+      if (parsed.type === 'unknown') {
+        log.push(`⚠ ${file.name}: הפורמט לא זוהה כקובץ נתוני אוצר`)
+        continue
+      }
+      const kind = parsed.type === 'returns' ? 'תשואות' : 'אפיקי השקעה'
+      if (parsed.matchedMofids.length === 0) {
+        // Loud warning: nothing linked — almost always a wrong/partial file for this portfolio
+        log.push(
+          `⚠ ${file.name}: קובץ ${kind} נקרא, אך אף אחד ממספרי האוצר בתיק לא נמצא בו ` +
+            `(מספרי אוצר בתיק: ${[...portfolioMofids].join(', ') || '—'}). ודא שהקובץ מכיל את הקופות/קרנות של הלקוח.`,
+        )
+        continue
+      }
+      if (parsed.type === 'returns') {
+        nextFunds = [
+          ...nextFunds.filter((f) => !parsed.funds.some((n) => n.mofid === f.mofid)),
+          ...parsed.funds,
+        ]
+      } else {
+        nextAllocs = [
+          ...nextAllocs.filter((a) => !parsed.allocations.some((n) => n.mofid === a.mofid)),
+          ...parsed.allocations,
+        ]
+      }
+      log.push(
+        `✓ ${file.name}: קובץ ${kind} — נמצאו נתונים עבור ${parsed.matchedMofids.length} מתוך ${portfolioMofids.size} מספרי אוצר בתיק`,
+      )
+    }
+
+    setTreasuryFunds(nextFunds)
+    setTreasuryAllocations(nextAllocs)
+    setUploadLog(log)
+    setParsing(false)
+    // Apply immediately so the returns tables update without a separate save click.
+    persist(nextFunds, nextAllocs)
+  }
+
+  function save() {
+    persist()
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
   }
@@ -157,6 +175,7 @@ export default function AdvisorPage() {
         <p className="text-xs text-slate-400 mb-3">
           העלאת קבצי ה-XML הרשמיים (תשואות ואפיקי השקעה). המערכת שולפת אוטומטית את הנתונים
           לפי מספרי האוצר (מ"ה) של הקופות בתיק — תשואות, שארפ, דמי ניהול ממוצעים ואפיקים.
+          הנתונים מוחלים על הניתוח מיד עם ההעלאה (אין צורך בלחיצה נוספת).
         </p>
         <input
           type="file"
@@ -171,7 +190,12 @@ export default function AdvisorPage() {
           </div>
         )}
         {uploadLog.map((line, i) => (
-          <p key={i} className="text-xs text-slate-500 mt-2">✓ {line}</p>
+          <p
+            key={i}
+            className={`text-xs mt-2 ${line.startsWith('⚠') ? 'text-amber-600' : 'text-slate-500'}`}
+          >
+            {line}
+          </p>
         ))}
         {(treasuryFunds.length > 0 || treasuryAllocations.length > 0) && (
           <div className="mt-3 rounded-xl bg-brand-25 border border-slate-200/70 p-3 text-sm">
