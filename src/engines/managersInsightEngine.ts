@@ -37,7 +37,7 @@ export const managersInsightEngine: Engine = ({ policies, supplementary }) => {
     if (activePension.length === 0) {
       notes.push(
         'בתיק אין קרן פנסיה מקיפה פעילה — ההפקדות הפנסיוניות מתבצעות בביטוח המנהלים בלבד. ' +
-          'כדאי להכיר את הבדלי העלויות בין המוצרים, כולל קיומה של קרן פנסיה משלימה',
+          'קיימים הבדלי עלויות בין המוצרים, וכן אפשרות של קרן פנסיה משלימה — נקודה לבדיקה מול בעל רישיון',
       )
     } else if (pensionSalary < MEKIFA_SALARY_CAP) {
       const parts = [

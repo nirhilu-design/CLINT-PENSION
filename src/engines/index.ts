@@ -16,7 +16,7 @@ export { buildExecutiveSummary } from './executiveSummaryEngine'
 
 // id must match the catalog id in config/logicConfig.ts so the editor can toggle it.
 const engines: { id: string; engine: Engine }[] = [
-  { id: 'stopIssue', engine: stopIssueEngine },
+  { id: 'managersGeneration', engine: stopIssueEngine },
   { id: 'cost', engine: costEngine },
   { id: 'retirement', engine: retirementEngine },
   { id: 'investment', engine: investmentEngine },

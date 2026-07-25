@@ -5,6 +5,7 @@ import { depositsEngine } from './depositsEngine'
 import { costEngine } from './costEngine'
 import { incomeProtectionEngine } from './incomeProtectionEngine'
 import { dataQualityEngine } from './dataQualityEngine'
+import { stopIssueEngine, isBlockedByStopIssue } from './stopIssueEngine'
 import { sortFindings } from './findingPriority'
 import { makeFinding } from './engineTypes'
 
@@ -150,6 +151,22 @@ describe('costEngine', () => {
       }),
     )
     expect(out.some((f) => f.title.includes('מהממוצע בקופה'))).toBe(true)
+  })
+})
+
+describe('managers generation engine (stopIssueEngine)', () => {
+  it('examines every generation including pre-2001 (nothing blocked)', () => {
+    const old = makePolicy({
+      policyNumber: 'OLD',
+      productType: 'managers',
+      managersGeneration: 'before-2001-06',
+      hasGuaranteedFactor: true,
+    })
+    expect(isBlockedByStopIssue(old)).toBe(false)
+    const out = stopIssueEngine(input([old]))
+    const f = out.find((x) => x.title.includes('דור ביטוח המנהלים'))
+    expect(f).toBeDefined()
+    expect(f!.description).toContain('מקדם קצבה מובטח')
   })
 })
 

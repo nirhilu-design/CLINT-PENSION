@@ -7,13 +7,6 @@ import { PENSION_TO_SALARY_MIN_RATIO } from '../config/thresholds'
 import { isBlockedByStopIssue } from './stopIssueEngine'
 import { formatCurrency } from '../utils/format'
 
-const generationLabels: Record<string, string> = {
-  'before-2001-06': 'לפני יוני 2001 (מקדם מובטח היסטורי)',
-  '2001-06-to-2004': 'יוני 2001 עד 2004',
-  '2004-to-2013': '2004 עד 2013',
-  '2013-plus': '2013 ואילך',
-}
-
 export const retirementEngine: Engine = ({ policies, supplementary }) => {
   const findings = []
 
@@ -171,47 +164,8 @@ export const retirementEngine: Engine = ({ policies, supplementary }) => {
     )
   }
 
-  // Managers classification review
-  for (const p of policies.filter(
-    (p) => p.productType === 'managers' && p.managersGeneration && !isBlockedByStopIssue(p),
-  )) {
-    const gen = p.managersGeneration!
-    const isNewGuaranteedFactorEra = gen === '2001-06-to-2004' || gen === '2004-to-2013'
-
-    if (isNewGuaranteedFactorEra && p.hasGuaranteedFactor) {
-      // Observation only: the value of a 2001-2013 factor depends on age and
-      // the full picture (near retirement it may even gain importance) —
-      // the system highlights, it does not judge.
-      findings.push(
-        makeFinding({
-          category: 'insight',
-          level: 'policy',
-          severity: 'info',
-          title: 'קיים מקדם קצבה מובטח מדור 2001–2013',
-          description:
-            `בפוליסה ${p.policyNumber} (${generationLabels[gen]}) קיים מקדם קצבה מובטח. ` +
-            'בפוליסות מדור זה גלומה עלות עבור הבטחת המקדם, ושוויה בפועל תלוי בגיל, בוותק ובתמונה הכוללת של התיק — ' +
-            'נקודה שחשוב להכיר בבחינת הפוליסה.',
-          productType: p.productType,
-          policyNumber: p.policyNumber,
-        }),
-      )
-    } else {
-      findings.push(
-        makeFinding({
-          category: 'retirement',
-          level: 'policy',
-          severity: 'info',
-          title: 'סיווג דור ביטוח המנהלים',
-          description:
-            `פוליסה ${p.policyNumber} שייכת לדור: ${generationLabels[gen]}` +
-            (p.hasGuaranteedFactor ? '. קיים מקדם קצבה מובטח.' : '. ללא מקדם קצבה מובטח.'),
-          productType: p.productType,
-          policyNumber: p.policyNumber,
-        }),
-      )
-    }
-  }
+  // Managers generation classification moved to stopIssueEngine (the managers
+  // generation engine), which now examines all generations.
 
   return findings
 }
