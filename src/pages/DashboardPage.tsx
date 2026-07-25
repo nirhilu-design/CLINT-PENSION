@@ -6,6 +6,8 @@ import PieChartCard from '../components/PieChartCard'
 import FindingCard from '../components/FindingCard'
 import ReturnsTable from '../components/ReturnsTable'
 import PensionScenarioBar from '../components/PensionScenarioBar'
+import ExposureAnalysis from '../components/ExposureAnalysis'
+import { computeExposure } from '../services/exposureService'
 import { sortFindings } from '../engines/findingPriority'
 import { assessCompleteness } from '../services/completenessService'
 import { useState } from 'react'
@@ -172,6 +174,10 @@ export default function DashboardPage() {
             />
           </div>
         )}
+
+        <ExposureAnalysis
+          exposure={computeExposure(policies, analysis.supplementary.treasuryAllocations)}
+        />
 
         {/* 1. Attention first */}
         <section className="mb-8">
