@@ -346,6 +346,10 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
         mofid: mofidFromKidodAchid(getText(heshbon, 'KIDOD-ACHID')),
         openDate,
         status: statusRaw === '1' ? 'active' : statusRaw ? 'inactive' : null,
+        statusCode: statusRaw,
+        // STATUS-POLISA-O-CHESHBON 4 = ריסק זמני, 8 = ריסק זמני אוטומטי:
+        // deposits stopped but risk coverage is kept temporarily from the accumulation.
+        temporaryRisk: statusRaw === '4' || statusRaw === '8',
         currentValue,
         coveredSalary: getNumber(heshbon, 'PirteiHaasaka > SACHAR-POLISA'),
         // קצבה חודשית חזויה: עם המשך הפקדות מול ללא הפקדות (שני שדות נפרדים בדיווח)

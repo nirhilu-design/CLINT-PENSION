@@ -121,7 +121,7 @@ export const LOGIC_CATALOG: LogicDef[] = [
     label: 'הפקדות ורציפות',
     products: ['pension', 'managers', 'gemel', 'education'],
     explanation:
-      'בודק עדכניות ורציפות הפקדות: הפקדה אחרונה מול תאריך הקובץ, ופערי חודשים בתוך חלון הרציפות.',
+      'בודק עדכניות ורציפות הפקדות: הפקדה אחרונה מול תאריך הקובץ, ופערי חודשים בתוך חלון הרציפות. פוליסה בסטטוס ריסק זמני מסומנת בנפרד (ההפקדות פסקו והכיסוי נשמר זמנית).',
     params: [
       { key: 'depositRecencyMonths', label: 'חודשים מותרים מההפקדה האחרונה', unit: 'חודשים' },
       { key: 'depositContinuityWindowMonths', label: 'חלון בדיקת רציפות', unit: 'חודשים' },

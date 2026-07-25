@@ -54,7 +54,7 @@ export const DEFAULT_THRESHOLDS: ThresholdValues = {
   educationFundMonthlySalaryCap: 15712, // תקרת שכר מוטבת (2024-2025)
   mekifaSalaryCap: 26632, // twice the national average wage (2025)
   depositRecencyMonths: 3, // months allowed since last deposit vs file date
-  depositContinuityWindowMonths: 12, // salary-months window for continuity gaps
+  depositContinuityWindowMonths: 6, // salary-months window for continuity gaps
   salaryCrosscheckDiffRatio: 0.15, // stated vs insured salary
   largeAssetsThreshold: 1_000_000,
   largeLifeCoverThreshold: 500_000,

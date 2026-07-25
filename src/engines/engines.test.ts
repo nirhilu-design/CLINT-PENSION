@@ -28,6 +28,8 @@ function makePolicy(overrides: Partial<Policy> = {}): Policy {
     mofid: '7777',
     openDate: '2019-12-22',
     status: 'active',
+    statusCode: '1',
+    temporaryRisk: false,
     currentValue: 100000,
     coveredSalary: 14000,
     expectedPensionWithDeposits: 9000,
@@ -94,6 +96,13 @@ describe('depositsEngine', () => {
       ]),
     )
     expect(out).toHaveLength(0)
+  })
+
+  it('surfaces a temporary-risk (ריסק זמני) policy on its own', () => {
+    const out = depositsEngine(
+      input([makePolicy({ status: 'inactive', temporaryRisk: true, statusCode: '4' })]),
+    )
+    expect(out.some((f) => f.title.includes('ריסק זמני'))).toBe(true)
   })
 })
 
