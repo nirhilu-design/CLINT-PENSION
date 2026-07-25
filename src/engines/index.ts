@@ -14,20 +14,22 @@ import { depositsEngine } from './depositsEngine'
 
 export { buildExecutiveSummary } from './executiveSummaryEngine'
 
-const engines: Engine[] = [
-  stopIssueEngine,
-  costEngine,
-  retirementEngine,
-  investmentEngine,
-  incomeProtectionEngine,
-  deathPictureEngine,
-  dataQualityEngine,
-  savingsEngine,
-  managersInsightEngine,
-  pensionInsightEngine,
-  depositsEngine,
+// id must match the catalog id in config/logicConfig.ts so the editor can toggle it.
+const engines: { id: string; engine: Engine }[] = [
+  { id: 'stopIssue', engine: stopIssueEngine },
+  { id: 'cost', engine: costEngine },
+  { id: 'retirement', engine: retirementEngine },
+  { id: 'investment', engine: investmentEngine },
+  { id: 'incomeProtection', engine: incomeProtectionEngine },
+  { id: 'deathPicture', engine: deathPictureEngine },
+  { id: 'dataQuality', engine: dataQualityEngine },
+  { id: 'savings', engine: savingsEngine },
+  { id: 'managersInsight', engine: managersInsightEngine },
+  { id: 'pensionInsight', engine: pensionInsightEngine },
+  { id: 'deposits', engine: depositsEngine },
 ]
 
-export function runEngines(input: EngineInput): Finding[] {
-  return engines.flatMap((engine) => engine(input))
+export function runEngines(input: EngineInput, disabledLogics: string[] = []): Finding[] {
+  const off = new Set(disabledLogics)
+  return engines.flatMap(({ id, engine }) => (off.has(id) ? [] : engine(input)))
 }

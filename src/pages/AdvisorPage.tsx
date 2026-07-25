@@ -94,7 +94,7 @@ export default function AdvisorPage() {
       })
       .filter((b) => b.annualReturn !== null || b.sharpe !== null)
 
-    const rebuilt = buildAnalysis(state.parsedFiles, updated)
+    const rebuilt = buildAnalysis(state.parsedFiles, updated, state.logicConfig)
     dispatch({ type: 'ANALYSIS_UPDATED', analysis: rebuilt })
   }
 

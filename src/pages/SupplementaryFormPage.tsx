@@ -78,7 +78,7 @@ export default function SupplementaryFormPage() {
     supplementary.currentGrossSalary = toNum(salary)
     supplementary.familyReliesOnIncome = familyRelies
 
-    const analysis = buildAnalysis(state.parsedFiles, supplementary)
+    const analysis = buildAnalysis(state.parsedFiles, supplementary, state.logicConfig)
     dispatch({ type: 'ANALYSIS_READY', analysis })
   }
 
