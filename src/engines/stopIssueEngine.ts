@@ -6,6 +6,7 @@
 
 import type { Engine } from './engineTypes'
 import { makeFinding, effectiveSalary } from './engineTypes'
+import { coverageTypeLabels } from '../models/labels'
 import { MEKIFA_SALARY_CAP, MANAGERS_NEW_FACTOR_FEE_THRESHOLD } from '../config/thresholds'
 
 const generationLabels: Record<string, string> = {
@@ -67,6 +68,18 @@ export const stopIssueEngine: Engine = ({ policies, supplementary }) => {
         } else {
           clause = 'בתיק קיימת גם קרן פנסיה פעילה; הרלוונטיות של חלוקת ההפקדות תלויה במצב המשפחתי. '
         }
+      }
+      // Old policies: savings allocation (100% vs 90%) and the riders dressed in
+      if (p.savingsAllocationPercent !== null) {
+        clause +=
+          `הקצאה לחיסכון: ${p.savingsAllocationPercent.toFixed(0)}%` +
+          (p.savingsAllocationPercent >= 100
+            ? ' (חיסכון מלא). '
+            : ' (חלק מההפקדה מיועד לרכיבי ביטוח). ')
+      }
+      const riderTypes = [...new Set(p.coverages.map((c) => c.type))]
+      if (riderTypes.length > 0) {
+        clause += `תוספות ביטוחיות בפוליסה: ${riderTypes.map((t) => coverageTypeLabels[t]).join(', ')}. `
       }
     } else if (gen === '2001-06-to-2004') {
       clause = 'בדור זה נהוג לבחון האם עדיף להפנות את ההפקדות למוצר אחר. '

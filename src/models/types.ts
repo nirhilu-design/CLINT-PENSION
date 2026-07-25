@@ -83,6 +83,7 @@ export interface Policy {
   status: 'active' | 'inactive' | null
   statusCode: string | null // raw STATUS-POLISA-O-CHESHBON
   temporaryRisk: boolean // ריסק זמני (status 4/8) — coverage kept temporarily, deposits stopped
+  savingsAllocationPercent: number | null // ACHUZ-HAKTZAA-LE-CHISACHON — % of premium to savings
   currentValue: number | null
   coveredSalary: number | null
   // קצבה חודשית חזויה — שני תרחישי המסלקה

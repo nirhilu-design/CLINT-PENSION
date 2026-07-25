@@ -347,6 +347,12 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
         openDate,
         status: statusRaw === '1' ? 'active' : statusRaw ? 'inactive' : null,
         statusCode: statusRaw,
+        // ACHUZ-HAKTZAA-LE-CHISACHON — savings allocation share (e.g. 100% vs 90%),
+        // relevant for old managers policies where part of the premium funds riders.
+        savingsAllocationPercent: getNumber(
+          heshbon,
+          'SchumeiBituahYesodi ACHUZ-HAKTZAA-LE-CHISACHON',
+        ),
         // STATUS-POLISA-O-CHESHBON 4 = ריסק זמני, 8 = ריסק זמני אוטומטי:
         // deposits stopped but risk coverage is kept temporarily from the accumulation.
         temporaryRisk: statusRaw === '4' || statusRaw === '8',

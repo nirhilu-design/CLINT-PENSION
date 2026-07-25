@@ -31,6 +31,7 @@ function makePolicy(overrides: Partial<Policy> = {}): Policy {
     status: 'active',
     statusCode: '1',
     temporaryRisk: false,
+    savingsAllocationPercent: null,
     currentValue: 100000,
     coveredSalary: 14000,
     expectedPensionWithDeposits: 9000,
@@ -175,6 +176,19 @@ describe('managers generation engine (stopIssueEngine)', () => {
       }),
     )
     expect(sev(out)).toBe('attention')
+  })
+
+  it('pre-2001 notes the savings allocation (100% vs 90%) and the riders', () => {
+    const old = managers('before-2001-06', {
+      hasGuaranteedFactor: true,
+      savingsAllocationPercent: 90,
+      coverages: [
+        { type: 'death', name: null, amount: 5, percent: null, coveredSalary: null, cost: null, status: 'active', policyNumber: 'MG' },
+      ],
+    })
+    const desc = stopIssueEngine(input([old]))[0].description
+    expect(desc).toContain('הקצאה לחיסכון: 90%')
+    expect(desc).toContain('תוספות ביטוחיות')
   })
 
   it('2001–2004 → attention (consider diverting)', () => {
