@@ -43,7 +43,7 @@ export const costEngine: Engine = ({ policies, supplementary }) => {
           level: 'policy',
           severity: 'attention',
           title: 'דמי ניהול גבוהים מהמקובל בשוק',
-          description: `בפוליסה ${policy.policyNumber}: ${high.join('; ')}. כדאי לבדוק אפשרות להוזלה.`,
+          description: `בפוליסה ${policy.policyNumber}: ${high.join('; ')}. נקודה לבדיקה מול בעל רישיון.`,
           basedOn: `דמי ניהול כפי שדווחו בקובץ המסלקה · ספי שוק מקובלים לפי סוג המוצר`,
           productType: policy.productType,
           policyNumber: policy.policyNumber,
@@ -74,7 +74,7 @@ export const costEngine: Engine = ({ policies, supplementary }) => {
           description:
             `בפוליסה ${policy.policyNumber} דמי הניהול מצבירה הם ${policy.fees.fromAccumulation.toFixed(2)}%, ` +
             `לעומת ממוצע של ${fund.avgFeeFromAccumulation.toFixed(2)}% למצטרפי הקופה (לפי נתוני האוצר). ` +
-            'כדאי לבדוק אפשרות להוזלה.',
+            'נקודה לבדיקה מול בעל רישיון.',
           basedOn: `דמי ניהול מדווחים במסלקה מול ממוצע הקופה בקובץ נתוני האוצר (מ"ה ${policy.mofid})`,
           productType: policy.productType,
           policyNumber: policy.policyNumber,
@@ -118,7 +118,7 @@ export const costEngine: Engine = ({ policies, supplementary }) => {
           level: 'policy',
           severity: 'gap',
           title: 'נמצא פער בדמי הניהול מול ההסכם',
-          description: `בפוליסה ${policy.policyNumber}: ${gaps.join('; ')}. כדאי לבדוק את הנושא מול הגורם המנהל.`,
+          description: `בפוליסה ${policy.policyNumber}: ${gaps.join('; ')}. נקודה לבדיקה מול בעל רישיון.`,
           productType: policy.productType,
           policyNumber: policy.policyNumber,
         }),
