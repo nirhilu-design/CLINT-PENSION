@@ -14,6 +14,7 @@ function policy(over: Partial<Policy>): Policy {
     statusCode: '1',
     temporaryRisk: false,
     savingsAllocationPercent: null,
+    capitalBalance: null,
     currentValue: 0,
     coveredSalary: null,
     expectedPensionWithDeposits: null,
@@ -73,5 +74,14 @@ describe('computeExposure', () => {
   it('returns null equity when no allocation data', () => {
     const e = computeExposure(policies, [])
     expect(e.portfolio.equity.equityPercent).toBeNull()
+  })
+
+  it('sums the capital-status (הון) balances for the gemel scope', () => {
+    const withCapital = [
+      policy({ productType: 'gemel', mofid: '1', currentValue: 60000, capitalBalance: 60000 }),
+      policy({ productType: 'gemelInvestment', mofid: '2', currentValue: 40000, capitalBalance: 0 }),
+    ]
+    const e = computeExposure(withCapital, [])
+    expect(e.gemel.capitalTotal).toBe(60000)
   })
 })

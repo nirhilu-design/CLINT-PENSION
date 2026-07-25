@@ -32,6 +32,7 @@ function makePolicy(overrides: Partial<Policy> = {}): Policy {
     statusCode: '1',
     temporaryRisk: false,
     savingsAllocationPercent: null,
+    capitalBalance: null,
     currentValue: 100000,
     coveredSalary: 14000,
     expectedPensionWithDeposits: 9000,

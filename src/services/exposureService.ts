@@ -22,6 +22,7 @@ export interface EquityExposure {
 
 export interface ExposureScope {
   total: number
+  capitalTotal: number // sum of the הון (capital-status) balances
   byCompany: CompanyExposure[]
   equity: EquityExposure
 }
@@ -74,8 +75,10 @@ function equityBreakdown(policies: Policy[], allocations: TreasuryAllocation[]):
 
 function scope(policies: Policy[], allocations: TreasuryAllocation[]): ExposureScope {
   const total = policies.reduce((s, p) => s + valueOf(p), 0)
+  const capitalTotal = policies.reduce((s, p) => s + (p.capitalBalance ?? 0), 0)
   return {
     total,
+    capitalTotal,
     byCompany: companyBreakdown(policies, total),
     equity: equityBreakdown(policies, allocations),
   }

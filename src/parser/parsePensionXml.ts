@@ -113,6 +113,23 @@ function coverageStatusFromEndDate(endRaw: string | null): 'active' | 'inactive'
   return end < new Date().toISOString().slice(0, 10) ? 'inactive' : 'active'
 }
 
+// Sum the capital-status (הון) balance layers: PerutYitraLeTkufa rows whose
+// SUG-ITRA-LETKUFA = 1 (1=הון, 2=קצבה משלמת, 3=קצבה לא משלמת). null when none reported.
+function parseCapitalBalance(heshbon: Element): number | null {
+  let sum = 0
+  let found = false
+  for (const row of heshbon.querySelectorAll('PerutYitraLeTkufa')) {
+    if (getText(row, 'SUG-ITRA-LETKUFA') === '1') {
+      const amount = getNumber(row, 'SACH-ITRA-LESHICHVA-BESHACH')
+      if (amount !== null) {
+        sum += amount
+        found = true
+      }
+    }
+  }
+  return found ? sum : null
+}
+
 function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
   const coverages: Coverage[] = []
 
@@ -353,6 +370,7 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
           heshbon,
           'SchumeiBituahYesodi ACHUZ-HAKTZAA-LE-CHISACHON',
         ),
+        capitalBalance: parseCapitalBalance(heshbon),
         // STATUS-POLISA-O-CHESHBON 4 = ריסק זמני, 8 = ריסק זמני אוטומטי:
         // deposits stopped but risk coverage is kept temporarily from the accumulation.
         temporaryRisk: statusRaw === '4' || statusRaw === '8',

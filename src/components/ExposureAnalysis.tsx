@@ -76,6 +76,13 @@ export default function ExposureAnalysis({ exposure }: { exposure: PortfolioExpo
           <div className="text-sm font-semibold text-slate-700 mb-2">קופות גמל בלבד</div>
           {gemel.total > 0 ? (
             <>
+              {gemel.capitalTotal > 0 && (
+                <p className="text-xs text-slate-600 mb-2">
+                  מזה במעמד הון:{' '}
+                  <span className="font-semibold text-slate-800">{formatCurrency(gemel.capitalTotal)}</span>{' '}
+                  ({((gemel.capitalTotal / gemel.total) * 100).toFixed(0)}%)
+                </p>
+              )}
               <CompanyBars items={gemel.byCompany} />
               <EquityLine scope={gemel} />
             </>
