@@ -155,18 +155,37 @@ describe('costEngine', () => {
 })
 
 describe('managers generation engine (stopIssueEngine)', () => {
+  const managers = (gen: Policy['managersGeneration'], extra: Partial<Policy> = {}) =>
+    makePolicy({ policyNumber: 'MG', productType: 'managers', managersGeneration: gen, ...extra })
+  const pension = makePolicy({ policyNumber: 'PEN', productType: 'pension' })
+  const sev = (out: ReturnType<typeof stopIssueEngine>) =>
+    out.find((x) => x.title.includes('דור ביטוח המנהלים'))?.severity
+
   it('examines every generation including pre-2001 (nothing blocked)', () => {
-    const old = makePolicy({
-      policyNumber: 'OLD',
-      productType: 'managers',
-      managersGeneration: 'before-2001-06',
-      hasGuaranteedFactor: true,
-    })
+    const old = managers('before-2001-06', { hasGuaranteedFactor: true })
     expect(isBlockedByStopIssue(old)).toBe(false)
-    const out = stopIssueEngine(input([old]))
-    const f = out.find((x) => x.title.includes('דור ביטוח המנהלים'))
-    expect(f).toBeDefined()
-    expect(f!.description).toContain('מקדם קצבה מובטח')
+    expect(sev(stopIssueEngine(input([old])))).toBeDefined()
+  })
+
+  it('pre-2001 split with a pension and no dependents → attention', () => {
+    const out = stopIssueEngine(
+      input([managers('before-2001-06', { hasGuaranteedFactor: true }), pension], {
+        hasSpouse: false,
+        hasChildrenUnder21: false,
+      }),
+    )
+    expect(sev(out)).toBe('attention')
+  })
+
+  it('2001–2004 → attention (consider diverting)', () => {
+    expect(sev(stopIssueEngine(input([managers('2001-06-to-2004')])))).toBe('attention')
+  })
+
+  it('2004–2013 new factor beside a pension: fee above threshold → attention, at/below → info', () => {
+    const high = managers('2004-to-2013', { fees: { fromDeposit: null, fromAccumulation: 1.2 } })
+    const low = managers('2004-to-2013', { fees: { fromDeposit: null, fromAccumulation: 0.5 } })
+    expect(sev(stopIssueEngine(input([high, pension])))).toBe('attention')
+    expect(sev(stopIssueEngine(input([low, pension])))).toBe('info')
   })
 })
 

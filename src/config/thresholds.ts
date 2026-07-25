@@ -25,6 +25,7 @@ export interface ThresholdValues {
   educationFundLiquidityYears: number
   educationFundMonthlySalaryCap: number
   mekifaSalaryCap: number
+  managersNewFactorFeeThreshold: number
   depositRecencyMonths: number
   depositContinuityWindowMonths: number
   salaryCrosscheckDiffRatio: number
@@ -53,6 +54,7 @@ export const DEFAULT_THRESHOLDS: ThresholdValues = {
   educationFundLiquidityYears: 6,
   educationFundMonthlySalaryCap: 15712, // תקרת שכר מוטבת (2024-2025)
   mekifaSalaryCap: 26632, // twice the national average wage (2025)
+  managersNewFactorFeeThreshold: 0.8, // 2004-2013 new-factor managers: fee at/below → leave alone
   depositRecencyMonths: 3, // months allowed since last deposit vs file date
   depositContinuityWindowMonths: 6, // salary-months window for continuity gaps
   salaryCrosscheckDiffRatio: 0.15, // stated vs insured salary
@@ -83,6 +85,7 @@ export let RETURN_BELOW_BENCHMARK_TOLERANCE = DEFAULT_THRESHOLDS.returnBelowBenc
 export let EDUCATION_FUND_LIQUIDITY_YEARS = DEFAULT_THRESHOLDS.educationFundLiquidityYears
 export let EDUCATION_FUND_MONTHLY_SALARY_CAP = DEFAULT_THRESHOLDS.educationFundMonthlySalaryCap
 export let MEKIFA_SALARY_CAP = DEFAULT_THRESHOLDS.mekifaSalaryCap
+export let MANAGERS_NEW_FACTOR_FEE_THRESHOLD = DEFAULT_THRESHOLDS.managersNewFactorFeeThreshold
 export let DEPOSIT_RECENCY_MONTHS = DEFAULT_THRESHOLDS.depositRecencyMonths
 export let DEPOSIT_CONTINUITY_WINDOW_MONTHS = DEFAULT_THRESHOLDS.depositContinuityWindowMonths
 export let SALARY_CROSSCHECK_DIFF_RATIO = DEFAULT_THRESHOLDS.salaryCrosscheckDiffRatio
@@ -103,6 +106,7 @@ export function applyThresholds(t: ThresholdValues): void {
   EDUCATION_FUND_LIQUIDITY_YEARS = t.educationFundLiquidityYears
   EDUCATION_FUND_MONTHLY_SALARY_CAP = t.educationFundMonthlySalaryCap
   MEKIFA_SALARY_CAP = t.mekifaSalaryCap
+  MANAGERS_NEW_FACTOR_FEE_THRESHOLD = t.managersNewFactorFeeThreshold
   DEPOSIT_RECENCY_MONTHS = t.depositRecencyMonths
   DEPOSIT_CONTINUITY_WINDOW_MONTHS = t.depositContinuityWindowMonths
   SALARY_CROSSCHECK_DIFF_RATIO = t.salaryCrosscheckDiffRatio
