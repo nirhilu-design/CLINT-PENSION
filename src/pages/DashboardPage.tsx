@@ -5,6 +5,7 @@ import { formatCurrency, formatDate } from '../utils/format'
 import PieChartCard from '../components/PieChartCard'
 import FindingCard from '../components/FindingCard'
 import ReturnsTable from '../components/ReturnsTable'
+import PensionScenarioBar from '../components/PensionScenarioBar'
 import { sortFindings } from '../engines/findingPriority'
 import { assessCompleteness } from '../services/completenessService'
 import { useState } from 'react'
@@ -163,6 +164,15 @@ export default function DashboardPage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-6 -mt-4 pb-10">
+        {(totalPensionWithDeposits > 0 || totalPensionWithoutDeposits > 0) && (
+          <div className="pt-4">
+            <PensionScenarioBar
+              withDeposits={totalPensionWithDeposits}
+              withoutDeposits={totalPensionWithoutDeposits}
+            />
+          </div>
+        )}
+
         {/* 1. Attention first */}
         <section className="mb-8">
           <div className="flex items-baseline justify-between mb-3 pt-2">
