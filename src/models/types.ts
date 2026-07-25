@@ -197,6 +197,10 @@ export interface SupplementaryInfo {
   otherAssetsRealEstateValue: number | null
   otherAssetsPortfolioValue: number | null
   otherAssetsLiquidValue: number | null
+  // Liabilities — used to weigh life-insurance coverage against what it needs to cover
+  hasLiabilities: boolean | null
+  mortgageBalance: number | null
+  otherDebts: number | null
   employmentStatus: EmploymentStatus | null
   currentGrossSalary: number | null
   familyReliesOnIncome: boolean | null

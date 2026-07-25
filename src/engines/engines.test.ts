@@ -5,6 +5,7 @@ import { depositsEngine } from './depositsEngine'
 import { costEngine } from './costEngine'
 import { incomeProtectionEngine } from './incomeProtectionEngine'
 import { dataQualityEngine } from './dataQualityEngine'
+import { deathPictureEngine } from './deathPictureEngine'
 import { stopIssueEngine, isBlockedByStopIssue } from './stopIssueEngine'
 import { sortFindings } from './findingPriority'
 import { makeFinding } from './engineTypes'
@@ -153,6 +154,31 @@ describe('costEngine', () => {
       }),
     )
     expect(out.some((f) => f.title.includes('מהממוצע בקופה'))).toBe(true)
+  })
+})
+
+describe('deathPictureEngine liabilities', () => {
+  const lifeCover = (amount: number) =>
+    makePolicy({
+      policyNumber: 'L1',
+      productType: 'life',
+      coverages: [
+        { type: 'death', name: null, amount, percent: null, coveredSalary: null, cost: null, status: 'active', policyNumber: 'L1' },
+      ],
+    })
+
+  it('flags when death coverage is below the liabilities', () => {
+    const out = deathPictureEngine(
+      input([lifeCover(200000)], { mortgageBalance: 500000, otherDebts: 50000, hasLiabilities: true }),
+    )
+    expect(out.some((f) => f.title.includes('נמוך מההתחייבויות'))).toBe(true)
+  })
+
+  it('confirms when coverage covers the liabilities', () => {
+    const out = deathPictureEngine(
+      input([lifeCover(800000)], { mortgageBalance: 500000, hasLiabilities: true }),
+    )
+    expect(out.some((f) => f.title.includes('מכסה את ההתחייבויות'))).toBe(true)
   })
 })
 
