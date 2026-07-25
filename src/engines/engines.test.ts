@@ -156,18 +156,28 @@ describe('incomeProtectionEngine', () => {
     policyNumber: 'P1',
   }
 
-  it('flags coverage percent below the 73% target', () => {
-    const out = incomeProtectionEngine(input([makePolicy({ coverages: [disabilityCover] })]))
+  // Uses a non-pension product: pension disability is handled cross-product by
+  // pensionInsightEngine, so incomeProtection no longer flags pension in isolation.
+  const managersPolicy = (overrides = {}) =>
+    makePolicy({ productType: 'managers', coverages: [disabilityCover], ...overrides })
+
+  it('flags coverage percent below the 73% target (non-pension product)', () => {
+    const out = incomeProtectionEngine(input([managersPolicy()]))
     const f = out.find((x) => x.title.includes('נמוך מהיעד'))
     expect(f?.severity).toBe('attention')
   })
 
   it('escalates to gap when the family relies on the income', () => {
-    const out = incomeProtectionEngine(
-      input([makePolicy({ coverages: [disabilityCover] })], { familyReliesOnIncome: true }),
-    )
+    const out = incomeProtectionEngine(input([managersPolicy()], { familyReliesOnIncome: true }))
     const f = out.find((x) => x.title.includes('נמוך מהיעד'))
     expect(f?.severity).toBe('gap')
+  })
+
+  it('does not flag a low pension disability in isolation (handled cross-product)', () => {
+    const out = incomeProtectionEngine(
+      input([makePolicy({ productType: 'pension', coverages: [disabilityCover] })]),
+    )
+    expect(out.some((x) => x.title.includes('נמוך מהיעד'))).toBe(false)
   })
 })
 

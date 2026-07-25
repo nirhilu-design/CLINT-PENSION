@@ -6,14 +6,29 @@ import type { Engine } from './engineTypes'
 import { makeFinding } from './engineTypes'
 import { isBlockedByStopIssue } from './stopIssueEngine'
 import { formatCurrency } from '../utils/format'
+import { productTypeLabels } from '../models/labels'
 
-import { MAX_PENSION_DISABILITY_PERCENT as MAX_DISABILITY_PERCENT } from '../config/thresholds'
+import {
+  MAX_PENSION_DISABILITY_PERCENT as MAX_DISABILITY_PERCENT,
+  PENSION_DISABILITY_LOW_PERCENT,
+} from '../config/thresholds'
 
 export const pensionInsightEngine: Engine = ({ policies, supplementary }) => {
   const findings = []
 
   const activePension = policies.filter(
     (p) => p.productType === 'pension' && p.status === 'active' && !isBlockedByStopIssue(p),
+  )
+
+  // Cross-product view: disability / אכ"ע coverage that exists OUTSIDE the pension
+  // fund (e.g. a managers policy with an income-protection rider). A low pension
+  // disability percent is not a gap on its own when covered elsewhere.
+  const otherDisabilityPolicies = policies.filter(
+    (p) =>
+      p.productType !== 'pension' &&
+      p.status === 'active' &&
+      !isBlockedByStopIssue(p) &&
+      p.coverages.some((c) => c.type === 'disability'),
   )
 
   const noDependents =
@@ -54,29 +69,41 @@ export const pensionInsightEngine: Engine = ({ policies, supplementary }) => {
           title: 'קיים ויתור על כיסוי שאירים למרות שצוינו תלויים',
           description:
             `בקרן ${policy.policyNumber} קיים ויתור על כיסוי שאירים, בעוד צוין שקיימים בן/בת זוג או ילדים מתחת לגיל 21. ` +
-            'המשמעות: במקרה פטירה לא תשולם קצבת שאירים מהקרן. מומלץ לבחון את התאמת המסלול הביטוחי.',
+            'המשמעות: במקרה פטירה לא תשולם קצבת שאירים מהקרן. נקודה לבדיקה מול בעל רישיון.',
           productType: 'pension',
           policyNumber: policy.policyNumber,
         }),
       )
     }
 
-    // Basic track observation: disability coverage below the maximum
+    // Low pension disability → look across products before calling it a gap.
+    // A pension fund's נכות is often intentionally partial because אכ"ע sits in
+    // a managers/life policy. Below the low threshold we point to that check.
     const disabilityPercents = policy.coverages
       .filter((c) => c.type === 'disability' && c.percent !== null)
       .map((c) => c.percent!)
     if (disabilityPercents.length > 0) {
       const maxPercent = Math.max(...disabilityPercents)
-      if (maxPercent < MAX_DISABILITY_PERCENT) {
+      if (maxPercent < PENSION_DISABILITY_LOW_PERCENT) {
+        const coveredElsewhere = otherDisabilityPolicies.length > 0
+        const others = otherDisabilityPolicies
+          .map((p) => `${p.policyNumber} (${productTypeLabels[p.productType]})`)
+          .join(', ')
         findings.push(
           makeFinding({
             category: 'insight',
             level: 'policy',
             severity: 'info',
-            title: 'מסלול הביטוח אינו בכיסוי הנכות המרבי',
-            description:
-              `בקרן ${policy.policyNumber} שיעור הכיסוי לנכות במסלול הנוכחי הוא ${maxPercent.toFixed(0)}%, ` +
-              `לעומת כיסוי מרבי אפשרי של ${MAX_DISABILITY_PERCENT}%. נקודה שכדאי להכיר בבחינת מסלול הביטוח.`,
+            title: coveredElsewhere
+              ? 'כיסוי הנכות בקרן נמוך — קיים כיסוי אכ"ע במוצר אחר'
+              : 'כיסוי הנכות בקרן נמוך — לא זוהה כיסוי אכ"ע במוצר אחר',
+            description: coveredElsewhere
+              ? `בקרן ${policy.policyNumber} שיעור כיסוי הנכות הוא ${maxPercent.toFixed(0)}% בלבד ` +
+                `(מתוך מקסימום ${MAX_DISABILITY_PERCENT}%). זוהה כיסוי אובדן כושר עבודה גם ב-${others}, ` +
+                'כך שייתכן שהתמונה המצרפית מכסה את מלוא השכר. נקודה לבדיקה מול בעל רישיון.'
+              : `בקרן ${policy.policyNumber} שיעור כיסוי הנכות הוא ${maxPercent.toFixed(0)}% בלבד ` +
+                `(מתוך מקסימום ${MAX_DISABILITY_PERCENT}%), ולא זוהה כיסוי אובדן כושר עבודה במוצר אחר. ` +
+                'ייתכן פער בכיסוי אובדן כושר עבודה — נקודה לבדיקה מול בעל רישיון.',
             productType: 'pension',
             policyNumber: policy.policyNumber,
           }),

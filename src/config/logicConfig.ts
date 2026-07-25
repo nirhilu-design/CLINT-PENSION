@@ -110,8 +110,11 @@ export const LOGIC_CATALOG: LogicDef[] = [
     label: 'תובנות פנסיה',
     products: ['pension'],
     explanation:
-      'תובנות ברמת קרן פנסיה: כיסוי שאירים מול הקשר המשפחתי, ושיעור כיסוי נכות מול המקסימום המותר.',
-    params: [{ key: 'maxPensionDisabilityPercent', label: 'שיעור כיסוי נכות מקסימלי', unit: '%' }],
+      'הארות ברמת קרן פנסיה (ניטרליות בלבד): כיסוי שאירים מול הקשר המשפחתי; וכשכיסוי הנכות בקרן נמוך מהסף — בדיקה חוצת-מוצרים האם קיים כיסוי אכ"ע במוצר אחר (כגון רכיב אכ"ע בביטוח מנהלים).',
+    params: [
+      { key: 'pensionDisabilityLowPercent', label: 'סף נכות נמוך → בדיקת אכ"ע במוצר אחר', unit: '%' },
+      { key: 'maxPensionDisabilityPercent', label: 'שיעור כיסוי נכות מקסימלי (הקשר)', unit: '%' },
+    ],
   },
   {
     id: 'deposits',
