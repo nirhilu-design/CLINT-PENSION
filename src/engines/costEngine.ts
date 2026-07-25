@@ -1,89 +1,15 @@
 // Cost Engine:
-// 1. Compare actual fees vs agreement fees (only when an agreement exists).
-// 2. Compare actual fees vs market thresholds per product type.
+// Fees are judged against the employer fee agreement (קובץ דמי ניהול מעסיק) only —
+// not against a market average. A finding is raised where the actual fee exceeds
+// the agreed fee. Policies without an agreement are not judged on cost here.
 
 import type { Engine } from './engineTypes'
 import { makeFinding } from './engineTypes'
 import { isBlockedByStopIssue } from './stopIssueEngine'
-import { MARKET_FEE_THRESHOLDS, FEE_ABOVE_FUND_AVG_TOLERANCE } from '../config/thresholds'
 
 export const costEngine: Engine = ({ policies, supplementary }) => {
   const findings = []
 
-  // Market threshold check — runs for every policy with fee data
-  for (const policy of policies) {
-    if (isBlockedByStopIssue(policy) || policy.status === 'inactive') continue
-    const threshold = MARKET_FEE_THRESHOLDS[policy.productType]
-    if (!threshold) continue
-
-    const high: string[] = []
-    if (
-      threshold.fromAccumulation !== null &&
-      policy.fees.fromAccumulation !== null &&
-      policy.fees.fromAccumulation > threshold.fromAccumulation
-    ) {
-      high.push(
-        `דמי ניהול מצבירה ${policy.fees.fromAccumulation.toFixed(2)}% (מקובל בשוק: עד ${threshold.fromAccumulation.toFixed(2)}%)`,
-      )
-    }
-    if (
-      threshold.fromDeposit !== null &&
-      policy.fees.fromDeposit !== null &&
-      policy.fees.fromDeposit > threshold.fromDeposit
-    ) {
-      high.push(
-        `דמי ניהול מהפקדה ${policy.fees.fromDeposit.toFixed(2)}% (מקובל בשוק: עד ${threshold.fromDeposit.toFixed(2)}%)`,
-      )
-    }
-
-    if (high.length > 0) {
-      findings.push(
-        makeFinding({
-          category: 'cost',
-          level: 'policy',
-          severity: 'attention',
-          title: 'דמי ניהול גבוהים מהמקובל בשוק',
-          description: `בפוליסה ${policy.policyNumber}: ${high.join('; ')}. נקודה לבדיקה מול בעל רישיון.`,
-          basedOn: `דמי ניהול כפי שדווחו בקובץ המסלקה · ספי שוק מקובלים לפי סוג המוצר`,
-          productType: policy.productType,
-          policyNumber: policy.policyNumber,
-        }),
-      )
-    }
-  }
-
-  // Treasury data check — client's actual fee vs the fund's average fee
-  for (const policy of policies) {
-    if (isBlockedByStopIssue(policy) || policy.status === 'inactive') continue
-    const fund = policy.mofid
-      ? supplementary.treasuryFunds.find((f) => f.mofid === policy.mofid)
-      : undefined
-    if (!fund) continue
-
-    if (
-      fund.avgFeeFromAccumulation !== null &&
-      policy.fees.fromAccumulation !== null &&
-      policy.fees.fromAccumulation > fund.avgFeeFromAccumulation + FEE_ABOVE_FUND_AVG_TOLERANCE
-    ) {
-      findings.push(
-        makeFinding({
-          category: 'cost',
-          level: 'policy',
-          severity: 'attention',
-          title: 'דמי ניהול גבוהים מהממוצע בקופה',
-          description:
-            `בפוליסה ${policy.policyNumber} דמי הניהול מצבירה הם ${policy.fees.fromAccumulation.toFixed(2)}%, ` +
-            `לעומת ממוצע של ${fund.avgFeeFromAccumulation.toFixed(2)}% למצטרפי הקופה (לפי נתוני האוצר). ` +
-            'נקודה לבדיקה מול בעל רישיון.',
-          basedOn: `דמי ניהול מדווחים במסלקה מול ממוצע הקופה בקובץ נתוני האוצר (מ"ה ${policy.mofid})`,
-          productType: policy.productType,
-          policyNumber: policy.policyNumber,
-        }),
-      )
-    }
-  }
-
-  // Agreement check — only where an agreement was entered
   for (const policy of policies) {
     if (isBlockedByStopIssue(policy)) continue
     const agreement = supplementary.feeAgreements.find(
@@ -117,8 +43,9 @@ export const costEngine: Engine = ({ policies, supplementary }) => {
           category: 'cost',
           level: 'policy',
           severity: 'gap',
-          title: 'נמצא פער בדמי הניהול מול ההסכם',
+          title: 'נמצא פער בדמי הניהול מול הסכם המעסיק',
           description: `בפוליסה ${policy.policyNumber}: ${gaps.join('; ')}. נקודה לבדיקה מול בעל רישיון.`,
+          basedOn: 'דמי ניהול מדווחים במסלקה מול קובץ דמי ניהול המעסיק',
           productType: policy.productType,
           policyNumber: policy.policyNumber,
         }),

@@ -10,6 +10,7 @@ import type {
 } from '../models/types'
 import { productTypeLabels } from '../models/labels'
 import { parseTreasuryXml } from '../parser/parseTreasuryXml'
+import { parseEmployerFeeFile } from '../parser/parseEmployerFeeFile'
 import Spinner from '../components/Spinner'
 
 const sourceLabels: Record<BenchmarkSource, string> = {
@@ -37,6 +38,7 @@ export default function AdvisorPage() {
   )
   const [uploadLog, setUploadLog] = useState<string[]>([])
   const [parsing, setParsing] = useState(false)
+  const [employerFeeLog, setEmployerFeeLog] = useState<string[]>([])
 
   const [fees, setFees] = useState<Record<string, { deposit: string; accum: string }>>(() =>
     Object.fromEntries(
@@ -153,6 +155,19 @@ export default function AdvisorPage() {
     setTimeout(() => setSaved(false), 2500)
   }
 
+  // Employer fee file (קובץ דמי ניהול מעסיק) — template only for now. Once the file
+  // mapping is implemented, parsed.agreements will populate the fee agreements below.
+  async function handleEmployerFeeFile(fileList: FileList | null) {
+    if (!fileList || fileList.length === 0) return
+    const log: string[] = []
+    for (const file of fileList) {
+      const text = await file.text()
+      const parsed = parseEmployerFeeFile(text, file.name)
+      log.push(`${file.name}: ${parsed.note}`)
+    }
+    setEmployerFeeLog(log)
+  }
+
   const uniqueMofids = [...new Map(policies.filter((p) => p.mofid).map((p) => [p.mofid!, p])).values()]
 
   return (
@@ -214,6 +229,24 @@ export default function AdvisorPage() {
             ))}
           </div>
         )}
+      </div>
+
+      <div className="rounded-2xl bg-white border border-slate-200/70 p-5 mb-4 shadow-sm">
+        <h2 className="font-semibold text-slate-700 mb-1">קובץ דמי ניהול מעסיק</h2>
+        <p className="text-xs text-slate-400 mb-3">
+          העלאת קובץ דמי הניהול של המעסיק. דמי הניהול בתיק נבחנים מולו (לא מול ממוצע שוק).
+          מיפוי פורמט הקובץ יתווסף לאחר קבלת דוגמה — כרגע מבנה בלבד.
+        </p>
+        <input
+          type="file"
+          onChange={(e) => handleEmployerFeeFile(e.target.files)}
+          className="block w-full text-sm text-slate-500 file:ml-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-brand-700 hover:file:bg-brand-50"
+        />
+        {employerFeeLog.map((line, i) => (
+          <p key={i} className="text-xs text-slate-500 mt-2">
+            {line}
+          </p>
+        ))}
       </div>
 
       <div className="rounded-2xl bg-white border border-slate-200/70 p-5 mb-4 shadow-sm">

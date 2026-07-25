@@ -111,49 +111,21 @@ describe('depositsEngine', () => {
 })
 
 describe('costEngine', () => {
-  it('flags fees above the market threshold', () => {
+  it('stays silent without an employer fee agreement (no market comparison)', () => {
+    // High fees but no agreement → nothing, since fees are judged only vs the employer file
     const out = costEngine(input([makePolicy({ fees: { fromDeposit: 5, fromAccumulation: 0.4 } })]))
-    expect(out.some((f) => f.title.includes('מהמקובל בשוק'))).toBe(true)
-  })
-
-  it('stays silent below thresholds and without agreements', () => {
-    const out = costEngine(input([makePolicy()]))
     expect(out).toHaveLength(0)
   })
 
-  it('compares against a fee agreement only when one exists', () => {
+  it('flags a gap only against the employer fee agreement', () => {
     const out = costEngine(
-      input([makePolicy()], {
+      input([makePolicy({ fees: { fromDeposit: 2, fromAccumulation: 0.3 } })], {
         feeAgreements: [
           { policyNumber: 'P1', agreedFeeFromDeposit: 1.0, agreedFeeFromAccumulation: 0.1 },
         ],
       }),
     )
-    expect(out.some((f) => f.title.includes('מול ההסכם'))).toBe(true)
-  })
-
-  it('compares against the fund average from treasury data', () => {
-    const out = costEngine(
-      input([makePolicy({ fees: { fromDeposit: null, fromAccumulation: 0.6 } })], {
-        treasuryFunds: [
-          {
-            mofid: '7777',
-            name: 'קרן',
-            managingCompany: null,
-            avgFeeFromAccumulation: 0.2,
-            avgFeeFromDeposit: null,
-            return12m: null,
-            return3yAnnualized: null,
-            return5yAnnualized: null,
-            stdDev36m: null,
-            sharpe: null,
-            liquidityRatio: null,
-            periodTo: null,
-          },
-        ],
-      }),
-    )
-    expect(out.some((f) => f.title.includes('מהממוצע בקופה'))).toBe(true)
+    expect(out.some((f) => f.title.includes('מול הסכם המעסיק'))).toBe(true)
   })
 })
 
