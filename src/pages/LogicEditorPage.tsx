@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { useApp } from '../hooks/useAppState'
 import { buildAnalysis } from '../services/analysisService'
 import { productTypeLabels } from '../models/labels'
+import { ArrowRight } from 'lucide-react'
 import type { ProductType } from '../models/types'
+import Card from '../components/ds/Card'
 import {
   LOGIC_CATALOG,
   defaultLogicConfig,
@@ -12,19 +14,45 @@ import {
 } from '../config/logicConfig'
 import { cloneThresholds, DEFAULT_THRESHOLDS, type ThresholdValues } from '../config/thresholds'
 
-// Products in review order — "all products" logics show under every tab.
-const PRODUCT_TABS: ProductType[] = [
-  'pension',
-  'managers',
-  'life',
-  'incomeProtection',
-  'gemel',
-  'gemelInvestment',
-  'education',
-]
+const PRODUCT_TABS: ProductType[] = ['pension', 'managers', 'life', 'incomeProtection', 'gemel', 'gemelInvestment', 'education']
 
 function cloneConfig(c: LogicConfig): LogicConfig {
   return { thresholds: cloneThresholds(c.thresholds), disabledLogics: [...c.disabledLogics] }
+}
+
+function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      onClick={() => onChange(!on)}
+      aria-pressed={on}
+      style={{
+        width: 38,
+        height: 22,
+        borderRadius: 'var(--radius-full)',
+        background: on ? 'var(--clint-600)' : 'var(--neutral-300)',
+        border: 'none',
+        cursor: 'pointer',
+        position: 'relative',
+        flexShrink: 0,
+        transition: 'background 160ms var(--ease-out)',
+        padding: 0,
+      }}
+    >
+      <span
+        style={{
+          position: 'absolute',
+          top: 2,
+          left: on ? 18 : 2,
+          width: 18,
+          height: 18,
+          borderRadius: '50%',
+          background: '#fff',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
+          transition: 'left 160ms var(--ease-out)',
+        }}
+      />
+    </button>
+  )
 }
 
 export default function LogicEditorPage() {
@@ -33,15 +61,13 @@ export default function LogicEditorPage() {
   const [product, setProduct] = useState<ProductType>('pension')
   const [saved, setSaved] = useState(false)
 
-  const logicsForProduct = (p: ProductType) =>
-    LOGIC_CATALOG.filter((l) => l.products.length === 0 || l.products.includes(p))
+  const logicsForProduct = (p: ProductType) => LOGIC_CATALOG.filter((l) => l.products.length === 0 || l.products.includes(p))
 
   function setParam(key: LogicParam['key'], value: string) {
     const n = value.trim() === '' ? 0 : parseFloat(value)
     setCfg((c) => ({ ...c, thresholds: { ...c.thresholds, [key]: Number.isFinite(n) ? n : 0 } }))
     setSaved(false)
   }
-
   function setFee(pt: ProductType, field: 'fromDeposit' | 'fromAccumulation', value: string) {
     const n = value.trim() === '' ? null : parseFloat(value)
     setCfg((c) => {
@@ -52,17 +78,13 @@ export default function LogicEditorPage() {
     })
     setSaved(false)
   }
-
   function toggleLogic(id: string, enabled: boolean) {
     setCfg((c) => ({
       ...c,
-      disabledLogics: enabled
-        ? c.disabledLogics.filter((x) => x !== id)
-        : [...new Set([...c.disabledLogics, id])],
+      disabledLogics: enabled ? c.disabledLogics.filter((x) => x !== id) : [...new Set([...c.disabledLogics, id])],
     }))
     setSaved(false)
   }
-
   function save() {
     if (state.analysis && state.parsedFiles.length > 0) {
       const rebuilt = buildAnalysis(state.parsedFiles, state.analysis.supplementary, cfg)
@@ -71,46 +93,51 @@ export default function LogicEditorPage() {
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
   }
-
   function resetAll() {
     setCfg(defaultLogicConfig())
     setSaved(false)
   }
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <nav className="text-sm text-slate-400 mb-4">
-        <button onClick={() => dispatch({ type: 'GO_DASHBOARD' })} className="text-brand-700 hover:underline">
-          דשבורד
-        </button>
-        <span className="mx-1.5">‹</span>
-        <span className="text-slate-600">אזור לוגיקות</span>
-      </nav>
+    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 32px 48px' }}>
+      <button
+        onClick={() => dispatch({ type: 'GO_DASHBOARD' })}
+        style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 18, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+      >
+        <ArrowRight size={14} color="var(--color-text-tertiary)" />
+        <span style={{ fontSize: 13, color: 'var(--color-text-tertiary)' }}>חזרה לדשבורד</span>
+      </button>
 
-      <h1 className="text-2xl font-bold text-slate-800 mb-1">אזור לוגיקות</h1>
-      <p className="text-slate-500 mb-5 text-sm">
-        כל לוגיקת ניתוח מוצגת כאן עם ההסבר כיצד ההארה נבנית והספים שניתן לכוונן. שינוי סף מריץ את
-        הניתוח מחדש. לוגיקה שתכובה לא תייצר הארות.
+      <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: 'var(--color-text-primary)' }}>אזור לוגיקות</h1>
+      <p style={{ margin: '6px 0 20px', fontSize: 13, color: 'var(--color-text-tertiary)', maxWidth: 620, lineHeight: 1.6 }}>
+        כל לוגיקת ניתוח עם ההסבר כיצד ההארה נבנית והספים שניתן לכוונן. כיבוי לוגיקה מונע ממנה לייצר
+        הארות. שמירה מריצה את הניתוח מחדש.
       </p>
 
-      {/* Product tabs — review one product at a time */}
-      <div className="flex flex-wrap gap-2 mb-5">
+      {/* Product filter pills */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
         {PRODUCT_TABS.map((p) => (
           <button
             key={p}
             onClick={() => setProduct(p)}
-            className={`rounded-full px-3.5 py-1.5 text-sm font-medium border ${
-              product === p
-                ? 'bg-brand-700 text-white border-brand-700'
-                : 'bg-white text-slate-600 border-slate-300 hover:border-brand-400'
-            }`}
+            style={{
+              borderRadius: 'var(--radius-full)',
+              padding: '6px 14px',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              border: `1px solid ${product === p ? 'var(--clint-600)' : 'var(--color-border-base)'}`,
+              background: product === p ? 'var(--clint-600)' : 'var(--color-bg-card)',
+              color: product === p ? '#fff' : 'var(--color-text-secondary)',
+            }}
           >
             {productTypeLabels[p]}
           </button>
         ))}
       </div>
 
-      <div className="space-y-3">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {logicsForProduct(product).map((logic) => (
           <LogicCard
             key={logic.id}
@@ -125,17 +152,17 @@ export default function LogicEditorPage() {
         ))}
       </div>
 
-      <div className="flex items-center gap-3 mt-6">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 24 }}>
         <button
           onClick={save}
-          className="rounded-xl bg-gradient-to-l from-brand-800 to-brand-700 text-white font-semibold py-2.5 px-8 hover:opacity-95"
+          style={{ background: 'var(--clint-700)', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', padding: '11px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
         >
           שמירה והרצת ניתוח מחדש
         </button>
-        <button onClick={resetAll} className="text-sm text-slate-500 hover:text-slate-700 hover:underline">
+        <button onClick={resetAll} style={{ background: 'none', border: 'none', color: 'var(--color-text-tertiary)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
           איפוס לברירת מחדל
         </button>
-        {saved && <span className="text-sm text-accent-600 font-medium">✓ נשמר — הניתוח עודכן</span>}
+        {saved && <span style={{ fontSize: 13, color: 'var(--color-success)', fontWeight: 600 }}>✓ נשמר — הניתוח עודכן</span>}
       </div>
     </div>
   )
@@ -161,73 +188,60 @@ function LogicCard({
   const changed =
     logic.params.some((p) => thresholds[p.key] !== DEFAULT_THRESHOLDS[p.key]) ||
     (logic.editsMarketFees &&
-      JSON.stringify(thresholds.marketFees[product]) !==
-        JSON.stringify(DEFAULT_THRESHOLDS.marketFees[product]))
+      JSON.stringify(thresholds.marketFees[product]) !== JSON.stringify(DEFAULT_THRESHOLDS.marketFees[product]))
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--color-border-base)',
+    padding: '8px 10px',
+    fontSize: 13,
+    fontFamily: 'var(--font-mono)',
+    background: enabled ? '#fff' : 'var(--neutral-50)',
+  }
 
   return (
-    <div className={`rounded-2xl bg-white border p-5 shadow-sm ${enabled ? 'border-slate-200/70' : 'border-slate-200/70 opacity-60'}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-slate-800">{logic.label}</h3>
-            {changed && <span className="text-[10px] rounded bg-amber-100 text-amber-700 px-1.5 py-0.5">שונה</span>}
-          </div>
-          <p className="text-xs text-slate-500 mt-1 leading-relaxed">{logic.explanation}</p>
-        </div>
-        <label className="flex items-center gap-1.5 text-xs text-slate-500 shrink-0 cursor-pointer">
-          <input type="checkbox" checked={enabled} onChange={(e) => onToggle(e.target.checked)} />
-          פעיל
-        </label>
-      </div>
-
-      {(logic.params.length > 0 || logic.editsMarketFees) && (
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          {logic.params.map((p) => (
-            <label key={p.key} className="text-sm">
-              <span className="block text-xs text-slate-500 mb-1">
-                {p.label}
-                {p.unit ? ` (${p.unit})` : ''}
+    <Card style={{ opacity: enabled ? 1 : 0.6 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+        <Toggle on={enabled} onChange={onToggle} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)' }}>{logic.label}</h3>
+            {changed && (
+              <span style={{ fontSize: 10, borderRadius: 'var(--radius-full)', background: 'var(--color-warning-bg)', color: 'var(--color-warning-dark)', padding: '2px 8px', fontWeight: 700 }}>
+                שונה
               </span>
-              <input
-                type="number"
-                step="any"
-                disabled={!enabled}
-                value={String(thresholds[p.key] ?? '')}
-                onChange={(e) => onParam(p.key, e.target.value)}
-                className="w-full rounded-lg border border-slate-300 p-2 disabled:bg-slate-50"
-              />
-            </label>
-          ))}
-          {logic.editsMarketFees && (
-            <>
-              <label className="text-sm">
-                <span className="block text-xs text-slate-500 mb-1">סף דמי ניהול מהפקדה (%)</span>
-                <input
-                  type="number"
-                  step="any"
-                  disabled={!enabled}
-                  value={thresholds.marketFees[product]?.fromDeposit ?? ''}
-                  onChange={(e) => onFee(product, 'fromDeposit', e.target.value)}
-                  placeholder="לא רלוונטי"
-                  className="w-full rounded-lg border border-slate-300 p-2 disabled:bg-slate-50"
-                />
-              </label>
-              <label className="text-sm">
-                <span className="block text-xs text-slate-500 mb-1">סף דמי ניהול מצבירה (%)</span>
-                <input
-                  type="number"
-                  step="any"
-                  disabled={!enabled}
-                  value={thresholds.marketFees[product]?.fromAccumulation ?? ''}
-                  onChange={(e) => onFee(product, 'fromAccumulation', e.target.value)}
-                  placeholder="לא רלוונטי"
-                  className="w-full rounded-lg border border-slate-300 p-2 disabled:bg-slate-50"
-                />
-              </label>
-            </>
+            )}
+          </div>
+          <p style={{ margin: '6px 0 0', fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>{logic.explanation}</p>
+
+          {(logic.params.length > 0 || logic.editsMarketFees) && (
+            <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 12 }}>
+              {logic.params.map((p) => (
+                <label key={p.key} style={{ fontSize: 13 }}>
+                  <span style={{ display: 'block', fontSize: 11, color: 'var(--color-text-tertiary)', marginBottom: 4 }}>
+                    {p.label}
+                    {p.unit ? ` (${p.unit})` : ''}
+                  </span>
+                  <input type="number" step="any" disabled={!enabled} value={String(thresholds[p.key] ?? '')} onChange={(e) => onParam(p.key, e.target.value)} style={inputStyle} />
+                </label>
+              ))}
+              {logic.editsMarketFees && (
+                <>
+                  <label style={{ fontSize: 13 }}>
+                    <span style={{ display: 'block', fontSize: 11, color: 'var(--color-text-tertiary)', marginBottom: 4 }}>סף דמי ניהול מהפקדה (%)</span>
+                    <input type="number" step="any" disabled={!enabled} value={thresholds.marketFees[product]?.fromDeposit ?? ''} onChange={(e) => onFee(product, 'fromDeposit', e.target.value)} placeholder="לא רלוונטי" style={inputStyle} />
+                  </label>
+                  <label style={{ fontSize: 13 }}>
+                    <span style={{ display: 'block', fontSize: 11, color: 'var(--color-text-tertiary)', marginBottom: 4 }}>סף דמי ניהול מצבירה (%)</span>
+                    <input type="number" step="any" disabled={!enabled} value={thresholds.marketFees[product]?.fromAccumulation ?? ''} onChange={(e) => onFee(product, 'fromAccumulation', e.target.value)} placeholder="לא רלוונטי" style={inputStyle} />
+                  </label>
+                </>
+              )}
+            </div>
           )}
         </div>
-      )}
-    </div>
+      </div>
+    </Card>
   )
 }
