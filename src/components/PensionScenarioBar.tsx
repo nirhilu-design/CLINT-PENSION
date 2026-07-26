@@ -1,8 +1,47 @@
+import { TrendingUp } from 'lucide-react'
+import Card, { CardHeader } from './ds/Card'
 import { formatCurrency } from '../utils/format'
 
-// Shows, on one horizontal bar, what today's accumulation is worth as a monthly
-// pension without further deposits (base) and how continued deposits grow it (the
-// accent increment). Identity is carried by direct labels, not color alone.
+// Two stacked horizontal bars: "with deposits" (coral, full width) and
+// "without deposits" (navy, proportional). Value label sits inside each bar.
+function ScenarioBar({ label, value, total, color }: { label: string; value: number; total: number; color: string }) {
+  const pct = total > 0 ? Math.min(100, (value / total) * 100) : 0
+  return (
+    <div>
+      <div
+        style={{
+          fontSize: 13,
+          color: 'var(--color-text-secondary)',
+          marginBottom: 6,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+        }}
+      >
+        <span style={{ width: 10, height: 10, borderRadius: 3, background: color, display: 'inline-block' }} />
+        {label}
+      </div>
+      <div style={{ position: 'relative', height: 14, borderRadius: 7, background: 'var(--neutral-100)', overflow: 'hidden' }}>
+        <div style={{ height: '100%', borderRadius: 7, background: color, width: `${pct}%` }} />
+        <span
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: 10,
+            transform: 'translateY(-50%)',
+            fontSize: 12,
+            fontWeight: 700,
+            fontFamily: 'var(--font-mono)',
+            color: pct > 12 ? '#fff' : 'var(--color-text-primary)',
+          }}
+        >
+          {formatCurrency(value)}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 export default function PensionScenarioBar({
   withDeposits,
   withoutDeposits,
@@ -12,56 +51,26 @@ export default function PensionScenarioBar({
 }) {
   const base = Math.max(0, withoutDeposits)
   const total = Math.max(base, withDeposits)
-  const increment = Math.max(0, total - base)
   if (total <= 0) return null
 
-  const basePct = (base / total) * 100
-  const incPct = (increment / total) * 100
-
   return (
-    <section className="rounded-2xl bg-white border border-slate-200/70 p-5 shadow-sm mb-8">
-      <h3 className="font-bold text-slate-800">קצבה חודשית חזויה — הערך של המשך ההפקדות</h3>
-      <p className="text-sm text-slate-500 mt-1 leading-relaxed">
+    <Card style={{ marginBottom: 24 }}>
+      <CardHeader icon={<TrendingUp size={17} />} title="קצבה חודשית חזויה — הערך של המשך ההפקדות" tone="teal" />
+      <p style={{ margin: '10px 0 0', fontSize: 14, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
         הצבירה של היום שקולה לקצבה חודשית של{' '}
-        <span className="font-semibold text-slate-700">{formatCurrency(base)}</span> גם אם ההפקדות
-        ייפסקו. המשך ההפקדות עד הפרישה מגדיל אותה ל-
-        <span className="font-semibold text-slate-700">{formatCurrency(total)}</span> בחודש.
+        <span style={{ fontWeight: 700, color: 'var(--color-text-primary)', fontFamily: 'var(--font-mono)' }}>
+          {formatCurrency(base)}
+        </span>{' '}
+        גם אם ההפקדות ייפסקו. המשך ההפקדות עד הפרישה מגדיל אותה ל-
+        <span style={{ fontWeight: 700, color: 'var(--color-text-primary)', fontFamily: 'var(--font-mono)' }}>
+          {formatCurrency(total)}
+        </span>{' '}
+        בחודש.
       </p>
-
-      {/* Stacked bar: base (navy) + increment from continued deposits (accent) */}
-      <div className="mt-4 flex h-9 w-full overflow-hidden rounded-lg bg-slate-100" role="img"
-        aria-label={`קצבה ללא המשך הפקדות ${formatCurrency(base)}, ובהמשך הפקדות ${formatCurrency(total)}`}>
-        <div
-          className="h-full bg-brand-700"
-          style={{ width: `${basePct}%` }}
-          title={`ללא המשך הפקדות: ${formatCurrency(base)}`}
-        />
-        {increment > 0 && (
-          <div
-            className="h-full bg-accent-500 border-r-2 border-white"
-            style={{ width: `${incPct}%` }}
-            title={`תוספת בהמשך הפקדות: ${formatCurrency(increment)}`}
-          />
-        )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 20 }}>
+        <ScenarioBar label="בהמשך הפקדות" value={total} total={total} color="var(--accent-coral)" />
+        <ScenarioBar label="ללא המשך הפקדות" value={base} total={total} color="var(--accent-navy)" />
       </div>
-
-      {/* Legend + values (identity not by color alone) */}
-      <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs">
-        <span className="flex items-center gap-1.5 text-slate-600">
-          <span className="w-3 h-3 rounded-sm bg-brand-700 inline-block" />
-          ללא המשך הפקדות: <span className="font-semibold text-slate-800">{formatCurrency(base)}</span>
-        </span>
-        {increment > 0 && (
-          <span className="flex items-center gap-1.5 text-slate-600">
-            <span className="w-3 h-3 rounded-sm bg-accent-500 inline-block" />
-            תוספת בהמשך הפקדות:{' '}
-            <span className="font-semibold text-slate-800">+{formatCurrency(increment)}</span>
-          </span>
-        )}
-        <span className="flex items-center gap-1.5 text-slate-600 ms-auto">
-          סה״כ בהמשך הפקדות: <span className="font-semibold text-slate-800">{formatCurrency(total)}</span>
-        </span>
-      </div>
-    </section>
+    </Card>
   )
 }

@@ -13,6 +13,78 @@
   --color-accent-600: #0e9484;
 }
 
+/* ── Clint Design System tokens (from the design handoff) ──
+   The redesign prototypes reference these CSS variables directly. The DS token
+   files were not shipped in the kit, so the base scale is mapped onto the brand
+   palette; the custom accent palette (navy/coral/beige) is per the handoff. */
+:root {
+  /* clint navy scale */
+  --clint-950: #081527;
+  --clint-900: #0c1f38;
+  --clint-800: #123054;
+  --clint-700: #1a4270;
+  --clint-600: #235a92;
+  --clint-500: #2f6fad;
+  --clint-400: #5a8cc0;
+  --clint-50: #eef3f9;
+  /* teal scale */
+  --teal-700: #0b7a6d;
+  --teal-600: #0e9484;
+  --teal-500: #16ab99;
+  --teal-400: #35c2b1;
+  --teal-300: #6fd6c9;
+  --teal-50: #e6f7f4;
+  /* amber */
+  --amber-600: #d98e00;
+  --amber-400: #f5b301;
+  /* neutral (slate) scale */
+  --neutral-50: #f8fafc;
+  --neutral-100: #f1f5f9;
+  --neutral-200: #e2e8f0;
+  --neutral-300: #cbd5e1;
+  --neutral-400: #94a3b8;
+  --neutral-500: #64748b;
+  --neutral-600: #475569;
+  --neutral-800: #1e293b;
+  --neutral-900: #0f172a;
+  /* semantic surfaces & text */
+  --color-bg-page: #f4f7fb;
+  --color-bg-card: #ffffff;
+  --color-bg-overlay: rgba(8, 21, 39, 0.55);
+  --color-border-base: #e2e8f0;
+  --color-text-primary: #17233a;
+  --color-text-secondary: #475569;
+  --color-text-tertiary: #94a3b8;
+  --color-primary: #1a4270;
+  --color-teal: #16ab99;
+  /* status pairs */
+  --color-danger: #dc2626;
+  --color-danger-bg: #fee2e2;
+  --color-danger-dark: #991b1b;
+  --color-warning: #d97706;
+  --color-warning-bg: #fef3c7;
+  --color-warning-dark: #92400e;
+  --color-success: #0e9484;
+  --color-success-bg: #e6f7f4;
+  --color-success-dark: #0b6b60;
+  /* radii, effects, motion */
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* fonts */
+  --font-ui: "Heebo", "Segoe UI", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  /* custom accent palette (handoff) — charts/bars */
+  --accent-navy: #00215d;
+  --accent-coral: #ff2756;
+  --accent-beige: #e2d1bf;
+  --accent-navy-tint: #3d5389;
+  --accent-coral-tint: #ff6b85;
+  --accent-beige-tint: #c9b49c;
+}
+
 html {
   direction: rtl;
 }
@@ -27,6 +99,21 @@ body {
 /* Numbers align in tables and KPIs */
 .tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* Monospace numerics per the design system */
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Thin scrollbar for the app main area */
+.clint-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.clint-scroll::-webkit-scrollbar-thumb {
+  background: var(--neutral-300);
+  border-radius: 3px;
 }
 
 /* Visible keyboard focus everywhere, consistent with the brand */
