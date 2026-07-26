@@ -27,6 +27,11 @@ export function emptySupplementary(): SupplementaryInfo {
     benchmarks: [],
     treasuryFunds: [],
     treasuryAllocations: [],
+    advisorNotes: [],
+    scenarioRetirementAge: null,
+    scenarioRealReturnPercent: null,
+    scenarioSalaryGrowthPercent: null,
+    scenarioLifeExpectancy: null,
   }
 }
 

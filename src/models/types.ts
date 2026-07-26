@@ -210,6 +210,17 @@ export interface SupplementaryInfo {
   benchmarks: FundBenchmark[]
   treasuryFunds: TreasuryFundData[]
   treasuryAllocations: TreasuryAllocation[]
+  advisorNotes: AdvisorNote[]
+  // Scenario assumptions (persisted; a scenario engine that consumes them is future work)
+  scenarioRetirementAge: number | null
+  scenarioRealReturnPercent: number | null
+  scenarioSalaryGrowthPercent: number | null
+  scenarioLifeExpectancy: number | null
+}
+
+export interface AdvisorNote {
+  date: string // ISO
+  text: string
 }
 
 // ---- Analysis (root aggregate) ----
