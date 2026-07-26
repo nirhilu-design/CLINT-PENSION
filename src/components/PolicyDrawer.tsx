@@ -1,32 +1,31 @@
 import { useEffect, useState } from 'react'
+import { X } from 'lucide-react'
 import type { Finding, Policy, TreasuryAllocation } from '../models/types'
 import { coverageTypeLabels, productTypeLabels } from '../models/labels'
 import { formatCurrency, formatDate, formatPercent } from '../utils/format'
 import FindingCard from './FindingCard'
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <section className="mb-5">
-      <h3 className="font-semibold text-slate-700 border-b border-slate-200 pb-1 mb-2">{title}</h3>
+    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.03em', margin: '22px 0 10px' }}>
       {children}
-    </section>
-  )
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between py-1 text-sm">
-      <span className="text-slate-500">{label}</span>
-      <span className="text-slate-800 font-medium">{value}</span>
     </div>
   )
 }
 
-const contributionLabels: Record<string, string> = {
-  employee: 'עובד',
-  employer: 'מעסיק',
-  severance: 'פיצויים',
-  other: 'אחר',
+function Tile({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ borderRadius: 'var(--radius-md)', background: 'var(--neutral-50)', padding: '10px 12px' }}>
+      <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>{label}</div>
+      <div style={{ fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-text-primary)', marginTop: 2 }}>{value}</div>
+    </div>
+  )
+}
+
+function status(p: Policy): { label: string; dot: string } {
+  if (p.temporaryRisk) return { label: 'ריסק זמני', dot: 'var(--color-warning)' }
+  if (p.status === 'active') return { label: 'פעיל', dot: 'var(--color-success)' }
+  return { label: 'לא פעיל', dot: 'var(--neutral-400)' }
 }
 
 export default function PolicyDrawer({
@@ -40,9 +39,12 @@ export default function PolicyDrawer({
   allocation?: TreasuryAllocation
   onClose: () => void
 }) {
-  const [findingsOpen, setFindingsOpen] = useState(true)
   const [entered, setEntered] = useState(false)
   const policyFindings = findings.filter((f) => f.policyNumber === policy.policyNumber)
+  const st = status(policy)
+  const employer = policy.contributions.find((c) => c.role === 'employer')
+  const employee = policy.contributions.find((c) => c.role === 'employee')
+  const isPensionLike = policy.productType === 'pension' || policy.productType === 'managers'
 
   useEffect(() => {
     const raf = requestAnimationFrame(() => setEntered(true))
@@ -55,163 +57,172 @@ export default function PolicyDrawer({
   }, [onClose])
 
   return (
-    <div className="fixed inset-0 z-40">
+    <div style={{ position: 'fixed', inset: 0, zIndex: 40 }}>
       <div
-        className={`absolute inset-0 bg-black/30 transition-opacity duration-200 ${entered ? 'opacity-100' : 'opacity-0'}`}
         onClick={onClose}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'var(--color-bg-overlay)',
+          backdropFilter: 'blur(8px)',
+          opacity: entered ? 1 : 0,
+          transition: 'opacity 220ms var(--ease-out)',
+        }}
       />
       <aside
-        className={`absolute top-0 left-0 h-full w-full max-w-md bg-white shadow-xl overflow-y-auto transition-transform duration-200 ${
-          entered ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        style={{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          right: 0,
+          width: 480,
+          maxWidth: '94vw',
+          background: 'var(--color-bg-card)',
+          boxShadow: '-8px 0 32px rgba(13,34,64,0.22)',
+          transform: entered ? 'translateX(0)' : 'translateX(110%)',
+          transition: 'transform 220ms var(--ease-out)',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
       >
-        <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-slate-100 px-5 py-3.5 flex items-center justify-between z-10">
+        {/* Header */}
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--color-border-base)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <h2 className="text-lg font-bold text-slate-800">{policy.productName ?? productTypeLabels[policy.productType]}</h2>
-            <p className="text-sm text-slate-500">{policy.managingCompany}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <span style={{ width: 9, height: 9, borderRadius: '50%', background: st.dot }} />
+              <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)' }}>
+                {policy.managingCompany ?? policy.productName ?? productTypeLabels[policy.productType]}
+              </span>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)', marginTop: 4 }}>
+              פוליסה {policy.policyNumber} · {st.label} · {productTypeLabels[policy.productType]}
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg grid place-items-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 text-xl"
             aria-label="סגירה"
+            style={{ cursor: 'pointer', width: 30, height: 30, borderRadius: '50%', background: 'var(--neutral-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none' }}
           >
-            ×
+            <X size={16} color="var(--neutral-600)" />
           </button>
         </div>
-        <div className="p-5">
 
-        <Section title="פרטי פוליסה">
-          <Row label="מספר פוליסה / חשבון" value={policy.policyNumber || '—'} />
-          <Row label="סוג מוצר" value={productTypeLabels[policy.productType]} />
-          <Row label="מספר אוצר" value={policy.mofid ?? '—'} />
-          <Row label="תאריך הצטרפות" value={formatDate(policy.openDate)} />
-          <Row label="סטטוס" value={policy.status === 'active' ? 'פעיל' : policy.status === 'inactive' ? 'לא פעיל' : '—'} />
-        </Section>
+        {/* Body */}
+        <div className="clint-scroll" style={{ flex: 1, overflowY: 'auto', padding: '4px 24px 28px' }}>
+          <SectionLabel>פרטים פיננסיים</SectionLabel>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <Tile label="שווי נוכחי" value={formatCurrency(policy.currentValue)} />
+            <Tile label="שכר מבוטח" value={formatCurrency(policy.coveredSalary)} />
+            <Tile label="הפקדה אחרונה" value={policy.lastDepositMonth ?? '—'} />
+            <Tile label="תאריך הצטרפות" value={formatDate(policy.openDate)} />
+            <Tile label="מספר אוצר" value={policy.mofid ?? '—'} />
+            <Tile label="תשואה נטו" value={formatPercent(policy.netReturn)} />
+          </div>
 
-        <Section title="מידע פיננסי">
-          <Row label="יתרה צבורה" value={formatCurrency(policy.currentValue)} />
-          <Row label="קצבה חודשית צפויה (בהמשך הפקדות)" value={formatCurrency(policy.expectedPensionWithDeposits)} />
-          <Row label="קצבה חודשית צפויה (ללא הפקדות)" value={formatCurrency(policy.expectedPensionWithoutDeposits)} />
-          <Row label="צבירה צפויה לפרישה (בהמשך הפקדות)" value={formatCurrency(policy.expectedAccumulationWithDeposits)} />
-          <Row label="צבירה צפויה לפרישה (ללא הפקדות)" value={formatCurrency(policy.expectedAccumulationWithoutDeposits)} />
-          <Row label="שכר מבוטח" value={formatCurrency(policy.coveredSalary)} />
-          {policy.productType === 'managers' && (
-            <Row label="מקדם קצבה מובטח" value={policy.hasGuaranteedFactor ? 'קיים' : 'לא קיים'} />
-          )}
-          <Row label='דמי ניהול מהפקדה' value={formatPercent(policy.fees.fromDeposit)} />
-          <Row label='דמי ניהול מצבירה' value={formatPercent(policy.fees.fromAccumulation)} />
-          <Row label="תשואה נטו" value={formatPercent(policy.netReturn)} />
-          {policy.lastDepositMonth && (
-            <Row
-              label="הפקדה אחרונה"
-              value={`${formatCurrency(policy.lastDepositTotal)} (${policy.lastDepositMonth})`}
-            />
-          )}
-          {policy.reportDate && <Row label="נכונות הנתונים" value={formatDate(policy.reportDate)} />}
-          {policy.contributions.length > 0 && (
-            <div className="mt-2 text-sm text-slate-600">
-              הפרשות:{' '}
-              {policy.contributions
-                .map((c) => `${contributionLabels[c.role]} ${formatPercent(c.percent)}`)
-                .join(' · ')}
-            </div>
-          )}
-        </Section>
+          <SectionLabel>הפקדות ודמי ניהול</SectionLabel>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <Tile label="הפקדת מעסיק" value={employer ? formatPercent(employer.percent) : '—'} />
+            <Tile label="הפקדת עובד" value={employee ? formatPercent(employee.percent) : '—'} />
+            <Tile label="דמי ניהול מהפקדה" value={formatPercent(policy.fees.fromDeposit)} />
+            <Tile label="דמי ניהול מצבירה" value={formatPercent(policy.fees.fromAccumulation)} />
+          </div>
 
-        <Section title="מסלולי השקעה">
-          {policy.investmentTracks.length === 0 ? (
-            <p className="text-sm text-slate-400">לא דווחו מסלולי השקעה</p>
-          ) : (
-            policy.investmentTracks.map((t, i) => (
-              <div key={i} className="rounded-lg border border-slate-200 p-2.5 mb-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="font-medium text-slate-700">{t.name ?? 'מסלול ללא שם'}</span>
-                  <span className="font-semibold text-slate-800">{formatCurrency(t.value)}</span>
-                </div>
-                <div className="flex flex-wrap gap-x-4 mt-1 text-xs text-slate-500">
-                  {t.depositPercent !== null && <span>מההפקדה: {formatPercent(t.depositPercent, 0)}</span>}
-                  {t.returnNet !== null && <span>תשואה נטו: {formatPercent(t.returnNet)}</span>}
-                  {t.feeFromAccumulation !== null && <span>ד"נ מצבירה: {formatPercent(t.feeFromAccumulation)}</span>}
-                  {t.feeFromDeposit !== null && t.feeFromDeposit > 0 && (
-                    <span>ד"נ מהפקדה: {formatPercent(t.feeFromDeposit)}</span>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
-        </Section>
-
-        {allocation && allocation.groups.length > 0 && (
-          <Section title='אפיקי השקעה (נתוני אוצר)'>
-            {allocation.groups.map((g) => (
-              <div key={g.name} className="py-1">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-600">{g.name}</span>
-                  <span className="text-slate-800 font-medium tabular">{g.percent.toFixed(1)}%</span>
-                </div>
-                <div className="h-1.5 rounded-full bg-slate-100 mt-1 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-brand-600"
-                    style={{ width: `${Math.min(100, Math.max(0, g.percent))}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </Section>
-        )}
-
-        <Section title="כיסויים ביטוחיים">
-          {policy.coverages.length === 0 ? (
-            <p className="text-sm text-slate-400">לא דווחו כיסויים</p>
-          ) : (
-            policy.coverages.map((c, i) => (
-              <div key={i} className="rounded-lg border border-slate-200 p-2.5 mb-2 text-sm">
-                <div className="font-medium text-slate-700">{coverageTypeLabels[c.type]}</div>
-                {c.name && <div className="text-xs text-slate-500 mt-0.5">{c.name}</div>}
-                <div className="flex flex-wrap items-baseline gap-x-3 mt-1 text-slate-700">
-                  <span>סכום ביטוח: {formatCurrency(c.amount)}</span>
-                  {c.percent !== null && <span className="text-xs text-slate-500">שיעור: {formatPercent(c.percent, 0)}</span>}
-                </div>
-                {c.cost !== null && (
-                  <div className="mt-0.5 text-slate-600">עלות חודשית: {formatCurrency(c.cost)}</div>
+          {isPensionLike && (
+            <>
+              <SectionLabel>קצבה וצבירה חזויות</SectionLabel>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <Tile label="קצבה — בהמשך הפקדות" value={formatCurrency(policy.expectedPensionWithDeposits)} />
+                <Tile label="קצבה — ללא הפקדות" value={formatCurrency(policy.expectedPensionWithoutDeposits)} />
+                <Tile label="צבירה חזויה — בהפקדות" value={formatCurrency(policy.expectedAccumulationWithDeposits)} />
+                <Tile label="צבירה חזויה — ללא הפקדות" value={formatCurrency(policy.expectedAccumulationWithoutDeposits)} />
+                {policy.productType === 'managers' && (
+                  <Tile label="מקדם קצבה מובטח" value={policy.hasGuaranteedFactor ? 'קיים' : 'לא קיים'} />
+                )}
+                {policy.savingsAllocationPercent !== null && (
+                  <Tile label="הקצאה לחיסכון" value={formatPercent(policy.savingsAllocationPercent, 0)} />
                 )}
               </div>
+            </>
+          )}
+
+          {policy.investmentTracks.length > 0 && (
+            <>
+              <SectionLabel>מסלולי השקעה</SectionLabel>
+              {policy.investmentTracks.map((t, i) => (
+                <div key={i} style={{ borderRadius: 'var(--radius-md)', background: 'var(--neutral-50)', padding: '10px 12px', marginBottom: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>{t.name ?? 'מסלול ללא שם'}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-text-primary)' }}>{formatCurrency(t.value)}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 14px', marginTop: 4, fontSize: 11, color: 'var(--color-text-tertiary)' }}>
+                    {t.returnNet !== null && <span>תשואה נטו: {formatPercent(t.returnNet)}</span>}
+                    {t.feeFromAccumulation !== null && <span>ד"נ מצבירה: {formatPercent(t.feeFromAccumulation)}</span>}
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+
+          {allocation && allocation.groups.length > 0 && (
+            <>
+              <SectionLabel>אפיקי השקעה (נתוני אוצר)</SectionLabel>
+              {allocation.groups.map((g) => (
+                <div key={g.name} style={{ padding: '5px 0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                    <span style={{ color: 'var(--color-text-secondary)' }}>{g.name}</span>
+                    <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-text-primary)' }}>{g.percent.toFixed(1)}%</span>
+                  </div>
+                  <div style={{ height: 6, borderRadius: 3, background: 'var(--neutral-100)', marginTop: 4, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', borderRadius: 3, background: 'var(--clint-600)', width: `${Math.min(100, Math.max(0, g.percent))}%` }} />
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+
+          <SectionLabel>כיסויים ביטוחיים</SectionLabel>
+          {policy.coverages.length === 0 ? (
+            <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)', margin: 0 }}>לא דווחו כיסויים</p>
+          ) : (
+            policy.coverages.map((c, i) => (
+              <div key={i} style={{ padding: '9px 0', borderBottom: '1px solid var(--color-border-base)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>{coverageTypeLabels[c.type]}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-text-primary)' }}>{formatCurrency(c.amount)}</span>
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 2 }}>
+                  {c.name ? `${c.name} · ` : ''}
+                  {c.percent !== null ? `שיעור ${formatPercent(c.percent, 0)} · ` : ''}
+                  עלות חודשית: {formatCurrency(c.cost)}
+                </div>
+              </div>
             ))
           )}
-        </Section>
 
-        <Section title="מוטבים">
+          <SectionLabel>מוטבים</SectionLabel>
           {policy.beneficiaries.length === 0 ? (
-            <p className="text-sm text-slate-400">לא דווחו מוטבים בקובץ</p>
+            <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)', margin: 0 }}>לא דווחו מוטבים בקובץ</p>
           ) : (
             policy.beneficiaries.map((b, i) => (
-              <Row
-                key={i}
-                label={b.name ?? b.relation ?? 'מוטב'}
-                value={b.allocationPercent !== null ? formatPercent(b.allocationPercent, 0) : (b.relation ?? '—')}
-              />
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid var(--color-border-base)', fontSize: 13 }}>
+                <span style={{ color: 'var(--color-text-secondary)' }}>{b.name ?? b.relation ?? 'מוטב'}{b.name && b.relation ? ` · ${b.relation}` : ''}</span>
+                <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-text-primary)' }}>
+                  {b.allocationPercent !== null ? formatPercent(b.allocationPercent, 0) : '—'}
+                </span>
+              </div>
             ))
           )}
-        </Section>
 
-        <section>
-          <button
-            onClick={() => setFindingsOpen(!findingsOpen)}
-            className="w-full flex justify-between items-center font-semibold text-slate-700 border-b border-slate-200 pb-1 mb-2"
-          >
-            <span>ממצאים ({policyFindings.length})</span>
-            <span className="text-slate-400">{findingsOpen ? '▴' : '▾'}</span>
-          </button>
-          {findingsOpen && (
-            <div className="space-y-2">
-              {policyFindings.length === 0 ? (
-                <p className="text-sm text-slate-400">אין ממצאים לפוליסה זו</p>
-              ) : (
-                policyFindings.map((f) => <FindingCard key={f.id} finding={f} />)
-              )}
+          <SectionLabel>ממצאים ({policyFindings.length})</SectionLabel>
+          {policyFindings.length === 0 ? (
+            <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)', margin: 0 }}>אין ממצאים לפוליסה זו</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {policyFindings.map((f) => (
+                <FindingCard key={f.id} finding={f} />
+              ))}
             </div>
           )}
-        </section>
         </div>
       </aside>
     </div>
