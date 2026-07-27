@@ -33,3 +33,14 @@ export function runEngines(input: EngineInput, disabledLogics: string[] = []): F
   const off = new Set(disabledLogics)
   return engines.flatMap(({ id, engine }) => (off.has(id) ? [] : engine(input)))
 }
+
+// How many findings each logic currently raises for the loaded client, keyed by
+// logic id — the "X התאמות" count in the Logic Editor. Runs every engine
+// regardless of enabled state so the count reflects the logic's actual reach.
+export function findingCountsByLogic(input: EngineInput): Record<string, number> {
+  const counts: Record<string, number> = {}
+  for (const { id, engine } of engines) {
+    counts[id] = engine(input).length
+  }
+  return counts
+}
