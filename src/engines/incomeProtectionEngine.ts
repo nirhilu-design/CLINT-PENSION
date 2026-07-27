@@ -29,14 +29,18 @@ export const incomeProtectionEngine: Engine = ({ policies, supplementary }) => {
         description:
           'במוצרים שנותחו לא אותר כיסוי לאובדן כושר עבודה' +
           (familyRelies ? ', בעוד צוין שהמשפחה מסתמכת על ההכנסה שלך' : '') +
-          '. מומלץ לבחון האם קיים כיסוי כזה במוצרים נוספים.',
+          '. נקודה לבדיקה מול בעל רישיון האם קיים כיסוי כזה במוצרים נוספים.',
       }),
     )
     return findings
   }
 
-  // Policy level: coverage percent vs target
+  // Policy level: coverage percent vs target.
+  // Pension disability is handled cross-product by pensionInsightEngine (a low
+  // pension נכות is often complemented by an אכ"ע rider elsewhere), so it is not
+  // flagged here in isolation.
   for (const { policy, coverage } of disabilityCoverages) {
+    if (policy.productType === 'pension') continue
     if (coverage.percent === null) continue
     if (coverage.percent < TARGET_PERCENT - IP_COVERAGE_PERCENT_SLACK) {
       findings.push(
@@ -47,7 +51,7 @@ export const incomeProtectionEngine: Engine = ({ policies, supplementary }) => {
           title: 'שיעור כיסוי אכ"ע נמוך מהיעד',
           description:
             `בפוליסה ${policy.policyNumber} שיעור הכיסוי לאובדן כושר עבודה הוא ${coverage.percent.toFixed(0)}% ` +
-            `לעומת יעד מקובל של ${TARGET_PERCENT}%. מומלץ לבחון השלמת כיסוי.`,
+            `לעומת יעד מקובל של ${TARGET_PERCENT}%. נקודה לבדיקה מול בעל רישיון.`,
           productType: policy.productType,
           policyNumber: policy.policyNumber,
         }),
@@ -72,7 +76,7 @@ export const incomeProtectionEngine: Engine = ({ policies, supplementary }) => {
           title: 'נמצא פער בין השכר המבוטח לאכ"ע לשכר בפועל',
           description:
             `השכר המבוטח לאובדן כושר עבודה (₪${maxCoveredSalary.toLocaleString()}) נמוך מ${fromClient ? 'השכר שציינת' : 'השכר המדווח בקבצים'} ` +
-            `(₪${salary.toLocaleString()}). כדאי לבדוק התאמת הכיסוי לשכר הנוכחי.`,
+            `(₪${salary.toLocaleString()}). נקודה לבדיקה מול בעל רישיון.`,
           basedOn: fromClient
             ? 'השכר המבוטח לנכות בקבצי המסלקה מול השכר שהוזן בטופס'
             : 'השכר המבוטח לנכות מול השכר המבוטח הגבוה בתיק, שניהם מקבצי המסלקה',

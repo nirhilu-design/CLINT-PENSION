@@ -58,6 +58,9 @@ export default function SupplementaryFormPage() {
   const [realEstateValue, setRealEstateValue] = useState('')
   const [portfolioValue, setPortfolioValue] = useState('')
   const [liquidValue, setLiquidValue] = useState('')
+  const [liabilities, setLiabilities] = useState<boolean | null>(null)
+  const [mortgageBalance, setMortgageBalance] = useState('')
+  const [otherDebts, setOtherDebts] = useState('')
 
   function toNum(s: string): number | null {
     const n = parseFloat(s)
@@ -74,11 +77,16 @@ export default function SupplementaryFormPage() {
       supplementary.otherAssetsPortfolioValue = toNum(portfolioValue)
       supplementary.otherAssetsLiquidValue = toNum(liquidValue)
     }
+    supplementary.hasLiabilities = liabilities
+    if (liabilities === true) {
+      supplementary.mortgageBalance = toNum(mortgageBalance)
+      supplementary.otherDebts = toNum(otherDebts)
+    }
     supplementary.employmentStatus = employment
     supplementary.currentGrossSalary = toNum(salary)
     supplementary.familyReliesOnIncome = familyRelies
 
-    const analysis = buildAnalysis(state.parsedFiles, supplementary)
+    const analysis = buildAnalysis(state.parsedFiles, supplementary, state.logicConfig)
     dispatch({ type: 'ANALYSIS_READY', analysis })
   }
 
@@ -189,6 +197,40 @@ export default function SupplementaryFormPage() {
                     value={liquidValue}
                     onChange={(e) => setLiquidValue(e.target.value)}
                     placeholder="עו״ש, פיקדונות"
+                    className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm"
+                  />
+                </label>
+              </div>
+            </div>
+          )}
+          <YesNoQuestion
+            label="האם קיימות התחייבויות — משכנתא או חובות — שתרצה שנתייחס אליהן?"
+            value={liabilities}
+            onChange={setLiabilities}
+          />
+          {liabilities === true && (
+            <div className="mt-3 rounded-xl bg-brand-25 border border-slate-200/70 p-4">
+              <p className="text-xs text-slate-500 mb-3">
+                יתרות אלה נשקלות מול כיסוי ביטוח החיים, כדי לראות אם הכיסוי מספיק. אפשר להשאיר ריק.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="text-sm text-slate-600">
+                  יתרת משכנתא (₪)
+                  <input
+                    type="number"
+                    value={mortgageBalance}
+                    onChange={(e) => setMortgageBalance(e.target.value)}
+                    placeholder="יתרה לסילוק"
+                    className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm"
+                  />
+                </label>
+                <label className="text-sm text-slate-600">
+                  חובות נוספים (₪)
+                  <input
+                    type="number"
+                    value={otherDebts}
+                    onChange={(e) => setOtherDebts(e.target.value)}
+                    placeholder="הלוואות, חובות"
                     className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm"
                   />
                 </label>

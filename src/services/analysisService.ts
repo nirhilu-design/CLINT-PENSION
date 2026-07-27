@@ -4,6 +4,8 @@
 import type { Analysis, Policy, SupplementaryInfo } from '../models/types'
 import { parsePensionXml, XmlParseError, type ParsedFile } from '../parser/parsePensionXml'
 import { runEngines, buildExecutiveSummary } from '../engines'
+import { applyThresholds } from '../config/thresholds'
+import { defaultLogicConfig, type LogicConfig } from '../config/logicConfig'
 
 export { XmlParseError }
 
@@ -15,6 +17,9 @@ export function emptySupplementary(): SupplementaryInfo {
     otherAssetsRealEstateValue: null,
     otherAssetsPortfolioValue: null,
     otherAssetsLiquidValue: null,
+    hasLiabilities: null,
+    mortgageBalance: null,
+    otherDebts: null,
     employmentStatus: null,
     currentGrossSalary: null,
     familyReliesOnIncome: null,
@@ -22,6 +27,11 @@ export function emptySupplementary(): SupplementaryInfo {
     benchmarks: [],
     treasuryFunds: [],
     treasuryAllocations: [],
+    advisorNotes: [],
+    scenarioRetirementAge: null,
+    scenarioRealReturnPercent: null,
+    scenarioSalaryGrowthPercent: null,
+    scenarioLifeExpectancy: null,
   }
 }
 
@@ -43,12 +53,18 @@ export function parseFiles(files: { name: string; text: string }[]): ParsedFile[
   return parsed
 }
 
-/** Build the full analysis from parsed files + supplementary info. */
-export function buildAnalysis(parsedFiles: ParsedFile[], supplementary: SupplementaryInfo): Analysis {
+/** Build the full analysis from parsed files + supplementary info + logic config. */
+export function buildAnalysis(
+  parsedFiles: ParsedFile[],
+  supplementary: SupplementaryInfo,
+  logicConfig: LogicConfig = defaultLogicConfig(),
+): Analysis {
   const client = parsedFiles[0].client
   const policies: Policy[] = parsedFiles.flatMap((f) => f.policies)
 
-  const findings = runEngines({ client, policies, supplementary })
+  // Apply the (possibly edited) thresholds before the engines read them.
+  applyThresholds(logicConfig.thresholds)
+  const findings = runEngines({ client, policies, supplementary }, logicConfig.disabledLogics)
   const executiveSummary = buildExecutiveSummary(findings, policies)
 
   return {

@@ -34,6 +34,7 @@ export default function Navbar() {
           )}
           {navButton('סיכום מנהלים', state.step === 'summary', () => dispatch({ type: 'GO_SUMMARY' }))}
           {navButton('אזור יועץ', state.step === 'advisor', () => dispatch({ type: 'GO_ADVISOR' }))}
+          {navButton('אזור לוגיקות', state.step === 'logic', () => dispatch({ type: 'GO_LOGIC' }))}
           <span className="w-px h-5 bg-white/15 mx-2" />
           <button
             onClick={() => dispatch({ type: 'RESET' })}

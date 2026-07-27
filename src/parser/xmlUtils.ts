@@ -30,8 +30,8 @@ export function parseDate(raw: string | null): string | null {
 /**
  * Normalize an Israeli ID number (תעודת זהות) for comparison.
  * The same ID can arrive with different zero-padding across files and
- * even across records in one file (e.g. "0000000027864610", "027864610",
- * "27864610"). Strip every leading zero to the significant digits, then
+ * even across records in one file (e.g. "0000000012345674", "012345674",
+ * "12345674"). Strip every leading zero to the significant digits, then
  * pad back to the canonical 9 digits, so the same person is never treated
  * as two different clients.
  */

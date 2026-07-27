@@ -57,7 +57,7 @@ export const savingsEngine: Engine = ({ policies, supplementary }) => {
           title: 'קרן השתלמות לעצמאים — הטבת מס שונה',
           description:
             `בקרן ${p.policyNumber}: כעצמאי/ת, הטבת המס בהשתלמות ניתנת כניכוי מההכנסה החייבת עד תקרת הפקדה שנתית, ` +
-            'ולא לפי תקרת שכר חודשית. כדאי לבדוק את ניצול התקרה השנתית.',
+            'ולא לפי תקרת שכר חודשית. ניצול התקרה השנתית הוא נקודה לבדיקה מול בעל רישיון.',
           productType: p.productType,
           policyNumber: p.policyNumber,
         }),

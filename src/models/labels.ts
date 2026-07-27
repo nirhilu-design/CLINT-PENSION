@@ -37,12 +37,13 @@ export const severityLabels: Record<FindingSeverity, string> = {
   gap: 'נמצא פער',
 }
 
+// SUG-ZIHUY-MUTAV (סוג זיהוי מוטב) per the מבנה אחיד value list.
 export const beneficiaryRelationLabels: Record<string, string> = {
-  '1': 'בן/בת זוג',
-  '2': 'ילד/ה',
-  '3': 'הורה',
-  '4': 'אח/אחות',
-  '5': 'אחר',
-  '6': 'עיזבון',
-  '7': 'על פי דין',
+  '1': 'פרטי',
+  '2': 'תאגיד',
+  '3': 'יורשים חוקיים',
+  '4': 'צוואה',
+  '5': 'שאיר',
+  '6': 'אחר',
+  '7': 'לא נקבעו מוטבים',
 }

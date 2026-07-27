@@ -6,6 +6,7 @@ import type {
   Client,
   Contribution,
   Coverage,
+  CoverageType,
   ManagersGeneration,
   MonthlyDeposit,
   Policy,
@@ -28,15 +29,27 @@ function mapProductType(
   hasDeathCoverage: boolean,
   planName: string | null,
 ): ProductType {
+  // SUG-MUTZAR value list per the מבנה אחיד (נספח ערכים):
+  // 1=ביטוח חיים משולב חיסכון, 2=קרן פנסיה, 3=קופת גמל, 4=קרן השתלמות,
+  // 5=חיסכון טהור, 6=סיכון טהור (ריסק/אכ"ע), 7=ביטוח חיים משכנתא,
+  // 8=סיכון טהור קולקטיב, 9=קופת גמל להשקעה, 10=חיסכון לכל ילד.
   switch (sugMutzar) {
     case '2':
       return 'pension'
-    case '3':
-      // גמל להשקעה is a separate product (always liquid); identified by plan name
-      return planName?.includes('להשקעה') ? 'gemelInvestment' : 'gemel'
     case '4':
       return 'education'
-    case '1':
+    case '9':
+      return 'gemelInvestment'
+    case '3':
+      // גמל להשקעה also shows up under code 3 for some issuers; identify by plan name
+      return planName?.includes('להשקעה') ? 'gemelInvestment' : 'gemel'
+    case '10':
+      return 'gemel' // חיסכון לכל ילד — a gemel savings account
+    case '1': // ביטוח חיים משולב חיסכון
+    case '5': // פוליסת חיסכון טהור
+    case '6': // פוליסת סיכון טהור (ריסק מוות ו/או אכ"ע)
+    case '7': // ביטוח חיים משכנתא
+    case '8': // פוליסת סיכון טהור קולקטיב
       // Insurance products: distinguish by content
       if (hasSavings) return 'managers'
       if (hasDeathCoverage) return 'life'
@@ -68,6 +81,53 @@ function parseClient(yeshutLakoach: Element): Client {
     email: getText(yeshutLakoach, 'E-MAIL'),
     phone: getText(yeshutLakoach, 'MISPAR-CELLULARI'),
   }
+}
+
+// Maps SUG-KISUY-BITOCHI (מבנה אחיד, נספח ערכים) to our coverage taxonomy.
+// null = not a risk coverage we surface (premium waiver / pure savings).
+function coverageTypeFromKisuyBituchi(code: string | null): CoverageType | null {
+  switch (code) {
+    case '1': // כיסוי למקרה מוות
+    case '3': // מוות מתאונה
+    case '9': // מוות + אכ"ע (פנסיה ותיקה)
+      return 'death'
+    case '2': // נכות מקצועית
+    case '4': // נכות מתאונה
+    case '5': // אבדן כושר עבודה (אכ"ע)
+      return 'disability'
+    case '7': // מחלות קשות
+    case '10': // אחר
+      return 'other'
+    case '6': // שחרור (ויתור על תשלום פרמיה) — לא כיסוי תשלום
+    case '8': // תוכנית משולבת חיסכון — חיסכון, לא סיכון
+      return null
+    default:
+      return null
+  }
+}
+
+// A coverage is active unless it carries an end date that has already passed.
+function coverageStatusFromEndDate(endRaw: string | null): 'active' | 'inactive' | null {
+  const end = parseDate(endRaw)
+  if (!end) return 'active'
+  return end < new Date().toISOString().slice(0, 10) ? 'inactive' : 'active'
+}
+
+// Sum the capital-status (הון) balance layers: PerutYitraLeTkufa rows whose
+// SUG-ITRA-LETKUFA = 1 (1=הון, 2=קצבה משלמת, 3=קצבה לא משלמת). null when none reported.
+function parseCapitalBalance(heshbon: Element): number | null {
+  let sum = 0
+  let found = false
+  for (const row of heshbon.querySelectorAll('PerutYitraLeTkufa')) {
+    if (getText(row, 'SUG-ITRA-LETKUFA') === '1') {
+      const amount = getNumber(row, 'SACH-ITRA-LESHICHVA-BESHACH')
+      if (amount !== null) {
+        sum += amount
+        found = true
+      }
+    }
+  }
+  return found ? sum : null
 }
 
 function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
@@ -121,21 +181,24 @@ function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
       }
     }
 
-    // Insurance coverage rows (life / income protection / managers riders)
-    for (const pt of kisui.querySelectorAll('PirteiTosafot')) {
-      const amount = getNumber(pt, 'SCHUM-BITUACH')
-      if (amount !== null) {
-        coverages.push({
-          type: 'death',
-          name,
-          amount,
-          percent: null,
-          coveredSalary: null,
-          cost: getNumber(pt, 'ALUT-KISUI'),
-          status: 'active',
-          policyNumber,
-        })
-      }
+    // Insurance-company coverages (managers / life): each PirteiKisuiBeMutzar row
+    // carries SUG-KISUY-BITOCHI identifying what it insures — death, disability,
+    // income protection (אכ"ע), etc. The amount is SCHUM-BITUACH, the premium is
+    // DMEI-BITUAH-LETASHLUM-BAPOAL. (Previously we mis-read PirteiTosafot — a rider
+    // block with no SCHUM-BITUACH — and hard-coded every row as death coverage.)
+    for (const cover of kisui.querySelectorAll('PirteiKisuiBeMutzar')) {
+      const type = coverageTypeFromKisuyBituchi(getText(cover, 'SUG-KISUY-BITOCHI'))
+      if (type === null) continue // savings / premium-waiver rows are not risk covers
+      coverages.push({
+        type,
+        name,
+        amount: getNumber(cover, 'SCHUM-BITUACH'),
+        percent: getNumber(cover, 'ACHUZ-MESACHAR'),
+        coveredSalary: null,
+        cost: getNumber(cover, 'DMEI-BITUAH-LETASHLUM-BAPOAL'),
+        status: coverageStatusFromEndDate(getText(cover, 'TAARICH-TOM-KISUY')),
+        policyNumber,
+      })
     }
   }
 
@@ -147,10 +210,12 @@ function parseContributions(heshbon: Element): Contribution[] {
   for (const h of heshbon.querySelectorAll('PerutHafrashotLePolisa')) {
     const sug = getText(h, 'SUG-HAFRASHA')
     const percent = getNumber(h, 'ACHUZ-HAFRASHA')
+    // SUG-HAFRASHA: 1=פיצויים, 2=תגמולים עובד, 3=תגמולים מעביד, 6=שונות עובד,
+    // 7=שונות מעביד, 8=קה"ש עובד, 9=קה"ש מעביד.
     const role =
-      sug === '2' || sug === '8'
+      sug === '2' || sug === '8' || sug === '6'
         ? 'employee'
-        : sug === '3' || sug === '9'
+        : sug === '3' || sug === '9' || sug === '7'
           ? 'employer'
           : sug === '1'
             ? 'severance'
@@ -165,14 +230,18 @@ function parseBeneficiaries(heshbon: Element): Beneficiary[] {
   for (const mutav of heshbon.querySelectorAll('Mutav')) {
     const first = getText(mutav, 'SHEM-PRATI-MUTAV')
     const last = getText(mutav, 'SHEM-MISHPACHA-MUTAV')
-    const relationCode = getText(mutav, 'SUG-ZIHUY-MUTAV') ?? getText(mutav, 'KIRVAT-MUTAV')
+    // SUG-ZIHUY-MUTAV is the beneficiary identity type (פרטי / תאגיד / יורשים חוקיים…),
+    // per the מבנה אחיד — the standard carries no kinship field. Code 7 = "no
+    // beneficiaries set by the client", so it is not a real beneficiary row.
+    const relationCode = getText(mutav, 'SUG-ZIHUY-MUTAV')
+    if (relationCode === '7') continue
     const name = [first, last].filter(Boolean).join(' ') || null
     const relation = relationCode ? (beneficiaryRelationLabels[relationCode] ?? relationCode) : null
     if (name || relation) {
       beneficiaries.push({
         name,
         relation,
-        allocationPercent: getNumber(mutav, 'ACHUZ-HALUKA'),
+        allocationPercent: getNumber(mutav, 'ACHUZ-MUTAV'),
       })
     }
   }
@@ -294,10 +363,29 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
         mofid: mofidFromKidodAchid(getText(heshbon, 'KIDOD-ACHID')),
         openDate,
         status: statusRaw === '1' ? 'active' : statusRaw ? 'inactive' : null,
+        statusCode: statusRaw,
+        // ACHUZ-HAKTZAA-LE-CHISACHON — savings allocation share (e.g. 100% vs 90%),
+        // relevant for old managers policies where part of the premium funds riders.
+        savingsAllocationPercent: getNumber(
+          heshbon,
+          'SchumeiBituahYesodi ACHUZ-HAKTZAA-LE-CHISACHON',
+        ),
+        capitalBalance: parseCapitalBalance(heshbon),
+        // STATUS-POLISA-O-CHESHBON 4 = ריסק זמני, 8 = ריסק זמני אוטומטי:
+        // deposits stopped but risk coverage is kept temporarily from the accumulation.
+        temporaryRisk: statusRaw === '4' || statusRaw === '8',
         currentValue,
         coveredSalary: getNumber(heshbon, 'PirteiHaasaka > SACHAR-POLISA'),
-        expectedPension: getNumber(yitra, 'KITZVAT-HODSHIT-TZFUYA'),
-        expectedAccumulationAtRetirement: getNumber(yitra, 'TOTAL-CHISACHON-MITZTABER-TZAFUY'),
+        // קצבה חודשית חזויה: עם המשך הפקדות מול ללא הפקדות (שני שדות נפרדים בדיווח)
+        expectedPensionWithDeposits: getNumber(yitra, 'SCHUM-KITZVAT-ZIKNA'),
+        expectedPensionWithoutDeposits: getNumber(yitra, 'KITZVAT-HODSHIT-TZFUYA'),
+        // צבירה חזויה לפרישה: עם/ללא הפקדות (עם נפילה חזרה לשדות ה-LEKITZBA המפורשים)
+        expectedAccumulationWithDeposits:
+          getNumber(yitra, 'TOTAL-CHISACHON-MITZTABER-TZAFUY') ??
+          getNumber(yitra, 'TOTAL-SCHUM-MTZBR-TZAFUY-LEGIL-PRISHA-MECHUSHAV-LEKITZBA-IM-PREMIYOT'),
+        expectedAccumulationWithoutDeposits:
+          getNumber(yitra, 'TZVIRAT-CHISACHON-CHAZUYA-LELO-PREMIYOT') ??
+          getNumber(yitra, 'TOTAL-SCHUM-MITZVTABER-TZFUY-LEGIL-PRISHA-MECHUSHAV-HAMEYOAD-LEKITZBA-LELO-PREMIYOT'),
         retirementAge: getNumber(yitra, 'GIL-PRISHA'),
         fees: { fromDeposit: feeFromDeposit, fromAccumulation: feeFromAccumulation },
         netReturn: getNumber(heshbon, 'Tsua > SHEUR-TSUA-NETO'),

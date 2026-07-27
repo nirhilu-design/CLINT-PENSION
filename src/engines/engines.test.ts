@@ -5,11 +5,13 @@ import { depositsEngine } from './depositsEngine'
 import { costEngine } from './costEngine'
 import { incomeProtectionEngine } from './incomeProtectionEngine'
 import { dataQualityEngine } from './dataQualityEngine'
+import { deathPictureEngine } from './deathPictureEngine'
+import { stopIssueEngine, isBlockedByStopIssue } from './stopIssueEngine'
 import { sortFindings } from './findingPriority'
 import { makeFinding } from './engineTypes'
 
 const client = {
-  id: '027864610',
+  id: '012345674',
   firstName: 'א',
   lastName: 'ב',
   fullName: 'א ב',
@@ -25,13 +27,19 @@ function makePolicy(overrides: Partial<Policy> = {}): Policy {
     productType: 'pension',
     productName: 'קרן בדיקה',
     managingCompany: 'יצרן',
-    mofid: '209',
+    mofid: '7777',
     openDate: '2019-12-22',
     status: 'active',
+    statusCode: '1',
+    temporaryRisk: false,
+    savingsAllocationPercent: null,
+    capitalBalance: null,
     currentValue: 100000,
-    coveredSalary: 14442,
-    expectedPension: 4444,
-    expectedAccumulationAtRetirement: null,
+    coveredSalary: 14000,
+    expectedPensionWithDeposits: 9000,
+    expectedPensionWithoutDeposits: null,
+    expectedAccumulationWithDeposits: null,
+    expectedAccumulationWithoutDeposits: null,
     retirementAge: 67,
     fees: { fromDeposit: 1.2, fromAccumulation: 0.14 },
     netReturn: 9.5,
@@ -93,52 +101,104 @@ describe('depositsEngine', () => {
     )
     expect(out).toHaveLength(0)
   })
+
+  it('surfaces a temporary-risk (ריסק זמני) policy on its own', () => {
+    const out = depositsEngine(
+      input([makePolicy({ status: 'inactive', temporaryRisk: true, statusCode: '4' })]),
+    )
+    expect(out.some((f) => f.title.includes('ריסק זמני'))).toBe(true)
+  })
 })
 
 describe('costEngine', () => {
-  it('flags fees above the market threshold', () => {
+  it('stays silent without an employer fee agreement (no market comparison)', () => {
+    // High fees but no agreement → nothing, since fees are judged only vs the employer file
     const out = costEngine(input([makePolicy({ fees: { fromDeposit: 5, fromAccumulation: 0.4 } })]))
-    expect(out.some((f) => f.title.includes('מהמקובל בשוק'))).toBe(true)
-  })
-
-  it('stays silent below thresholds and without agreements', () => {
-    const out = costEngine(input([makePolicy()]))
     expect(out).toHaveLength(0)
   })
 
-  it('compares against a fee agreement only when one exists', () => {
+  it('flags a gap only against the employer fee agreement', () => {
     const out = costEngine(
-      input([makePolicy()], {
+      input([makePolicy({ fees: { fromDeposit: 2, fromAccumulation: 0.3 } })], {
         feeAgreements: [
           { policyNumber: 'P1', agreedFeeFromDeposit: 1.0, agreedFeeFromAccumulation: 0.1 },
         ],
       }),
     )
-    expect(out.some((f) => f.title.includes('מול ההסכם'))).toBe(true)
+    expect(out.some((f) => f.title.includes('מול הסכם המעסיק'))).toBe(true)
+  })
+})
+
+describe('deathPictureEngine liabilities', () => {
+  const lifeCover = (amount: number) =>
+    makePolicy({
+      policyNumber: 'L1',
+      productType: 'life',
+      coverages: [
+        { type: 'death', name: null, amount, percent: null, coveredSalary: null, cost: null, status: 'active', policyNumber: 'L1' },
+      ],
+    })
+
+  it('flags when death coverage is below the liabilities', () => {
+    const out = deathPictureEngine(
+      input([lifeCover(200000)], { mortgageBalance: 500000, otherDebts: 50000, hasLiabilities: true }),
+    )
+    expect(out.some((f) => f.title.includes('נמוך מההתחייבויות'))).toBe(true)
   })
 
-  it('compares against the fund average from treasury data', () => {
-    const out = costEngine(
-      input([makePolicy({ fees: { fromDeposit: null, fromAccumulation: 0.6 } })], {
-        treasuryFunds: [
-          {
-            mofid: '209',
-            name: 'קרן',
-            managingCompany: null,
-            avgFeeFromAccumulation: 0.2,
-            avgFeeFromDeposit: null,
-            return12m: null,
-            return3yAnnualized: null,
-            return5yAnnualized: null,
-            stdDev36m: null,
-            sharpe: null,
-            liquidityRatio: null,
-            periodTo: null,
-          },
-        ],
+  it('confirms when coverage covers the liabilities', () => {
+    const out = deathPictureEngine(
+      input([lifeCover(800000)], { mortgageBalance: 500000, hasLiabilities: true }),
+    )
+    expect(out.some((f) => f.title.includes('מכסה את ההתחייבויות'))).toBe(true)
+  })
+})
+
+describe('managers generation engine (stopIssueEngine)', () => {
+  const managers = (gen: Policy['managersGeneration'], extra: Partial<Policy> = {}) =>
+    makePolicy({ policyNumber: 'MG', productType: 'managers', managersGeneration: gen, ...extra })
+  const pension = makePolicy({ policyNumber: 'PEN', productType: 'pension' })
+  const sev = (out: ReturnType<typeof stopIssueEngine>) =>
+    out.find((x) => x.title.includes('דור ביטוח המנהלים'))?.severity
+
+  it('examines every generation including pre-2001 (nothing blocked)', () => {
+    const old = managers('before-2001-06', { hasGuaranteedFactor: true })
+    expect(isBlockedByStopIssue(old)).toBe(false)
+    expect(sev(stopIssueEngine(input([old])))).toBeDefined()
+  })
+
+  it('pre-2001 split with a pension and no dependents → attention', () => {
+    const out = stopIssueEngine(
+      input([managers('before-2001-06', { hasGuaranteedFactor: true }), pension], {
+        hasSpouse: false,
+        hasChildrenUnder21: false,
       }),
     )
-    expect(out.some((f) => f.title.includes('מהממוצע בקופה'))).toBe(true)
+    expect(sev(out)).toBe('attention')
+  })
+
+  it('pre-2001 notes the savings allocation (100% vs 90%) and the riders', () => {
+    const old = managers('before-2001-06', {
+      hasGuaranteedFactor: true,
+      savingsAllocationPercent: 90,
+      coverages: [
+        { type: 'death', name: null, amount: 5, percent: null, coveredSalary: null, cost: null, status: 'active', policyNumber: 'MG' },
+      ],
+    })
+    const desc = stopIssueEngine(input([old]))[0].description
+    expect(desc).toContain('הקצאה לחיסכון: 90%')
+    expect(desc).toContain('תוספות ביטוחיות')
+  })
+
+  it('2001–2004 → attention (consider diverting)', () => {
+    expect(sev(stopIssueEngine(input([managers('2001-06-to-2004')])))).toBe('attention')
+  })
+
+  it('2004–2013 new factor beside a pension: fee above threshold → attention, at/below → info', () => {
+    const high = managers('2004-to-2013', { fees: { fromDeposit: null, fromAccumulation: 1.2 } })
+    const low = managers('2004-to-2013', { fees: { fromDeposit: null, fromAccumulation: 0.5 } })
+    expect(sev(stopIssueEngine(input([high, pension])))).toBe('attention')
+    expect(sev(stopIssueEngine(input([low, pension])))).toBe('info')
   })
 })
 
@@ -148,24 +208,34 @@ describe('incomeProtectionEngine', () => {
     name: null,
     amount: 9000,
     percent: 60,
-    coveredSalary: 14442,
+    coveredSalary: 14000,
     cost: 60,
     status: 'active' as const,
     policyNumber: 'P1',
   }
 
-  it('flags coverage percent below the 73% target', () => {
-    const out = incomeProtectionEngine(input([makePolicy({ coverages: [disabilityCover] })]))
+  // Uses a non-pension product: pension disability is handled cross-product by
+  // pensionInsightEngine, so incomeProtection no longer flags pension in isolation.
+  const managersPolicy = (overrides = {}) =>
+    makePolicy({ productType: 'managers', coverages: [disabilityCover], ...overrides })
+
+  it('flags coverage percent below the 73% target (non-pension product)', () => {
+    const out = incomeProtectionEngine(input([managersPolicy()]))
     const f = out.find((x) => x.title.includes('נמוך מהיעד'))
     expect(f?.severity).toBe('attention')
   })
 
   it('escalates to gap when the family relies on the income', () => {
-    const out = incomeProtectionEngine(
-      input([makePolicy({ coverages: [disabilityCover] })], { familyReliesOnIncome: true }),
-    )
+    const out = incomeProtectionEngine(input([managersPolicy()], { familyReliesOnIncome: true }))
     const f = out.find((x) => x.title.includes('נמוך מהיעד'))
     expect(f?.severity).toBe('gap')
+  })
+
+  it('does not flag a low pension disability in isolation (handled cross-product)', () => {
+    const out = incomeProtectionEngine(
+      input([makePolicy({ productType: 'pension', coverages: [disabilityCover] })]),
+    )
+    expect(out.some((x) => x.title.includes('נמוך מהיעד'))).toBe(false)
   })
 })
 

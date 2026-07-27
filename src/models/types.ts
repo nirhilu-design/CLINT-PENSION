@@ -81,10 +81,18 @@ export interface Policy {
   mofid: string | null // מספר אוצר derived from KIDOD-ACHID
   openDate: string | null // ISO
   status: 'active' | 'inactive' | null
+  statusCode: string | null // raw STATUS-POLISA-O-CHESHBON
+  temporaryRisk: boolean // ריסק זמני (status 4/8) — coverage kept temporarily, deposits stopped
+  savingsAllocationPercent: number | null // ACHUZ-HAKTZAA-LE-CHISACHON — % of premium to savings
+  capitalBalance: number | null // הון portion (SUG-ITRA-LETKUFA=1), null when not reported
   currentValue: number | null
   coveredSalary: number | null
-  expectedPension: number | null // KITZVAT-HODSHIT-TZFUYA
-  expectedAccumulationAtRetirement: number | null
+  // קצבה חודשית חזויה — שני תרחישי המסלקה
+  expectedPensionWithDeposits: number | null // SCHUM-KITZVAT-ZIKNA — בהמשך הפקדות שוטפות
+  expectedPensionWithoutDeposits: number | null // KITZVAT-HODSHIT-TZFUYA — ללא המשך הפקדות
+  // צבירה חזויה לגיל פרישה — אותם שני תרחישים
+  expectedAccumulationWithDeposits: number | null // TOTAL-CHISACHON-MITZTABER-TZAFUY — בהמשך הפקדות
+  expectedAccumulationWithoutDeposits: number | null // TZVIRAT-CHISACHON-CHAZUYA-LELO-PREMIYOT — ללא הפקדות
   retirementAge: number | null
   fees: FeeStructure
   netReturn: number | null // percent, SHEUR-TSUA-NETO
@@ -189,6 +197,10 @@ export interface SupplementaryInfo {
   otherAssetsRealEstateValue: number | null
   otherAssetsPortfolioValue: number | null
   otherAssetsLiquidValue: number | null
+  // Liabilities — used to weigh life-insurance coverage against what it needs to cover
+  hasLiabilities: boolean | null
+  mortgageBalance: number | null
+  otherDebts: number | null
   employmentStatus: EmploymentStatus | null
   currentGrossSalary: number | null
   familyReliesOnIncome: boolean | null
@@ -198,6 +210,17 @@ export interface SupplementaryInfo {
   benchmarks: FundBenchmark[]
   treasuryFunds: TreasuryFundData[]
   treasuryAllocations: TreasuryAllocation[]
+  advisorNotes: AdvisorNote[]
+  // Scenario assumptions (persisted; a scenario engine that consumes them is future work)
+  scenarioRetirementAge: number | null
+  scenarioRealReturnPercent: number | null
+  scenarioSalaryGrowthPercent: number | null
+  scenarioLifeExpectancy: number | null
+}
+
+export interface AdvisorNote {
+  date: string // ISO
+  text: string
 }
 
 // ---- Analysis (root aggregate) ----

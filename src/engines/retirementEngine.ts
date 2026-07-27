@@ -7,13 +7,6 @@ import { PENSION_TO_SALARY_MIN_RATIO } from '../config/thresholds'
 import { isBlockedByStopIssue } from './stopIssueEngine'
 import { formatCurrency } from '../utils/format'
 
-const generationLabels: Record<string, string> = {
-  'before-2001-06': 'לפני יוני 2001 (מקדם מובטח היסטורי)',
-  '2001-06-to-2004': 'יוני 2001 עד 2004',
-  '2004-to-2013': '2004 עד 2013',
-  '2013-plus': '2013 ואילך',
-}
-
 export const retirementEngine: Engine = ({ policies, supplementary }) => {
   const findings = []
 
@@ -24,9 +17,19 @@ export const retirementEngine: Engine = ({ policies, supplementary }) => {
       p.status === 'active',
   )
 
-  // Aggregate expected pension
-  const withPension = pensionable.filter((p) => p.expectedPension !== null)
-  const totalExpected = withPension.reduce((sum, p) => sum + (p.expectedPension ?? 0), 0)
+  // Aggregate expected pension. The realistic figure for an active saver assumes
+  // continued deposits; the "no further deposits" figure is the conservative floor.
+  const hasPensionData = (p: (typeof pensionable)[number]) =>
+    p.expectedPensionWithDeposits !== null || p.expectedPensionWithoutDeposits !== null
+  const primaryPension = (p: (typeof pensionable)[number]) =>
+    p.expectedPensionWithDeposits ?? p.expectedPensionWithoutDeposits ?? 0
+
+  const withPension = pensionable.filter(hasPensionData)
+  const totalExpected = withPension.reduce((sum, p) => sum + primaryPension(p), 0)
+  const totalWithoutDeposits = withPension.reduce(
+    (sum, p) => sum + (p.expectedPensionWithoutDeposits ?? 0),
+    0,
+  )
 
   if (withPension.length > 0) {
     findings.push(
@@ -35,7 +38,11 @@ export const retirementEngine: Engine = ({ policies, supplementary }) => {
         level: 'client',
         severity: 'info',
         title: 'קצבה חודשית צפויה בפרישה',
-        description: `סך הקצבה החודשית הצפויה מהמוצרים הפנסיוניים הפעילים: ${formatCurrency(totalExpected)}.`,
+        description:
+          `סך הקצבה החודשית הצפויה מהמוצרים הפנסיוניים הפעילים בהמשך הפקדות: ${formatCurrency(totalExpected)}` +
+          (totalWithoutDeposits > 0
+            ? ` · ללא המשך הפקדות: ${formatCurrency(totalWithoutDeposits)}.`
+            : '.'),
       }),
     )
 
@@ -52,7 +59,7 @@ export const retirementEngine: Engine = ({ policies, supplementary }) => {
             title: 'הקצבה הצפויה נמוכה ביחס לשכר',
             description:
               `הקצבה הצפויה מהווה כ-${ratio}% מ${fromClient ? 'השכר שציינת' : 'השכר המבוטח המדווח בקבצים'} (${formatCurrency(salary)}). ` +
-              'מומלץ לבחון את היקף החיסכון הפנסיוני ואת רמת ההפקדות.',
+              'היקף החיסכון הפנסיוני ורמת ההפקדות הם נקודה לבדיקה מול בעל רישיון.',
           }),
         )
       }
@@ -72,13 +79,13 @@ export const retirementEngine: Engine = ({ policies, supplementary }) => {
         severity: 'attention',
         title: 'עצמאי ללא מוצר פנסיוני פעיל בתיק',
         description:
-          'צוין סטטוס עצמאי, אך בקבצים לא זוהה מוצר פנסיוני פעיל. על עצמאים חלה חובת הפקדה לפנסיה — כדאי לבדוק האם קיים מוצר שלא הועלה.',
+          'צוין סטטוס עצמאי, אך בקבצים לא זוהה מוצר פנסיוני פעיל. על עצמאים חלה חובת הפקדה לפנסיה — נקודה לבדיקה מול בעל רישיון האם קיים מוצר שלא הועלה.',
       }),
     )
   }
 
   // Pension products missing expected pension → limitation, not a guess
-  for (const p of pensionable.filter((p) => p.expectedPension === null)) {
+  for (const p of pensionable.filter((p) => !hasPensionData(p))) {
     findings.push(
       makeFinding({
         category: 'limitation',
@@ -112,7 +119,7 @@ export const retirementEngine: Engine = ({ policies, supplementary }) => {
           title: 'לא זוהו הפרשות מעסיק בקבצים',
           description:
             'צוין סטטוס שכיר, אך באף מוצר פעיל לא זוהו הפרשות מעסיק. ' +
-            'כדאי לבדוק שההפרשות מהמעסיק אכן מתבצעות ומדווחות.',
+            'האם ההפרשות מהמעסיק אכן מתבצעות ומדווחות — נקודה לבדיקה מול בעל רישיון.',
         }),
       )
     }
@@ -132,7 +139,7 @@ export const retirementEngine: Engine = ({ policies, supplementary }) => {
           title: 'ללא עבודה כיום — שמירת הכיסויים הביטוחיים מוגבלת בזמן',
           description:
             'צוין שאינך עובד/ת כיום. ללא הפקדות שוטפות, הכיסויים הביטוחיים בקרן הפנסיה נשמרים לתקופה מוגבלת בלבד (הסדר ריסק זמני). ' +
-            'מומלץ לבחון את המשך הכיסוי מול הקרן.',
+            'המשך הכיסוי מול הקרן הוא נקודה לבדיקה מול בעל רישיון.',
         }),
       )
     }
@@ -150,54 +157,15 @@ export const retirementEngine: Engine = ({ policies, supplementary }) => {
         title: 'חשבון לא פעיל (מוקפא) עם צבירה',
         description:
           `בחשבון ${p.policyNumber} (${p.managingCompany ?? ''}) קיימת צבירה של ${formatCurrency(p.currentValue)} ללא הפקדות שוטפות. ` +
-          'בחשבון מוקפא אין כיסוי ביטוחי ולעיתים דמי הניהול גבוהים יותר. מומלץ לבחון איחוד חשבונות.',
+          'בחשבון מוקפא אין כיסוי ביטוחי ולעיתים דמי הניהול גבוהים יותר. איחוד חשבונות הוא נקודה לבדיקה מול בעל רישיון.',
         productType: p.productType,
         policyNumber: p.policyNumber,
       }),
     )
   }
 
-  // Managers classification review
-  for (const p of policies.filter(
-    (p) => p.productType === 'managers' && p.managersGeneration && !isBlockedByStopIssue(p),
-  )) {
-    const gen = p.managersGeneration!
-    const isNewGuaranteedFactorEra = gen === '2001-06-to-2004' || gen === '2004-to-2013'
-
-    if (isNewGuaranteedFactorEra && p.hasGuaranteedFactor) {
-      // Observation only: the value of a 2001-2013 factor depends on age and
-      // the full picture (near retirement it may even gain importance) —
-      // the system highlights, it does not judge.
-      findings.push(
-        makeFinding({
-          category: 'insight',
-          level: 'policy',
-          severity: 'info',
-          title: 'קיים מקדם קצבה מובטח מדור 2001–2013',
-          description:
-            `בפוליסה ${p.policyNumber} (${generationLabels[gen]}) קיים מקדם קצבה מובטח. ` +
-            'בפוליסות מדור זה גלומה עלות עבור הבטחת המקדם, ושוויה בפועל תלוי בגיל, בוותק ובתמונה הכוללת של התיק — ' +
-            'נקודה שחשוב להכיר בבחינת הפוליסה.',
-          productType: p.productType,
-          policyNumber: p.policyNumber,
-        }),
-      )
-    } else {
-      findings.push(
-        makeFinding({
-          category: 'retirement',
-          level: 'policy',
-          severity: 'info',
-          title: 'סיווג דור ביטוח המנהלים',
-          description:
-            `פוליסה ${p.policyNumber} שייכת לדור: ${generationLabels[gen]}` +
-            (p.hasGuaranteedFactor ? '. קיים מקדם קצבה מובטח.' : '. ללא מקדם קצבה מובטח.'),
-          productType: p.productType,
-          policyNumber: p.policyNumber,
-        }),
-      )
-    }
-  }
+  // Managers generation classification moved to stopIssueEngine (the managers
+  // generation engine), which now examines all generations.
 
   return findings
 }

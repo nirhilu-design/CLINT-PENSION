@@ -38,7 +38,7 @@ export const investmentEngine: Engine = ({ policies, supplementary }) => {
             description:
               `בפוליסה ${policy.policyNumber} התשואה נטו המדווחת היא ${formatPercent(policy.netReturn)} ` +
               `לעומת ${formatPercent(benchmarkReturn)} ב${sourceLabel} (12 חודשים, ברוטו). ` +
-              'כדאי לבדוק את התאמת מסלול ההשקעה.',
+              'נקודה לבדיקה מול בעל רישיון.',
             basedOn: treasury
               ? `תשואת המסלקה מול קובץ נתוני האוצר (מ"ה ${policy.mofid}, לתקופה ${treasury.periodTo ?? '—'})`
               : 'תשואת המסלקה מול נתוני השוואה שהוזנו ידנית באזור היועץ',

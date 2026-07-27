@@ -21,7 +21,29 @@ export const depositsEngine: Engine = ({ policies }) => {
   const findings = []
 
   for (const p of policies) {
-    if (isBlockedByStopIssue(p) || p.status !== 'active') continue
+    if (isBlockedByStopIssue(p)) continue
+
+    // Temporary-risk status (ריסק זמני): deposits stopped and the risk coverage is
+    // being kept alive from the accumulation for a limited period — surfaced on its
+    // own, since the missing deposits are explained by this state.
+    if (p.temporaryRisk) {
+      findings.push(
+        makeFinding({
+          category: 'deposits',
+          level: 'policy',
+          severity: 'attention',
+          title: 'הפוליסה במצב ריסק זמני',
+          description:
+            `פוליסה ${p.policyNumber} מדווחת בסטטוס ריסק זמני — ההפקדות הופסקו והכיסוי הביטוחי נשמר ` +
+            'זמנית על חשבון הצבירה, לתקופה מוגבלת בלבד. נקודה לבדיקה מול בעל רישיון.',
+          productType: p.productType,
+          policyNumber: p.policyNumber,
+        }),
+      )
+      continue
+    }
+
+    if (p.status !== 'active') continue
     // Risk-only products have no ongoing savings deposits to track
     if (p.productType === 'life' || p.productType === 'incomeProtection') continue
 
@@ -40,7 +62,7 @@ export const depositsEngine: Engine = ({ policies }) => {
             description:
               `בפוליסה ${p.policyNumber} ההפקדה האחרונה נקלטה בחודש ${p.lastDepositMonth}, ` +
               `כ-${gapMonths} חודשים לפני תאריך הנתונים (${asOf}). ` +
-              'ייתכן עיכוב בהעברת הפקדות — כדאי לבדוק מול המעסיק או הגורם המשלם.',
+              'ייתכן עיכוב בהעברת הפקדות — נקודה לבדיקה מול בעל רישיון.',
             productType: p.productType,
             policyNumber: p.policyNumber,
           }),
@@ -69,7 +91,7 @@ export const depositsEngine: Engine = ({ policies }) => {
             title: 'זוהו חודשים ללא הפקדה',
             description:
               `בפוליסה ${p.policyNumber} חסרות הפקדות עבור ${missing} מתוך ${expected} חודשי השכר האחרונים שדווחו. ` +
-              'אי-רציפות בהפקדות עשויה לפגוע בכיסויים הביטוחיים ובצבירה — כדאי לבדוק את סיבת הפער.',
+              'אי-רציפות בהפקדות עשויה לפגוע בכיסויים הביטוחיים ובצבירה — נקודה לבדיקה מול בעל רישיון.',
             productType: p.productType,
             policyNumber: p.policyNumber,
           }),

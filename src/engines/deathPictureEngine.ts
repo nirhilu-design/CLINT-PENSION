@@ -40,6 +40,10 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
   }
   if (capitalAssets > 0) parts.push(`נכסים הוניים (גמל והשתלמות): ${formatCurrency(capitalAssets)}`)
 
+  const totalLiabilities =
+    (supplementary.mortgageBalance ?? 0) + (supplementary.otherDebts ?? 0)
+  if (totalLiabilities > 0) parts.push(`התחייבויות (משכנתא/חובות): ${formatCurrency(totalLiabilities)}`)
+
   // Client-stated assets outside the pension portfolio
   const statedParts: string[] = []
   if (supplementary.otherAssetsRealEstateValue) {
@@ -95,7 +99,7 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
           'צוין שקיימים ילדים מתחת לגיל 21 או בן/בת זוג' +
           (reliesOnIncome ? ' ושהמשפחה מסתמכת על ההכנסה שלך, ' : ', ') +
           'אך במוצרים שנותחו לא נמצא כיסוי שאירים או ביטוח למקרה מוות. ' +
-          'מומלץ לבחון את הצורך בכיסוי משפחתי.',
+          'נקודה לבדיקה מול בעל רישיון.',
       }),
     )
   }
@@ -113,9 +117,41 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
         title: 'כיסוי מוות קיים ללא תלויים',
         description:
           'צוין שאין ילדים מתחת לגיל 21 ואין בן/בת זוג, אך קיימים כיסויי מוות/שאירים בתשלום. ' +
-          'כדאי לבדוק את הצורך בכיסויים אלה ואת עלותם.',
+          'נקודה לבדיקה מול בעל רישיון.',
       }),
     )
+  }
+
+  // Life-insurance coverage vs the liabilities it would need to clear at death
+  if (totalLiabilities > 0) {
+    const availableAtDeath = deathLumpSum + capitalAssets
+    if (availableAtDeath < totalLiabilities) {
+      const reliesOnIncome = supplementary.familyReliesOnIncome === true
+      findings.push(
+        makeFinding({
+          category: 'death',
+          level: 'client',
+          severity: hasDependents && reliesOnIncome ? 'gap' : 'attention',
+          title: 'כיסוי המוות נמוך מההתחייבויות',
+          description:
+            `ההתחייבויות (משכנתא/חובות) עומדות על כ-${formatCurrency(totalLiabilities)}, ` +
+            `בעוד הכיסוי הזמין במקרה מוות (ביטוח חיים ונכסים הוניים) הוא כ-${formatCurrency(availableAtDeath)}. ` +
+            'ייתכן שהמשפחה תירש חלק מההתחייבויות ללא כיסוי — נקודה לבדיקה מול בעל רישיון.',
+        }),
+      )
+    } else {
+      findings.push(
+        makeFinding({
+          category: 'death',
+          level: 'client',
+          severity: 'info',
+          title: 'כיסוי המוות מכסה את ההתחייבויות',
+          description:
+            `הכיסוי הזמין במקרה מוות (כ-${formatCurrency(availableAtDeath)}) מכסה את ההתחייבויות ` +
+            `(כ-${formatCurrency(totalLiabilities)}). נקודה לבדיקה מול בעל רישיון.`,
+        }),
+      )
+    }
   }
 
   // Large life-insurance coverage alongside substantial private assets —
@@ -134,7 +170,7 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
         title: 'ביטוח חיים גדול לצד נכסים מהותיים',
         description:
           `דווחו נכסים בשווי כולל של כ-${formatCurrency(statedAssetsTotal)} לצד כיסוי ביטוח חיים של ${formatCurrency(deathLumpSum)}. ` +
-          'כאשר קיימים נכסים משמעותיים המשמשים רשת ביטחון, כדאי לבדוק את כדאיות היקף הכיסוי ועלותו מול הצורך בפועל.',
+          'כאשר קיימים נכסים משמעותיים המשמשים רשת ביטחון, היקף הכיסוי ועלותו מול הצורך בפועל הם נקודה לבדיקה מול בעל רישיון.',
       }),
     )
   }
@@ -154,7 +190,7 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
           (statedTotal > 0
             ? `דווחו נכסים נוספים מחוץ לתיק הפנסיוני בשווי כולל של כ-${formatCurrency(statedTotal)}. `
             : 'צוין שקיימים נכסים פיננסיים מהותיים נוספים מחוץ לתיק הפנסיוני. ') +
-          'נכסים אלה עשויים להוות חלופה חלקית לכיסוי ביטוחי — מומלץ לבחון את התמונה הכוללת מול בעל רישיון.',
+          'נכסים אלה עשויים להוות חלופה חלקית לכיסוי ביטוחי — נקודה לבדיקה מול בעל רישיון.',
       }),
     )
   }
