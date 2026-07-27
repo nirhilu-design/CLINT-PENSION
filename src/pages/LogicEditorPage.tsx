@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useApp } from '../hooks/useAppState'
 import { buildAnalysis } from '../services/analysisService'
+import { findingCountsByLogic } from '../engines'
 import { productTypeLabels } from '../models/labels'
 import { ArrowRight } from 'lucide-react'
-import type { ProductType } from '../models/types'
+import type { FindingSeverity, ProductType } from '../models/types'
 import Card from '../components/ds/Card'
 import {
   LOGIC_CATALOG,
@@ -12,9 +13,15 @@ import {
   type LogicDef,
   type LogicParam,
 } from '../config/logicConfig'
-import { cloneThresholds, DEFAULT_THRESHOLDS, type ThresholdValues } from '../config/thresholds'
+import { applyThresholds, cloneThresholds, DEFAULT_THRESHOLDS, type ThresholdValues } from '../config/thresholds'
 
 const PRODUCT_TABS: ProductType[] = ['pension', 'managers', 'life', 'incomeProtection', 'gemel', 'gemelInvestment', 'education']
+
+const SEVERITY_STYLE: Record<FindingSeverity, { label: string; bg: string; color: string }> = {
+  gap: { label: 'פער', bg: 'var(--color-danger-bg)', color: 'var(--color-danger-dark)' },
+  attention: { label: 'לבדיקה', bg: 'var(--color-warning-bg)', color: 'var(--color-warning-dark)' },
+  info: { label: 'הארה', bg: 'var(--teal-50)', color: 'var(--teal-700)' },
+}
 
 function cloneConfig(c: LogicConfig): LogicConfig {
   return { thresholds: cloneThresholds(c.thresholds), disabledLogics: [...c.disabledLogics] }
@@ -62,6 +69,14 @@ export default function LogicEditorPage() {
   const [saved, setSaved] = useState(false)
 
   const logicsForProduct = (p: ProductType) => LOGIC_CATALOG.filter((l) => l.products.length === 0 || l.products.includes(p))
+
+  // "X התאמות" — how many findings each logic currently raises for the loaded client.
+  const matchCounts = useMemo<Record<string, number>>(() => {
+    const a = state.analysis
+    if (!a) return {}
+    applyThresholds(state.logicConfig.thresholds)
+    return findingCountsByLogic({ client: a.client, policies: a.policies, supplementary: a.supplementary })
+  }, [state.analysis, state.logicConfig])
 
   function setParam(key: LogicParam['key'], value: string) {
     const n = value.trim() === '' ? 0 : parseFloat(value)
@@ -145,6 +160,7 @@ export default function LogicEditorPage() {
             product={product}
             thresholds={cfg.thresholds}
             enabled={!cfg.disabledLogics.includes(logic.id)}
+            matchCount={matchCounts[logic.id]}
             onParam={setParam}
             onFee={setFee}
             onToggle={(en) => toggleLogic(logic.id, en)}
@@ -173,6 +189,7 @@ function LogicCard({
   product,
   thresholds,
   enabled,
+  matchCount,
   onParam,
   onFee,
   onToggle,
@@ -181,10 +198,12 @@ function LogicCard({
   product: ProductType
   thresholds: ThresholdValues
   enabled: boolean
+  matchCount?: number
   onParam: (key: LogicParam['key'], value: string) => void
   onFee: (pt: ProductType, field: 'fromDeposit' | 'fromAccumulation', value: string) => void
   onToggle: (enabled: boolean) => void
 }) {
+  const sev = SEVERITY_STYLE[logic.severity]
   const changed =
     logic.params.some((p) => thresholds[p.key] !== DEFAULT_THRESHOLDS[p.key]) ||
     (logic.editsMarketFees &&
@@ -206,13 +225,18 @@ function LogicCard({
         <Toggle on={enabled} onChange={onToggle} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)' }}>{logic.label}</h3>
+            <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>{logic.category}</span>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: enabled ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)' }}>{logic.label}</h3>
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 9px', borderRadius: 'var(--radius-full)', background: sev.bg, color: sev.color }}>
+              {sev.label}
+            </span>
             {changed && (
               <span style={{ fontSize: 10, borderRadius: 'var(--radius-full)', background: 'var(--color-warning-bg)', color: 'var(--color-warning-dark)', padding: '2px 8px', fontWeight: 700 }}>
                 שונה
               </span>
             )}
           </div>
+          <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-mono)', direction: 'rtl' }}>{logic.condition}</p>
           <p style={{ margin: '6px 0 0', fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>{logic.explanation}</p>
 
           {(logic.params.length > 0 || logic.editsMarketFees) && (
@@ -241,6 +265,14 @@ function LogicCard({
             </div>
           )}
         </div>
+        {typeof matchCount === 'number' && (
+          <span
+            title="מספר הממצאים שהלוגיקה מייצרת ללקוח הטעון"
+            style={{ fontSize: 11, color: 'var(--color-text-tertiary)', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)', flexShrink: 0 }}
+          >
+            {matchCount} התאמות
+          </span>
+        )}
       </div>
     </Card>
   )
