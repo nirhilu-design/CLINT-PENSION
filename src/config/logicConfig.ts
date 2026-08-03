@@ -77,15 +77,11 @@ export const LOGIC_CATALOG: LogicDef[] = [
     label: 'אובדן כושר עבודה (אכ״ע)',
     category: 'ביטוח',
     severity: 'gap',
-    condition: 'שיעור_כיסוי_אכ״ע < יעד_כיסוי',
+    condition: 'סך_פיצוי_נכות_מכל_המוצרים / שכר < יעד_כיסוי',
     products: ['incomeProtection', 'pension', 'managers'],
     explanation:
-      'בודק את שיעור כיסוי האכ״ע מול יעד הכיסוי. שיעור מתחת ליעד פחות מרווח הסבילות פותח הארה; אם השכר המבוטח נמוך מהיחס לשכר בפועל — פער.',
-    params: [
-      { key: 'ipTargetCoveragePercent', label: 'יעד כיסוי אכ״ע', unit: '%' },
-      { key: 'ipCoveragePercentSlack', label: 'מרווח סבילות מתחת ליעד', unit: '%' },
-      { key: 'ipCoveredSalaryRatio', label: 'יחס שכר מבוטח מינימלי', unit: 'יחס' },
-    ],
+      'מסכם את הפיצוי החודשי לאובדן כושר עבודה מכל המוצרים (פנסיית נכות + אכ״ע) ומחשב את שיעורו מהשכר. שיעור מצרפי מתחת ליעד — פער. שיעור מעל היעד תקין ואינו מסומן, גם אם צירוף המוצרים חורג מהיעד.',
+    params: [{ key: 'ipTargetCoveragePercent', label: 'יעד כיסוי אכ״ע', unit: '%' }],
   },
   {
     id: 'deathPicture',

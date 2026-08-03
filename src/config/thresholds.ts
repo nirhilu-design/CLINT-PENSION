@@ -16,8 +16,6 @@ export interface ThresholdValues {
   marketFees: Partial<Record<ProductType, FeeThreshold>>
   feeAboveFundAvgTolerance: number
   ipTargetCoveragePercent: number
-  ipCoveragePercentSlack: number
-  ipCoveredSalaryRatio: number
   pensionToSalaryMinRatio: number
   maxPensionDisabilityPercent: number
   pensionDisabilityLowPercent: number
@@ -43,9 +41,7 @@ export const DEFAULT_THRESHOLDS: ThresholdValues = {
     managers: { fromDeposit: 4.0, fromAccumulation: 1.2 },
   },
   feeAboveFundAvgTolerance: 0.1, // tolerance above agreement / fund average (pp)
-  ipTargetCoveragePercent: 73, // income protection target coverage (%)
-  ipCoveragePercentSlack: 3, // below target-slack → finding
-  ipCoveredSalaryRatio: 0.9, // covered salary < 90% of actual → gap
+  ipTargetCoveragePercent: 75, // income protection target — combined disability benefit as % of salary; below → gap
   pensionToSalaryMinRatio: 0.7, // expected pension below 70% of salary → attention
   maxPensionDisabilityPercent: 75,
   pensionDisabilityLowPercent: 37.5, // pension disability below this → check אכ"ע in other products
@@ -76,8 +72,6 @@ export function cloneThresholds(t: ThresholdValues): ThresholdValues {
 export let MARKET_FEE_THRESHOLDS = DEFAULT_THRESHOLDS.marketFees
 export let FEE_ABOVE_FUND_AVG_TOLERANCE = DEFAULT_THRESHOLDS.feeAboveFundAvgTolerance
 export let IP_TARGET_COVERAGE_PERCENT = DEFAULT_THRESHOLDS.ipTargetCoveragePercent
-export let IP_COVERAGE_PERCENT_SLACK = DEFAULT_THRESHOLDS.ipCoveragePercentSlack
-export let IP_COVERED_SALARY_RATIO = DEFAULT_THRESHOLDS.ipCoveredSalaryRatio
 export let PENSION_TO_SALARY_MIN_RATIO = DEFAULT_THRESHOLDS.pensionToSalaryMinRatio
 export let MAX_PENSION_DISABILITY_PERCENT = DEFAULT_THRESHOLDS.maxPensionDisabilityPercent
 export let PENSION_DISABILITY_LOW_PERCENT = DEFAULT_THRESHOLDS.pensionDisabilityLowPercent
@@ -97,8 +91,6 @@ export function applyThresholds(t: ThresholdValues): void {
   MARKET_FEE_THRESHOLDS = t.marketFees
   FEE_ABOVE_FUND_AVG_TOLERANCE = t.feeAboveFundAvgTolerance
   IP_TARGET_COVERAGE_PERCENT = t.ipTargetCoveragePercent
-  IP_COVERAGE_PERCENT_SLACK = t.ipCoveragePercentSlack
-  IP_COVERED_SALARY_RATIO = t.ipCoveredSalaryRatio
   PENSION_TO_SALARY_MIN_RATIO = t.pensionToSalaryMinRatio
   MAX_PENSION_DISABILITY_PERCENT = t.maxPensionDisabilityPercent
   PENSION_DISABILITY_LOW_PERCENT = t.pensionDisabilityLowPercent

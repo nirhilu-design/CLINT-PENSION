@@ -204,39 +204,49 @@ describe('managers generation engine (stopIssueEngine)', () => {
 })
 
 describe('incomeProtectionEngine', () => {
-  const disabilityCover = {
+  const disabilityCover = (amount: number, policyNumber = 'P1') => ({
     type: 'disability' as const,
     name: null,
-    amount: 9000,
-    percent: 60,
-    coveredSalary: 14000,
-    cost: 60,
+    amount, // the monthly benefit (פיצוי) — pension נכות or אכ"ע alike
+    percent: null,
+    coveredSalary: null,
+    cost: null,
     status: 'active' as const,
-    policyNumber: 'P1',
-  }
-
-  // Uses a non-pension product: pension disability is handled cross-product by
-  // pensionInsightEngine, so incomeProtection no longer flags pension in isolation.
-  const managersPolicy = (overrides = {}) =>
-    makePolicy({ productType: 'managers', coverages: [disabilityCover], ...overrides })
-
-  it('flags coverage percent below the 73% target (non-pension product)', () => {
-    const out = incomeProtectionEngine(input([managersPolicy()]))
-    const f = out.find((x) => x.title.includes('נמוך מהיעד'))
-    expect(f?.severity).toBe('attention')
+    policyNumber,
   })
 
-  it('escalates to gap when the family relies on the income', () => {
-    const out = incomeProtectionEngine(input([managersPolicy()], { familyReliesOnIncome: true }))
-    const f = out.find((x) => x.title.includes('נמוך מהיעד'))
-    expect(f?.severity).toBe('gap')
-  })
-
-  it('does not flag a low pension disability in isolation (handled cross-product)', () => {
+  it('flags a gap when the combined benefit is below 75% of salary', () => {
+    // benefit 9,000 on salary 14,000 = 64% < 75%
     const out = incomeProtectionEngine(
-      input([makePolicy({ productType: 'pension', coverages: [disabilityCover] })]),
+      input([makePolicy({ productType: 'managers', coveredSalary: 14000, coverages: [disabilityCover(9000)] })]),
     )
-    expect(out.some((x) => x.title.includes('נמוך מהיעד'))).toBe(false)
+    const f = out.find((x) => x.title.includes('אובדן כושר עבודה'))
+    expect(f?.severity).toBe('gap')
+    expect(f?.description).toContain('64%')
+  })
+
+  it('sums the benefit across all products (pension נכות + אכ"ע) against the salary', () => {
+    // 6,000 (pension) + 5,000 (managers אכ"ע) = 11,000 on 20,000 = 55% < 75% → gap
+    const pension = makePolicy({ productType: 'pension', coveredSalary: 20000, coverages: [disabilityCover(6000)] })
+    const managers = makePolicy({ productType: 'managers', policyNumber: 'MG', coveredSalary: 20000, coverages: [disabilityCover(5000, 'MG')] })
+    const f = incomeProtectionEngine(input([pension, managers])).find((x) =>
+      x.title.includes('אובדן כושר עבודה'),
+    )
+    expect(f).toBeDefined()
+    expect(f?.description).toContain('55%')
+  })
+
+  it('does not flag when the combined benefit reaches 75%+ — over-coverage is fine', () => {
+    // 8,000 (pension) + 4,000 (אכ"ע) = 12,000 on 14,000 = 86% ≥ 75%
+    const pension = makePolicy({ productType: 'pension', coveredSalary: 14000, coverages: [disabilityCover(8000)] })
+    const managers = makePolicy({ productType: 'managers', policyNumber: 'MG', coveredSalary: 14000, coverages: [disabilityCover(4000, 'MG')] })
+    const out = incomeProtectionEngine(input([pension, managers]))
+    expect(out.some((x) => x.title.includes('אובדן כושר עבודה'))).toBe(false)
+  })
+
+  it('flags when no disability coverage exists at all', () => {
+    const out = incomeProtectionEngine(input([makePolicy({ coverages: [] })]))
+    expect(out.some((x) => x.title.includes('כיסוי אובדן כושר עבודה'))).toBe(true)
   })
 })
 

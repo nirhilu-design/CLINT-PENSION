@@ -1,11 +1,15 @@
-// Income Protection Engine: disability coverage percent, target 73%.
-// Policy-level and client-level findings.
+// Income Protection Engine: aggregate disability benefit vs salary.
+// Sums the monthly disability benefit (הפיצוי) across ALL active products —
+// pension נכות and אכ"ע riders alike — and expresses it as a share of salary.
+// A combined replacement ratio at or above the target is acceptable even when it
+// exceeds it; only a shortfall below the target is flagged.
 
 import type { Engine } from './engineTypes'
 import { makeFinding, effectiveSalary } from './engineTypes'
 import { isBlockedByStopIssue } from './stopIssueEngine'
+import { formatCurrency } from '../utils/format'
 
-import { IP_TARGET_COVERAGE_PERCENT as TARGET_PERCENT, IP_COVERAGE_PERCENT_SLACK, IP_COVERED_SALARY_RATIO } from '../config/thresholds'
+import { IP_TARGET_COVERAGE_PERCENT as TARGET_PERCENT } from '../config/thresholds'
 
 export const incomeProtectionEngine: Engine = ({ policies, supplementary }) => {
   const findings = []
@@ -35,53 +39,36 @@ export const incomeProtectionEngine: Engine = ({ policies, supplementary }) => {
     return findings
   }
 
-  // Policy level: coverage percent vs target.
-  // Pension disability is handled cross-product by pensionInsightEngine (a low
-  // pension נכות is often complemented by an אכ"ע rider elsewhere), so it is not
-  // flagged here in isolation.
-  for (const { policy, coverage } of disabilityCoverages) {
-    if (policy.productType === 'pension') continue
-    if (coverage.percent === null) continue
-    if (coverage.percent < TARGET_PERCENT - IP_COVERAGE_PERCENT_SLACK) {
-      findings.push(
-        makeFinding({
-          category: 'insurance',
-          level: 'policy',
-          severity: familyRelies ? 'gap' : 'attention',
-          title: 'שיעור כיסוי אכ"ע נמוך מהיעד',
-          description:
-            `בפוליסה ${policy.policyNumber} שיעור הכיסוי לאובדן כושר עבודה הוא ${coverage.percent.toFixed(0)}% ` +
-            `לעומת יעד מקובל של ${TARGET_PERCENT}%. נקודה לבדיקה מול בעל רישיון.`,
-          productType: policy.productType,
-          policyNumber: policy.policyNumber,
-        }),
-      )
-    }
-  }
-
-  // Client level: covered salary for disability vs the actual salary
-  // (client-stated salary wins over the XML-reported insured salary)
+  // Aggregate replacement ratio: the total monthly disability benefit across all
+  // products (פנסיית נכות + אכ"ע) as a share of salary. A combined ratio at or
+  // above the target is fine even if the products together exceed it — over-
+  // coverage is never flagged; only a shortfall below the target is a gap.
   const salary = effectiveSalary(policies, supplementary)
   if (salary && salary > 0) {
     const fromClient = supplementary.currentGrossSalary !== null
-    const maxCoveredSalary = Math.max(
-      ...disabilityCoverages.map(({ coverage }) => coverage.coveredSalary ?? 0),
+    const totalBenefit = disabilityCoverages.reduce(
+      (sum, { coverage }) => sum + (coverage.amount ?? 0),
+      0,
     )
-    if (maxCoveredSalary > 0 && maxCoveredSalary < salary * IP_COVERED_SALARY_RATIO) {
-      findings.push(
-        makeFinding({
-          category: 'insurance',
-          level: 'client',
-          severity: 'gap',
-          title: 'נמצא פער בין השכר המבוטח לאכ"ע לשכר בפועל',
-          description:
-            `השכר המבוטח לאובדן כושר עבודה (₪${maxCoveredSalary.toLocaleString()}) נמוך מ${fromClient ? 'השכר שציינת' : 'השכר המדווח בקבצים'} ` +
-            `(₪${salary.toLocaleString()}). נקודה לבדיקה מול בעל רישיון.`,
-          basedOn: fromClient
-            ? 'השכר המבוטח לנכות בקבצי המסלקה מול השכר שהוזן בטופס'
-            : 'השכר המבוטח לנכות מול השכר המבוטח הגבוה בתיק, שניהם מקבצי המסלקה',
-        }),
-      )
+    if (totalBenefit > 0) {
+      const coveragePercent = (totalBenefit / salary) * 100
+      if (coveragePercent < TARGET_PERCENT) {
+        findings.push(
+          makeFinding({
+            category: 'insurance',
+            level: 'client',
+            severity: 'gap',
+            title: 'שיעור הפיצוי לאובדן כושר עבודה נמוך מהיעד',
+            description:
+              `סך הפיצוי החודשי לאובדן כושר עבודה מכל המוצרים (${formatCurrency(totalBenefit)}) ` +
+              `מהווה ${coveragePercent.toFixed(0)}% מ${fromClient ? 'השכר שציינת' : 'השכר המדווח בקבצים'} ` +
+              `(${formatCurrency(salary)}), לעומת יעד של ${TARGET_PERCENT}%. נקודה לבדיקה מול בעל רישיון.`,
+            basedOn: fromClient
+              ? 'סך סכומי הפיצוי לנכות/אכ"ע בקבצי המסלקה מול השכר שהוזן בטופס'
+              : 'סך סכומי הפיצוי לנכות/אכ"ע מול השכר המבוטח הגבוה בתיק, שניהם מקבצי המסלקה',
+          }),
+        )
+      }
     }
   }
 
