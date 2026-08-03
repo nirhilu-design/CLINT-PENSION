@@ -4,6 +4,7 @@
 // family and for the whole portfolio. Pure functions over the model.
 
 import type { Policy, ProductType, TreasuryAllocation } from '../models/types'
+import { benchmarkKey } from '../utils/benchmark'
 
 // The "gemel family" of savings vehicles (excludes pension/insurance products).
 export const GEMEL_FAMILY: ProductType[] = ['gemel', 'gemelInvestment']
@@ -57,8 +58,9 @@ function equityBreakdown(policies: Policy[], allocations: TreasuryAllocation[]):
   let coveredValue = 0
   let equityValue = 0
   for (const p of policies) {
-    if (!p.mofid) continue
-    const alloc = byMofid.get(p.mofid)
+    const key = benchmarkKey(p)
+    if (!key) continue
+    const alloc = byMofid.get(key)
     if (!alloc) continue
     const equityGroup = alloc.groups.find((g) => g.name?.includes('מניות'))
     if (!equityGroup) continue

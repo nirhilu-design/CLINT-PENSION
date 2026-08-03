@@ -3,6 +3,7 @@ import { useApp } from '../hooks/useAppState'
 import { coverageTypeLabels, productTypeLabels } from '../models/labels'
 import type { Policy, ProductType } from '../models/types'
 import { formatCurrency, formatPercent } from '../utils/format'
+import { benchmarkKey } from '../utils/benchmark'
 import FindingCard from '../components/FindingCard'
 import Card from '../components/ds/Card'
 import { isEducationFundLiquid } from '../utils/liquidity'
@@ -327,7 +328,8 @@ export default function ProductPage() {
 function ReturnsTab({ policies, funds }: { policies: Policy[]; funds: { mofid: string; return12m: number | null; sharpe: number | null }[] }) {
   const rows = policies
     .map((p) => {
-      const fund = p.mofid ? funds.find((f) => f.mofid === p.mofid) : undefined
+      const key = benchmarkKey(p)
+      const fund = key ? funds.find((f) => f.mofid === key) : undefined
       return { company: p.managingCompany ?? p.policyNumber, reported: p.netReturn, treasury: fund?.return12m ?? null, sharpe: fund?.sharpe ?? null }
     })
     .filter((r) => r.reported !== null || r.treasury !== null)

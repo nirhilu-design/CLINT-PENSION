@@ -10,6 +10,7 @@ import type {
 import { productTypeLabels } from '../models/labels'
 import { parseTreasuryXml } from '../parser/parseTreasuryXml'
 import { parseEmployerFeeFile } from '../parser/parseEmployerFeeFile'
+import { benchmarkKey } from '../utils/benchmark'
 import Card from '../components/ds/Card'
 import Spinner from '../components/Spinner'
 import { ArrowRight } from 'lucide-react'
@@ -86,7 +87,9 @@ export default function AdvisorPage() {
     if (!fileList || fileList.length === 0) return
     setParsing(true)
     await new Promise((r) => setTimeout(r, 30))
-    const portfolioMofids = new Set(policies.map((p) => p.mofid).filter((m): m is string => !!m))
+    const portfolioMofids = new Set(
+      policies.map((p) => benchmarkKey(p)).filter((m): m is string => !!m),
+    )
     const log: string[] = []
     let nextFunds = [...treasuryFunds]
     let nextAllocs = [...treasuryAllocations]
@@ -137,7 +140,11 @@ export default function AdvisorPage() {
     setTimeout(() => setSaved(false), 2500)
   }
 
-  const uniqueMofids = [...new Map(policies.filter((p) => p.mofid).map((p) => [p.mofid!, p])).values()]
+  // The numbers the advisor should look for in פנסיה-נט/גמל-נט files: the
+  // per-track join keys (מספר מסלול), which differ from the fund מ"ה for multi-track funds.
+  const portfolioKeys = [
+    ...new Set(policies.map((p) => benchmarkKey(p)).filter((m): m is string => !!m)),
+  ]
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 32px 48px' }}>
@@ -169,7 +176,8 @@ export default function AdvisorPage() {
           <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 4 }}>הסכמי דמי ניהול מפעליים</div>
           <p style={{ margin: '0 0 14px', fontSize: 12, color: 'var(--color-text-tertiary)' }}>הזנת הסכם מול היצרן/מעסיק לכל פוליסה. בדיקת פער מול ההסכם תרוץ רק היכן שהוזן.</p>
           {policies.map((p) => {
-            const fund = p.mofid ? treasuryFunds.find((f) => f.mofid === p.mofid) : undefined
+            const key = benchmarkKey(p)
+            const fund = key ? treasuryFunds.find((f) => f.mofid === key) : undefined
             const agreedAccum = num(fees[p.policyNumber]?.accum ?? '')
             let badge: { label: string; bg: string; color: string } | null = null
             if (fund?.avgFeeFromAccumulation != null && agreedAccum != null) {
@@ -222,9 +230,9 @@ export default function AdvisorPage() {
               ))}
             </div>
           )}
-          {uniqueMofids.length > 0 && (
+          {portfolioKeys.length > 0 && (
             <p style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 10 }}>
-              מספרי אוצר בתיק: {uniqueMofids.map((p) => p.mofid).join(', ')}
+              מספרי אוצר בתיק: {portfolioKeys.join(', ')}
             </p>
           )}
         </Card>

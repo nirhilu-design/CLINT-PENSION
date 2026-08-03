@@ -2,6 +2,7 @@
 // "all clear" when checks simply could not run for lack of data.
 
 import type { Analysis } from '../models/types'
+import { benchmarkKey } from '../utils/benchmark'
 
 export interface CompletenessReport {
   complete: boolean
@@ -13,7 +14,7 @@ export function assessCompleteness(analysis: Analysis): CompletenessReport {
   const missing: string[] = []
 
   // Treasury benchmark coverage per fund
-  const mofids = [...new Set(policies.map((p) => p.mofid).filter(Boolean))] as string[]
+  const mofids = [...new Set(policies.map((p) => benchmarkKey(p)).filter(Boolean))] as string[]
   const covered = new Set(supplementary.treasuryFunds.map((f) => f.mofid))
   const manual = new Set(supplementary.benchmarks.map((b) => b.mofid))
   const unbenchmarked = mofids.filter((m) => !covered.has(m) && !manual.has(m))

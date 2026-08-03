@@ -47,8 +47,8 @@ function fixture({ clientId = '100000009', clientId2 = '', sugMutzar = '2' } = {
   <Mutav><SUG-ZIHUY-MUTAV>1</SUG-ZIHUY-MUTAV><SHEM-PRATI-MUTAV>דנה</SHEM-PRATI-MUTAV><SHEM-MISHPACHA-MUTAV>כהן</SHEM-MISHPACHA-MUTAV><ACHUZ-MUTAV>60.00</ACHUZ-MUTAV></Mutav>
   <Mutav><SUG-ZIHUY-MUTAV>3</SUG-ZIHUY-MUTAV><ACHUZ-MUTAV>40.00</ACHUZ-MUTAV></Mutav>
   <Mutav><SUG-ZIHUY-MUTAV>7</SUG-ZIHUY-MUTAV></Mutav>
-  <PerutMasluleiHashkaa><SCHUM-TZVIRA-BAMASLUL>100000</SCHUM-TZVIRA-BAMASLUL><SHEM-MASLUL-HASHKAA>מסלול א</SHEM-MASLUL-HASHKAA><TSUA-NETO>9.5</TSUA-NETO></PerutMasluleiHashkaa>
-  <PerutMasluleiHashkaa><SCHUM-TZVIRA-BAMASLUL>50000</SCHUM-TZVIRA-BAMASLUL><SHEM-MASLUL-HASHKAA>מסלול א</SHEM-MASLUL-HASHKAA></PerutMasluleiHashkaa>
+  <PerutMasluleiHashkaa><SCHUM-TZVIRA-BAMASLUL>100000</SCHUM-TZVIRA-BAMASLUL><SHEM-MASLUL-HASHKAA>מסלול א</SHEM-MASLUL-HASHKAA><TSUA-NETO>9.5</TSUA-NETO><KOD-MASLUL-HASHKAA>000000000000000000077770002187</KOD-MASLUL-HASHKAA></PerutMasluleiHashkaa>
+  <PerutMasluleiHashkaa><SCHUM-TZVIRA-BAMASLUL>50000</SCHUM-TZVIRA-BAMASLUL><SHEM-MASLUL-HASHKAA>מסלול א</SHEM-MASLUL-HASHKAA><KOD-MASLUL-HASHKAA>000000000000000000077770002187</KOD-MASLUL-HASHKAA></PerutMasluleiHashkaa>
   <YitraLefiGilPrisha><GIL-PRISHA>67.00</GIL-PRISHA><TOTAL-CHISACHON-MITZTABER-TZAFUY>2000000.00</TOTAL-CHISACHON-MITZTABER-TZAFUY><TZVIRAT-CHISACHON-CHAZUYA-LELO-PREMIYOT>900000.00</TZVIRAT-CHISACHON-CHAZUYA-LELO-PREMIYOT><Kupot><Kupa><SCHUM-KITZVAT-ZIKNA>9000.00</SCHUM-KITZVAT-ZIKNA><KITZVAT-HODSHIT-TZFUYA>5000.00</KITZVAT-HODSHIT-TZFUYA></Kupa></Kupot></YitraLefiGilPrisha>
 </HeshbonOPolisa></HeshbonotOPolisot></Mutzar>
 ${secondMutzar}
@@ -76,6 +76,13 @@ describe('parsePensionXml', () => {
     expect(p.currentValue).toBe(150000)
     expect(p.investmentTracks).toHaveLength(1)
     expect(p.investmentTracks[0].returnNet).toBe(9.5)
+  })
+
+  it('extracts the track code (מספר מסלול) as the פנסיה-נט join key, distinct from the fund מ"ה', () => {
+    // KOD-MASLUL-HASHKAA suffix 2187 is the track; the fund מ"ה (from KIDOD-ACHID) is 7777.
+    expect(p.investmentTracks[0].code).toBe('2187')
+    expect(p.trackCode).toBe('2187')
+    expect(p.mofid).toBe('7777')
   })
 
   it('itemizes survivors coverage per beneficiary type', () => {

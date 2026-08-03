@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { mofidFromKidodAchid, normalizeClientId, parseDate } from './xmlUtils'
+import {
+  mofidFromKidodAchid,
+  normalizeClientId,
+  parseDate,
+  trackCodeFromKodMaslul,
+} from './xmlUtils'
 
 describe('normalizeClientId', () => {
   it('treats every zero-padding of the same ID as one person', () => {
@@ -37,5 +42,20 @@ describe('mofidFromKidodAchid', () => {
   })
   it('returns null for short input', () => {
     expect(mofidFromKidodAchid('123')).toBeNull()
+  })
+})
+
+describe('trackCodeFromKodMaslul', () => {
+  it('extracts the track code from the KOD-MASLUL-HASHKAA suffix', () => {
+    // Pension: track (2187) differs from the fund code — this is the real join key.
+    expect(trackCodeFromKodMaslul('513026484000000000002090002187')).toBe('2187')
+    // Single-track fund: the track field repeats the fund code (1093 == fund מ"ה).
+    expect(trackCodeFromKodMaslul('513173393000000000010930001093')).toBe('1093')
+  })
+  it('returns null when the code is absent or too short', () => {
+    expect(trackCodeFromKodMaslul(null)).toBeNull()
+    expect(trackCodeFromKodMaslul('12')).toBeNull()
+    // an all-zero track field yields no code
+    expect(trackCodeFromKodMaslul('513026484000000000002090000000')).toBeNull()
   })
 })

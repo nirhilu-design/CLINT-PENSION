@@ -6,6 +6,7 @@ import type { Engine } from './engineTypes'
 import { makeFinding } from './engineTypes'
 import { isBlockedByStopIssue } from './stopIssueEngine'
 import { formatPercent } from '../utils/format'
+import { benchmarkKey } from '../utils/benchmark'
 import { RETURN_BELOW_BENCHMARK_TOLERANCE } from '../config/thresholds'
 
 export const investmentEngine: Engine = ({ policies, supplementary }) => {
@@ -15,12 +16,11 @@ export const investmentEngine: Engine = ({ policies, supplementary }) => {
     if (isBlockedByStopIssue(policy)) continue
     if (policy.netReturn === null) continue
 
-    const treasury = policy.mofid
-      ? supplementary.treasuryFunds.find((f) => f.mofid === policy.mofid)
-      : undefined
-    const manual = policy.mofid
-      ? supplementary.benchmarks.find((b) => b.mofid === policy.mofid)
-      : undefined
+    // Match by the track-level key (מספר מסלול) so a comprehensive pension's
+    // reported return is compared to its actual track in פנסיה-נט, not the fund at large.
+    const key = benchmarkKey(policy)
+    const treasury = key ? supplementary.treasuryFunds.find((f) => f.mofid === key) : undefined
+    const manual = key ? supplementary.benchmarks.find((b) => b.mofid === key) : undefined
 
     const benchmarkReturn = treasury?.return12m ?? manual?.annualReturn ?? null
     const benchmarkSharpe = treasury?.sharpe ?? manual?.sharpe ?? null
@@ -40,7 +40,7 @@ export const investmentEngine: Engine = ({ policies, supplementary }) => {
               `לעומת ${formatPercent(benchmarkReturn)} ב${sourceLabel} (12 חודשים, ברוטו). ` +
               'נקודה לבדיקה מול בעל רישיון.',
             basedOn: treasury
-              ? `תשואת המסלקה מול קובץ נתוני האוצר (מ"ה ${policy.mofid}, לתקופה ${treasury.periodTo ?? '—'})`
+              ? `תשואת המסלקה מול קובץ נתוני האוצר (מ"ה ${key}, לתקופה ${treasury.periodTo ?? '—'})`
               : 'תשואת המסלקה מול נתוני השוואה שהוזנו ידנית באזור היועץ',
             productType: policy.productType,
             policyNumber: policy.policyNumber,
@@ -88,7 +88,7 @@ export const investmentEngine: Engine = ({ policies, supplementary }) => {
           description:
             `בפוליסה ${policy.policyNumber} התשואה נטו המדווחת היא ${formatPercent(policy.netReturn)}. ` +
             'לא נמצאו נתוני אוצר עבור מספר האוצר של הקופה ולא הוזנו נתוני השוואה, ולכן לא בוצעה השוואה.',
-          missingInfo: `קובץ נתוני אוצר הכולל את מ"ה ${policy.mofid ?? '(לא זוהה)'} או הזנת נתוני השוואה באזור היועץ`,
+          missingInfo: `קובץ נתוני אוצר הכולל את מ"ה ${key ?? '(לא זוהה)'} או הזנת נתוני השוואה באזור היועץ`,
           productType: policy.productType,
           policyNumber: policy.policyNumber,
         }),

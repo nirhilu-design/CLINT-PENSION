@@ -47,3 +47,17 @@ export function mofidFromKidodAchid(kidod: string | null): string | null {
   const code = kidod.slice(18, 23).replace(/^0+/, '')
   return code || null
 }
+
+/**
+ * מספר מסלול (investment-track code) from KOD-MASLUL-HASHKAA.
+ * The code mirrors KIDOD-ACHID's 30-char layout and ends in a 4-char track field,
+ * e.g. ...002090002187 -> "2187" (הפניקס פנסיה מקיפה מניות). For single-track
+ * products the track field repeats the fund code (...010930001093 -> "1093"),
+ * so this doubles as the פנסיה-נט/גמל-נט join key at track granularity.
+ * Returns null when absent.
+ */
+export function trackCodeFromKodMaslul(kod: string | null): string | null {
+  if (!kod || kod.length < 4) return null
+  const code = kod.slice(-4).replace(/^0+/, '')
+  return code || null
+}

@@ -116,6 +116,9 @@ export default function PolicyDrawer({
             <Tile label="הפקדה אחרונה" value={policy.lastDepositMonth ?? '—'} />
             <Tile label="תאריך הצטרפות" value={formatDate(policy.openDate)} />
             <Tile label="מספר אוצר" value={policy.mofid ?? '—'} />
+            {policy.trackCode && policy.trackCode !== policy.mofid && (
+              <Tile label="מספר מסלול" value={policy.trackCode} />
+            )}
             <Tile label="תשואה נטו" value={formatPercent(policy.netReturn)} />
           </div>
 

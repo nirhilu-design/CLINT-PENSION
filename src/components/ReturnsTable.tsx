@@ -1,6 +1,7 @@
 import type { Policy, TreasuryFundData } from '../models/types'
 import { productTypeLabels } from '../models/labels'
 import { formatPercent } from '../utils/format'
+import { benchmarkKey } from '../utils/benchmark'
 
 // Consolidated returns view: the client's reported net return (from the
 // clearinghouse XML) side by side with official treasury data matched by
@@ -16,10 +17,14 @@ export default function ReturnsTable({
 }) {
   const rows = policies
     .filter((p) => p.status !== 'inactive' || (p.currentValue ?? 0) > 0)
-    .map((p) => ({
-      policy: p,
-      fund: p.mofid ? treasuryFunds.find((f) => f.mofid === p.mofid) : undefined,
-    }))
+    .map((p) => {
+      const key = benchmarkKey(p)
+      return {
+        policy: p,
+        matchKey: key,
+        fund: key ? treasuryFunds.find((f) => f.mofid === key) : undefined,
+      }
+    })
     .filter((r) => r.policy.netReturn !== null || r.fund)
 
   if (rows.length === 0) {
@@ -49,7 +54,7 @@ export default function ReturnsTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ policy, fund }) => {
+          {rows.map(({ policy, fund, matchKey }) => {
             const diff =
               policy.netReturn !== null && fund?.return12m != null
                 ? policy.netReturn - fund.return12m
@@ -67,7 +72,12 @@ export default function ReturnsTable({
                 {showProductColumn && (
                   <td className="p-3 text-slate-500">{productTypeLabels[policy.productType]}</td>
                 )}
-                <td className="p-3 tabular text-slate-600">{policy.mofid ?? '—'}</td>
+                <td className="p-3 tabular text-slate-600">
+                  {matchKey ?? '—'}
+                  {policy.trackCode && policy.trackCode !== policy.mofid && (
+                    <span className="text-xs text-slate-400 mr-1">מסלול</span>
+                  )}
+                </td>
                 <td className="p-3 tabular font-medium text-slate-800">
                   {formatPercent(policy.netReturn)}
                 </td>

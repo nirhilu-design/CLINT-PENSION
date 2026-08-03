@@ -54,6 +54,7 @@ export interface Beneficiary {
 
 export interface InvestmentTrack {
   name: string | null
+  code: string | null // מספר מסלול (KOD-MASLUL-HASHKAA suffix) — פנסיה-נט/גמל-נט join key
   value: number | null
   depositPercent: number | null // share of new deposits routed to this track
   returnNet: number | null // per-track net return, where the issuer reports it
@@ -78,7 +79,11 @@ export interface Policy {
   productType: ProductType
   productName: string | null
   managingCompany: string | null
-  mofid: string | null // מספר אוצר derived from KIDOD-ACHID
+  mofid: string | null // מספר אוצר של הקרן, derived from KIDOD-ACHID
+  // מספר מסלול (dominant investment track) — the join key to פנסיה-נט/גמל-נט returns,
+  // which are published per track. Differs from mofid in multi-track funds (e.g. a
+  // comprehensive pension's מניות track), and coincides with it for single-track products.
+  trackCode: string | null
   openDate: string | null // ISO
   status: 'active' | 'inactive' | null
   statusCode: string | null // raw STATUS-POLISA-O-CHESHBON

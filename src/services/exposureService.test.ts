@@ -9,6 +9,7 @@ function policy(over: Partial<Policy>): Policy {
     productName: null,
     managingCompany: 'חברה א',
     mofid: null,
+    trackCode: null,
     openDate: null,
     status: 'active',
     statusCode: '1',

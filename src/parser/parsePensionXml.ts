@@ -12,7 +12,14 @@ import type {
   Policy,
   ProductType,
 } from '../models/types'
-import { getNumber, getText, mofidFromKidodAchid, normalizeClientId, parseDate } from './xmlUtils'
+import {
+  getNumber,
+  getText,
+  mofidFromKidodAchid,
+  normalizeClientId,
+  parseDate,
+  trackCodeFromKodMaslul,
+} from './xmlUtils'
 import { beneficiaryRelationLabels } from '../models/labels'
 
 export class XmlParseError extends Error {}
@@ -288,6 +295,7 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
       // The same track appears once per contribution type — merge rows by track name
       const trackRows = [...heshbon.querySelectorAll('PerutMasluleiHashkaa')].map((m) => ({
         name: getText(m, 'SHEM-MASLUL-HASHKAA'),
+        code: trackCodeFromKodMaslul(getText(m, 'KOD-MASLUL-HASHKAA')),
         value: getNumber(m, 'SCHUM-TZVIRA-BAMASLUL'),
         depositPercent: getNumber(m, 'ACHUZ-HAFKADA-LEHASHKAA'),
         returnNet: getNumber(m, 'TSUA-NETO'),
@@ -306,10 +314,18 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
           existing.returnNet = existing.returnNet ?? row.returnNet
           existing.feeFromDeposit = existing.feeFromDeposit ?? row.feeFromDeposit
           existing.feeFromAccumulation = existing.feeFromAccumulation ?? row.feeFromAccumulation
+          existing.code = existing.code ?? row.code
         }
       }
       const tracks = [...trackByName.values()]
       const currentValue = tracks.reduce((sum, t) => sum + (t.value ?? 0), 0) || null
+      // Benchmark join key: the code of the track holding the largest balance —
+      // the client's primary track for the reported-return comparison to פנסיה-נט.
+      const dominantTrack = tracks.reduce<(typeof tracks)[number] | null>(
+        (best, t) => ((t.value ?? 0) > (best?.value ?? -Infinity) ? t : best),
+        null,
+      )
+      const trackCode = dominantTrack?.code ?? null
 
       const planName = getText(heshbon, 'SHEM-TOCHNIT')
       const coverages = parseCoverages(heshbon, policyNumber)
@@ -361,6 +377,7 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
         productName: planName,
         managingCompany,
         mofid: mofidFromKidodAchid(getText(heshbon, 'KIDOD-ACHID')),
+        trackCode,
         openDate,
         status: statusRaw === '1' ? 'active' : statusRaw ? 'inactive' : null,
         statusCode: statusRaw,
