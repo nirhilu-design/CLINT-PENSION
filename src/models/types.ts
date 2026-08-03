@@ -7,6 +7,7 @@ export type ProductType =
   | 'gemelInvestment'
   | 'education'
   | 'life'
+  | 'mortgage' // ביטוח חיים משכנתא — SUG-MUTZAR=7
   | 'incomeProtection'
   | 'unknown'
 
@@ -23,8 +24,26 @@ export interface Client {
 
 export type CoverageType = 'disability' | 'survivors' | 'death' | 'other'
 
+// Precise coverage kind per the מבנה אחיד value lists (SUG-KISUY-BITOCHI, plus
+// the pension-fund נכות/שאירים blocks). This is the granularity needed to build
+// a protection picture — distinguishing e.g. accidental death from ordinary death,
+// or critical illness from income protection — while `type` keeps the coarse
+// bucket the analysis engines rely on.
+export type CoverageKind =
+  | 'death' // 1 — כיסוי למקרה מוות (ביטוח חיים)
+  | 'accidentalDeath' // 3 — מוות מתאונה
+  | 'deathAndIncomeProtection' // 9 — מוות + אכ"ע (פנסיה ותיקה)
+  | 'occupationalDisability' // 2 — נכות מקצועית
+  | 'accidentalDisability' // 4 — נכות מתאונה
+  | 'incomeProtection' // 5 — אבדן כושר עבודה (אכ"ע)
+  | 'pensionDisability' // פנסיית נכות בקרן פנסיה
+  | 'survivors' // קצבת שאירים בקרן פנסיה
+  | 'criticalIllness' // 7 — מחלות קשות
+  | 'other' // 10 — אחר
+
 export interface Coverage {
   type: CoverageType
+  kind: CoverageKind
   name: string | null
   amount: number | null // monthly benefit or lump sum
   percent: number | null // coverage percent of salary

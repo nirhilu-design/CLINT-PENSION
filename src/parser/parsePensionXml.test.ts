@@ -42,6 +42,7 @@ function fixture({ clientId = '100000009', clientId2 = '', sugMutzar = '2' } = {
   </ZihuiKisui>
   <ZihuiKisui><SHEM-KISUI-YATZRAN>ריסק מוות</SHEM-KISUI-YATZRAN>
     <PirteiKisuiBeMutzar><SUG-KISUY-BITOCHI>1</SUG-KISUY-BITOCHI><SCHUM-BITUACH>500000.00</SCHUM-BITUACH><DMEI-BITUAH-LETASHLUM-BAPOAL>85.00</DMEI-BITUAH-LETASHLUM-BAPOAL></PirteiKisuiBeMutzar>
+    <PirteiKisuiBeMutzar><SUG-KISUY-BITOCHI>3</SUG-KISUY-BITOCHI><SCHUM-BITUACH>40000.00</SCHUM-BITUACH><DMEI-BITUAH-LETASHLUM-BAPOAL>10.00</DMEI-BITUAH-LETASHLUM-BAPOAL></PirteiKisuiBeMutzar>
     <PirteiKisuiBeMutzar><SUG-KISUY-BITOCHI>8</SUG-KISUY-BITOCHI><SCHUM-BITUACH>12345.00</SCHUM-BITUACH></PirteiKisuiBeMutzar>
   </ZihuiKisui></Kisuim>
   <Mutav><SUG-ZIHUY-MUTAV>1</SUG-ZIHUY-MUTAV><SHEM-PRATI-MUTAV>דנה</SHEM-PRATI-MUTAV><SHEM-MISHPACHA-MUTAV>כהן</SHEM-MISHPACHA-MUTAV><ACHUZ-MUTAV>60.00</ACHUZ-MUTAV></Mutav>
@@ -107,6 +108,18 @@ describe('parsePensionXml', () => {
     expect(p.coverages.some((c) => c.amount === 12345)).toBe(false)
   })
 
+  it('classifies the precise coverage kind for the protection picture', () => {
+    // אכ"ע (code 5) → kind incomeProtection (coarse type stays disability)
+    expect(p.coverages.find((c) => c.name === 'אכ"ע')?.kind).toBe('incomeProtection')
+    // ordinary death (code 1) vs accidental death (code 3) are separated
+    expect(p.coverages.find((c) => c.amount === 500000)?.kind).toBe('death')
+    const accidental = p.coverages.find((c) => c.amount === 40000)
+    expect(accidental?.kind).toBe('accidentalDeath')
+    expect(accidental?.type).toBe('death') // still rolls up to the coarse death bucket
+    // pension נכות carries its own kind
+    expect(p.coverages.some((c) => c.kind === 'pensionDisability')).toBe(true)
+  })
+
   it('maps SUG-MUTZAR across all product codes', () => {
     // 9 = קופת גמל להשקעה → gemelInvestment (previously fell through to unknown)
     expect(parsePensionXml(fixture({ sugMutzar: '9' }), 'f.xml').policies[0].productType).toBe(
@@ -119,6 +132,10 @@ describe('parsePensionXml', () => {
     // 6 = פוליסת סיכון טהור with accumulated savings in fixture → managers
     expect(parsePensionXml(fixture({ sugMutzar: '6' }), 'f.xml').policies[0].productType).toBe(
       'managers',
+    )
+    // 7 = ביטוח חיים משכנתא → mortgage (its own product kind)
+    expect(parsePensionXml(fixture({ sugMutzar: '7' }), 'f.xml').policies[0].productType).toBe(
+      'mortgage',
     )
   })
 

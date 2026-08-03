@@ -16,6 +16,7 @@ import {
   TrendingUp,
   GraduationCap,
   HeartPulse,
+  Home,
   Umbrella,
   HelpCircle,
   type LucideIcon,
@@ -28,6 +29,7 @@ const productMeta: Record<ProductType, { icon: LucideIcon; grad: string }> = {
   gemelInvestment: { icon: TrendingUp, grad: 'linear-gradient(135deg,#1baf7a,#12805a)' },
   education: { icon: GraduationCap, grad: 'linear-gradient(135deg,#eda100,#c07f00)' },
   life: { icon: HeartPulse, grad: 'linear-gradient(135deg,#e87ba4,#c25579)' },
+  mortgage: { icon: Home, grad: 'linear-gradient(135deg,#c25579,#8f3d58)' },
   incomeProtection: { icon: Umbrella, grad: 'linear-gradient(135deg,#eb6834,#bf4d20)' },
   unknown: { icon: HelpCircle, grad: 'linear-gradient(135deg,var(--neutral-400),var(--neutral-500))' },
 }

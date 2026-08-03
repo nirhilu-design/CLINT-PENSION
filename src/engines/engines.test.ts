@@ -136,7 +136,7 @@ describe('deathPictureEngine liabilities', () => {
       policyNumber: 'L1',
       productType: 'life',
       coverages: [
-        { type: 'death', name: null, amount, percent: null, coveredSalary: null, cost: null, status: 'active', policyNumber: 'L1' },
+        { type: 'death', kind: 'death', name: null, amount, percent: null, coveredSalary: null, cost: null, status: 'active', policyNumber: 'L1' },
       ],
     })
 
@@ -183,7 +183,7 @@ describe('managers generation engine (stopIssueEngine)', () => {
       hasGuaranteedFactor: true,
       savingsAllocationPercent: 90,
       coverages: [
-        { type: 'death', name: null, amount: 5, percent: null, coveredSalary: null, cost: null, status: 'active', policyNumber: 'MG' },
+        { type: 'death', kind: 'death', name: null, amount: 5, percent: null, coveredSalary: null, cost: null, status: 'active', policyNumber: 'MG' },
       ],
     })
     const desc = stopIssueEngine(input([old]))[0].description
@@ -206,6 +206,7 @@ describe('managers generation engine (stopIssueEngine)', () => {
 describe('incomeProtectionEngine', () => {
   const disabilityCover = (amount: number, policyNumber = 'P1') => ({
     type: 'disability' as const,
+    kind: 'incomeProtection' as const,
     name: null,
     amount, // the monthly benefit (פיצוי) — pension נכות or אכ"ע alike
     percent: null,

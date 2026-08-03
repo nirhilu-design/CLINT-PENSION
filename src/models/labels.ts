@@ -1,4 +1,10 @@
-import type { CoverageType, FindingCategory, FindingSeverity, ProductType } from './types'
+import type {
+  CoverageKind,
+  CoverageType,
+  FindingCategory,
+  FindingSeverity,
+  ProductType,
+} from './types'
 
 export const productTypeLabels: Record<ProductType, string> = {
   pension: 'קרן פנסיה',
@@ -7,6 +13,7 @@ export const productTypeLabels: Record<ProductType, string> = {
   gemelInvestment: 'גמל להשקעה',
   education: 'קרן השתלמות',
   life: 'ביטוח חיים',
+  mortgage: 'ביטוח חיים משכנתא',
   incomeProtection: 'אובדן כושר עבודה',
   unknown: 'מוצר לא מזוהה',
 }
@@ -15,6 +22,19 @@ export const coverageTypeLabels: Record<CoverageType, string> = {
   disability: 'נכות / אובדן כושר עבודה',
   survivors: 'שאירים',
   death: 'מקרה מוות',
+  other: 'כיסוי אחר',
+}
+
+export const coverageKindLabels: Record<CoverageKind, string> = {
+  death: 'מקרה מוות (ביטוח חיים)',
+  accidentalDeath: 'מוות מתאונה',
+  deathAndIncomeProtection: 'מוות + אכ"ע',
+  occupationalDisability: 'נכות מקצועית',
+  accidentalDisability: 'נכות מתאונה',
+  incomeProtection: 'אובדן כושר עבודה (אכ"ע)',
+  pensionDisability: 'פנסיית נכות',
+  survivors: 'קצבת שאירים',
+  criticalIllness: 'מחלות קשות',
   other: 'כיסוי אחר',
 }
 

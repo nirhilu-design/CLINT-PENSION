@@ -6,6 +6,7 @@ import type {
   Client,
   Contribution,
   Coverage,
+  CoverageKind,
   CoverageType,
   ManagersGeneration,
   MonthlyDeposit,
@@ -52,10 +53,11 @@ function mapProductType(
       return planName?.includes('להשקעה') ? 'gemelInvestment' : 'gemel'
     case '10':
       return 'gemel' // חיסכון לכל ילד — a gemel savings account
+    case '7': // ביטוח חיים משכנתא — a distinct product kind for the protection picture
+      return 'mortgage'
     case '1': // ביטוח חיים משולב חיסכון
     case '5': // פוליסת חיסכון טהור
     case '6': // פוליסת סיכון טהור (ריסק מוות ו/או אכ"ע)
-    case '7': // ביטוח חיים משכנתא
     case '8': // פוליסת סיכון טהור קולקטיב
       // Insurance products: distinguish by content
       if (hasSavings) return 'managers'
@@ -90,19 +92,24 @@ function parseClient(yeshutLakoach: Element): Client {
   }
 }
 
-// Maps SUG-KISUY-BITOCHI (מבנה אחיד, נספח ערכים) to our coverage taxonomy.
+// Maps SUG-KISUY-BITOCHI (מבנה אחיד, נספח ערכים) to the precise coverage kind.
 // null = not a risk coverage we surface (premium waiver / pure savings).
-function coverageTypeFromKisuyBituchi(code: string | null): CoverageType | null {
+function coverageKindFromKisuyBituchi(code: string | null): CoverageKind | null {
   switch (code) {
     case '1': // כיסוי למקרה מוות
-    case '3': // מוות מתאונה
-    case '9': // מוות + אכ"ע (פנסיה ותיקה)
       return 'death'
+    case '3': // מוות מתאונה
+      return 'accidentalDeath'
+    case '9': // מוות + אכ"ע (פנסיה ותיקה)
+      return 'deathAndIncomeProtection'
     case '2': // נכות מקצועית
+      return 'occupationalDisability'
     case '4': // נכות מתאונה
+      return 'accidentalDisability'
     case '5': // אבדן כושר עבודה (אכ"ע)
-      return 'disability'
+      return 'incomeProtection'
     case '7': // מחלות קשות
+      return 'criticalIllness'
     case '10': // אחר
       return 'other'
     case '6': // שחרור (ויתור על תשלום פרמיה) — לא כיסוי תשלום
@@ -110,6 +117,27 @@ function coverageTypeFromKisuyBituchi(code: string | null): CoverageType | null 
       return null
     default:
       return null
+  }
+}
+
+// The coarse bucket the analysis engines rely on, derived from the precise kind.
+// Unchanged from the previous SUG-KISUY-BITOCHI → CoverageType mapping.
+export function coverageTypeFromKind(kind: CoverageKind): CoverageType {
+  switch (kind) {
+    case 'death':
+    case 'accidentalDeath':
+    case 'deathAndIncomeProtection':
+      return 'death'
+    case 'occupationalDisability':
+    case 'accidentalDisability':
+    case 'incomeProtection':
+    case 'pensionDisability':
+      return 'disability'
+    case 'survivors':
+      return 'survivors'
+    case 'criticalIllness':
+    case 'other':
+      return 'other'
   }
 }
 
@@ -150,6 +178,7 @@ function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
       if (disabilityAmount !== null) {
         coverages.push({
           type: 'disability',
+          kind: 'pensionDisability',
           name,
           amount: disabilityAmount,
           percent: getNumber(pensionCover, 'SHEUR-KISUY-NECHUT'),
@@ -164,6 +193,7 @@ function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
       if (widowAmount !== null) {
         coverages.push({
           type: 'survivors',
+          kind: 'survivors',
           name: 'קצבת שאירים לאלמן/ה',
           amount: widowAmount,
           percent: getNumber(pensionCover, 'SHIUR-KISUY-ALMAN-O-ALMANA'),
@@ -177,6 +207,7 @@ function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
       if (orphanAmount !== null) {
         coverages.push({
           type: 'survivors',
+          kind: 'survivors',
           name: 'קצבת שאירים ליתום',
           amount: orphanAmount,
           percent: getNumber(pensionCover, 'SHIUR-KISUY-YATOM'),
@@ -194,10 +225,11 @@ function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
     // DMEI-BITUAH-LETASHLUM-BAPOAL. (Previously we mis-read PirteiTosafot — a rider
     // block with no SCHUM-BITUACH — and hard-coded every row as death coverage.)
     for (const cover of kisui.querySelectorAll('PirteiKisuiBeMutzar')) {
-      const type = coverageTypeFromKisuyBituchi(getText(cover, 'SUG-KISUY-BITOCHI'))
-      if (type === null) continue // savings / premium-waiver rows are not risk covers
+      const kind = coverageKindFromKisuyBituchi(getText(cover, 'SUG-KISUY-BITOCHI'))
+      if (kind === null) continue // savings / premium-waiver rows are not risk covers
       coverages.push({
-        type,
+        type: coverageTypeFromKind(kind),
+        kind,
         name,
         amount: getNumber(cover, 'SCHUM-BITUACH'),
         percent: getNumber(cover, 'ACHUZ-MESACHAR'),
