@@ -3,7 +3,7 @@ import { useApp } from '../hooks/useAppState'
 import { coverageTypeLabels, productTypeLabels } from '../models/labels'
 import type { Policy, ProductType } from '../models/types'
 import { formatCurrency, formatPercent } from '../utils/format'
-import FindingCard from '../components/FindingCard'
+import ProductFindingCategories from '../components/ProductFindingCategories'
 import Card from '../components/ds/Card'
 import { isEducationFundLiquid } from '../utils/liquidity'
 import {
@@ -266,15 +266,11 @@ export default function ProductPage() {
               )}
 
               <Card>
-                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 12 }}>ממצאים במוצר זה</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 16 }}>ממצאים במוצר זה</div>
                 {productFindings.length === 0 ? (
                   <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)', margin: 0 }}>אין ממצאים למוצר זה</p>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {productFindings.map((f) => (
-                      <FindingCard key={f.id} finding={f} />
-                    ))}
-                  </div>
+                  <ProductFindingCategories findings={productFindings} />
                 )}
               </Card>
             </div>
