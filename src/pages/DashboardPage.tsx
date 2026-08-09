@@ -4,6 +4,7 @@ import type { ProductType } from '../models/types'
 import { formatCurrency, formatDate } from '../utils/format'
 import PieChartCard from '../components/PieChartCard'
 import ProductFindingGroups from '../components/ProductFindingGroups'
+import PremiumAndDeposits from '../components/PremiumAndDeposits'
 import ReturnsTable from '../components/ReturnsTable'
 import PensionScenarioBar from '../components/PensionScenarioBar'
 import ExposureAnalysis from '../components/ExposureAnalysis'
@@ -280,6 +281,8 @@ export default function DashboardPage() {
         {(totalPensionWithDeposits > 0 || totalPensionWithoutDeposits > 0) && (
           <PensionScenarioBar withDeposits={totalPensionWithDeposits} withoutDeposits={totalPensionWithoutDeposits} />
         )}
+
+        <PremiumAndDeposits policies={policies} />
 
         <ExposureAnalysis exposure={computeExposure(policies, supp.treasuryAllocations)} />
 
