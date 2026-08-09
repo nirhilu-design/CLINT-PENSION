@@ -3,7 +3,7 @@ import { productTypeLabels } from '../models/labels'
 import type { ProductType } from '../models/types'
 import { formatCurrency, formatDate } from '../utils/format'
 import PieChartCard from '../components/PieChartCard'
-import FindingCard from '../components/FindingCard'
+import ProductFindingGroups from '../components/ProductFindingGroups'
 import ReturnsTable from '../components/ReturnsTable'
 import PensionScenarioBar from '../components/PensionScenarioBar'
 import ExposureAnalysis from '../components/ExposureAnalysis'
@@ -136,7 +136,6 @@ export default function DashboardPage() {
   }, [])
 
   const actionable = sortFindings(findings.filter((f) => f.severity !== 'info'))
-  const centralFindings = actionable.slice(0, 6)
   const gapCount = actionable.filter((f) => f.severity === 'gap').length
   const attentionCount = actionable.filter((f) => f.severity === 'attention').length
   const completeness = assessCompleteness(analysis)
@@ -284,28 +283,24 @@ export default function DashboardPage() {
 
         <ExposureAnalysis exposure={computeExposure(policies, supp.treasuryAllocations)} />
 
-        {/* Findings */}
+        {/* Findings grouped by product */}
         <section style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16 }}>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
-              נקודות הדורשות תשומת לב
+              הארות לפי מוצר
             </h2>
-            {actionable.length > centralFindings.length && (
-              <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>
-                מוצגים {centralFindings.length} מתוך {actionable.length} · המלא בסיכום המנהלים
-              </span>
-            )}
+            <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>
+              בחרו מוצר לצפייה בהארות שלו · המלא בסיכום המנהלים
+            </span>
           </div>
-          {centralFindings.length === 0 ? (
+          {findings.length === 0 ? (
             <p style={{ fontSize: 14, color: 'var(--color-text-tertiary)' }}>
               {completeness.complete ? 'לא נמצאו ממצאים הדורשים בדיקה' : 'לא עלו ממצאים — אך הבדיקה חלקית בשל מידע חסר (פירוט למטה).'}
             </p>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 12 }}>
-              {centralFindings.map((f) => (
-                <FindingCard key={f.id} finding={f} />
-              ))}
-            </div>
+            <Card>
+              <ProductFindingGroups findings={findings} policies={policies} />
+            </Card>
           )}
           {!completeness.complete && (
             <Card padding={16} style={{ marginTop: 16, background: 'var(--neutral-50)' }}>
