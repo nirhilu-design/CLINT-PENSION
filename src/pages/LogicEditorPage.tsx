@@ -83,16 +83,6 @@ export default function LogicEditorPage() {
     setCfg((c) => ({ ...c, thresholds: { ...c.thresholds, [key]: Number.isFinite(n) ? n : 0 } }))
     setSaved(false)
   }
-  function setFee(pt: ProductType, field: 'fromDeposit' | 'fromAccumulation', value: string) {
-    const n = value.trim() === '' ? null : parseFloat(value)
-    setCfg((c) => {
-      const marketFees = { ...c.thresholds.marketFees }
-      const cur = marketFees[pt] ?? { fromDeposit: null, fromAccumulation: null }
-      marketFees[pt] = { ...cur, [field]: n !== null && Number.isFinite(n) ? n : null }
-      return { ...c, thresholds: { ...c.thresholds, marketFees } }
-    })
-    setSaved(false)
-  }
   function toggleLogic(id: string, enabled: boolean) {
     setCfg((c) => ({
       ...c,
@@ -157,12 +147,10 @@ export default function LogicEditorPage() {
           <LogicCard
             key={logic.id}
             logic={logic}
-            product={product}
             thresholds={cfg.thresholds}
             enabled={!cfg.disabledLogics.includes(logic.id)}
             matchCount={matchCounts[logic.id]}
             onParam={setParam}
-            onFee={setFee}
             onToggle={(en) => toggleLogic(logic.id, en)}
           />
         ))}
@@ -186,28 +174,21 @@ export default function LogicEditorPage() {
 
 function LogicCard({
   logic,
-  product,
   thresholds,
   enabled,
   matchCount,
   onParam,
-  onFee,
   onToggle,
 }: {
   logic: LogicDef
-  product: ProductType
   thresholds: ThresholdValues
   enabled: boolean
   matchCount?: number
   onParam: (key: LogicParam['key'], value: string) => void
-  onFee: (pt: ProductType, field: 'fromDeposit' | 'fromAccumulation', value: string) => void
   onToggle: (enabled: boolean) => void
 }) {
   const sev = SEVERITY_STYLE[logic.severity]
-  const changed =
-    logic.params.some((p) => thresholds[p.key] !== DEFAULT_THRESHOLDS[p.key]) ||
-    (logic.editsMarketFees &&
-      JSON.stringify(thresholds.marketFees[product]) !== JSON.stringify(DEFAULT_THRESHOLDS.marketFees[product]))
+  const changed = logic.params.some((p) => thresholds[p.key] !== DEFAULT_THRESHOLDS[p.key])
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
@@ -239,7 +220,7 @@ function LogicCard({
           <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-mono)', direction: 'rtl' }}>{logic.condition}</p>
           <p style={{ margin: '6px 0 0', fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>{logic.explanation}</p>
 
-          {(logic.params.length > 0 || logic.editsMarketFees) && (
+          {logic.params.length > 0 && (
             <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 12 }}>
               {logic.params.map((p) => (
                 <label key={p.key} style={{ fontSize: 13 }}>
@@ -250,18 +231,6 @@ function LogicCard({
                   <input type="number" step="any" disabled={!enabled} value={String(thresholds[p.key] ?? '')} onChange={(e) => onParam(p.key, e.target.value)} style={inputStyle} />
                 </label>
               ))}
-              {logic.editsMarketFees && (
-                <>
-                  <label style={{ fontSize: 13 }}>
-                    <span style={{ display: 'block', fontSize: 11, color: 'var(--color-text-tertiary)', marginBottom: 4 }}>סף דמי ניהול מהפקדה (%)</span>
-                    <input type="number" step="any" disabled={!enabled} value={thresholds.marketFees[product]?.fromDeposit ?? ''} onChange={(e) => onFee(product, 'fromDeposit', e.target.value)} placeholder="לא רלוונטי" style={inputStyle} />
-                  </label>
-                  <label style={{ fontSize: 13 }}>
-                    <span style={{ display: 'block', fontSize: 11, color: 'var(--color-text-tertiary)', marginBottom: 4 }}>סף דמי ניהול מצבירה (%)</span>
-                    <input type="number" step="any" disabled={!enabled} value={thresholds.marketFees[product]?.fromAccumulation ?? ''} onChange={(e) => onFee(product, 'fromAccumulation', e.target.value)} placeholder="לא רלוונטי" style={inputStyle} />
-                  </label>
-                </>
-              )}
             </div>
           )}
         </div>

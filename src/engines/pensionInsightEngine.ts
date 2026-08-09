@@ -41,8 +41,49 @@ export const pensionInsightEngine: Engine = ({ policies, supplementary }) => {
       .filter((c) => c.type === 'survivors')
       .reduce((sum, c) => sum + (c.cost ?? 0), 0)
 
-    // Direction 1: no dependents, yet paying for survivors coverage
-    if (noDependents && !policy.survivorsWaiver && survivorsCost > 0) {
+    // The survivors waiver (ויתור שאירים) is valid for two years and renews
+    // automatically. A change in family status should end it, so an active
+    // waiver always warrants a tracking note — its weight depends on the
+    // current family status.
+    if (policy.survivorsWaiver === true) {
+      if (hasDependents) {
+        // Deficit: dependents exist yet no survivors pension would be paid.
+        findings.push(
+          makeFinding({
+            category: 'insurance',
+            level: 'policy',
+            severity: 'attention',
+            title: 'ויתור על כיסוי שאירים למרות שצוינו תלויים',
+            description:
+              `בקרן ${policy.policyNumber} קיים ויתור על כיסוי שאירים, בעוד צוין שקיימים בן/בת זוג או ילדים מתחת לגיל 21. ` +
+              'המשמעות: במקרה פטירה לא תשולם קצבת שאירים מהקרן. ' +
+              'הוויתור בתוקף לשנתיים ומתחדש אוטומטית, וייתכן שהתחדש למרות שינוי במצב המשפחתי — ' +
+              'ביטול הוויתור והחזרת כיסוי השאירים הם נקודה לבדיקה מול בעל רישיון.',
+            productType: 'pension',
+            policyNumber: policy.policyNumber,
+          }),
+        )
+      } else {
+        // No dependents (or unknown): the waiver fits, but it renews silently —
+        // surface it for ongoing tracking against family status.
+        findings.push(
+          makeFinding({
+            category: 'insight',
+            level: 'policy',
+            severity: 'info',
+            title: 'קיים ויתור על כיסוי שאירים — למעקב',
+            description:
+              `בקרן ${policy.policyNumber} קיים ויתור על כיסוי שאירים` +
+              (noDependents ? ', בהתאם לכך שצוין שאין בן/בת זוג וילדים מתחת לגיל 21. ' : '. ') +
+              'הוויתור בתוקף לשנתיים ומתחדש אוטומטית ללא התראה. ' +
+              'אם המצב המשפחתי ישתנה (בן/בת זוג או ילדים), יש לוודא שהוויתור אינו מתחדש מאליו — נקודה למעקב מול בעל רישיון.',
+            productType: 'pension',
+            policyNumber: policy.policyNumber,
+          }),
+        )
+      }
+    } else if (noDependents && survivorsCost > 0) {
+      // Paying for survivors coverage with no dependents — possibly unnecessary.
       findings.push(
         makeFinding({
           category: 'insight',
@@ -52,24 +93,8 @@ export const pensionInsightEngine: Engine = ({ policies, supplementary }) => {
           description:
             `בקרן ${policy.policyNumber} משולם כיסוי שאירים בעלות של כ-${formatCurrency(survivorsCost)} לחודש, ` +
             'בעוד צוין שאין בן/בת זוג וילדים מתחת לגיל 21. ' +
-            'קיים בקרנות הפנסיה מסלול ויתור שאירים לרווקים (מתחדש אחת לשנתיים) — נקודה שכדאי להכיר.',
-          productType: 'pension',
-          policyNumber: policy.policyNumber,
-        }),
-      )
-    }
-
-    // Direction 2 (stronger): dependents exist but survivors coverage is waived
-    if (hasDependents && policy.survivorsWaiver === true) {
-      findings.push(
-        makeFinding({
-          category: 'insurance',
-          level: 'policy',
-          severity: 'attention',
-          title: 'קיים ויתור על כיסוי שאירים למרות שצוינו תלויים',
-          description:
-            `בקרן ${policy.policyNumber} קיים ויתור על כיסוי שאירים, בעוד צוין שקיימים בן/בת זוג או ילדים מתחת לגיל 21. ` +
-            'המשמעות: במקרה פטירה לא תשולם קצבת שאירים מהקרן. נקודה לבדיקה מול בעל רישיון.',
+            'קיים בקרנות הפנסיה מסלול ויתור שאירים (בתוקף לשנתיים, מתחדש אוטומטית) — ' +
+            'התאמת הכיסוי למצב המשפחתי היא נקודה לבדיקה מול בעל רישיון.',
           productType: 'pension',
           policyNumber: policy.policyNumber,
         }),

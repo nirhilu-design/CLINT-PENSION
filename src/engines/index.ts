@@ -1,4 +1,5 @@
 import type { Engine, EngineInput } from './engineTypes'
+import { resetFindingIds } from './engineTypes'
 import type { Finding } from '../models/types'
 import { stopIssueEngine } from './stopIssueEngine'
 import { costEngine } from './costEngine'
@@ -30,6 +31,7 @@ const engines: { id: string; engine: Engine }[] = [
 ]
 
 export function runEngines(input: EngineInput, disabledLogics: string[] = []): Finding[] {
+  resetFindingIds()
   const off = new Set(disabledLogics)
   return engines.flatMap(({ id, engine }) => (off.has(id) ? [] : engine(input)))
 }

@@ -28,6 +28,23 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
     .filter((p) => ['gemel', 'gemelInvestment', 'education'].includes(p.productType))
     .reduce((sum, p) => sum + (p.currentValue ?? 0), 0)
 
+  // Pension/managers accumulation is normally paid to survivors as a monthly
+  // pension — NOT a lump sum available to clear debts. It is paid to the named
+  // beneficiaries as a lump ONLY when there are no survivors. We treat that as
+  // established when the policy carries a survivors waiver (from the XML) or the
+  // client declared no spouse and no children under 21.
+  const noDeclaredDependents =
+    supplementary.hasSpouse === false && supplementary.hasChildrenUnder21 === false
+  const pensionPolicies = active.filter(
+    (p) => p.productType === 'pension' || p.productType === 'managers',
+  )
+  const pensionAccumulation = pensionPolicies.reduce((sum, p) => sum + (p.currentValue ?? 0), 0)
+  const pensionLumpAtDeath = pensionPolicies
+    .filter((p) => p.survivorsWaiver === true || noDeclaredDependents)
+    .reduce((sum, p) => sum + (p.currentValue ?? 0), 0)
+  // Pension savings that stay a survivors pension (excluded from the lump math)
+  const pensionAsSurvivorsPension = pensionAccumulation - pensionLumpAtDeath
+
   const parts: string[] = []
   if (deathLumpSum > 0) {
     parts.push(`קיים ביטוח חד-פעמי למקרה פטירה בסך ${formatCurrency(deathLumpSum)}`)
@@ -122,9 +139,21 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
     )
   }
 
-  // Life-insurance coverage vs the liabilities it would need to clear at death
+  // Life-insurance coverage vs the liabilities it would need to clear at death.
+  // Lump sum available = life insurance + capital assets (+ pension accumulation
+  // only where it is paid to beneficiaries rather than as a survivors pension).
   if (totalLiabilities > 0) {
-    const availableAtDeath = deathLumpSum + capitalAssets
+    const availableAtDeath = deathLumpSum + capitalAssets + pensionLumpAtDeath
+    const lumpNote =
+      pensionLumpAtDeath > 0
+        ? ' (כולל צבירת פנסיה/מנהלים המשולמת למוטבים בהיעדר שאירים)'
+        : ''
+    // When pension savings would instead be paid as a survivors pension, the
+    // lump-sum comparison understates the family's protection — say so.
+    const survivorsPensionNote =
+      pensionAsSurvivorsPension > 0
+        ? ` יש לשים לב שצבירת הפנסיה/מנהלים (כ-${formatCurrency(pensionAsSurvivorsPension)}) משולמת כקצבת שאירים ואינה נכללת בהון הזמין לסילוק חד-פעמי.`
+        : ''
     if (availableAtDeath < totalLiabilities) {
       const reliesOnIncome = supplementary.familyReliesOnIncome === true
       findings.push(
@@ -132,11 +161,12 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
           category: 'death',
           level: 'client',
           severity: hasDependents && reliesOnIncome ? 'gap' : 'attention',
-          title: 'כיסוי המוות נמוך מההתחייבויות',
+          title: 'ההון הזמין במקרה מוות נמוך מההתחייבויות',
           description:
             `ההתחייבויות (משכנתא/חובות) עומדות על כ-${formatCurrency(totalLiabilities)}, ` +
-            `בעוד הכיסוי הזמין במקרה מוות (ביטוח חיים ונכסים הוניים) הוא כ-${formatCurrency(availableAtDeath)}. ` +
-            'ייתכן שהמשפחה תירש חלק מההתחייבויות ללא כיסוי — נקודה לבדיקה מול בעל רישיון.',
+            `בעוד ההון הזמין במקרה מוות (ביטוח חיים ונכסים הוניים${lumpNote}) הוא כ-${formatCurrency(availableAtDeath)}.` +
+            survivorsPensionNote +
+            ' ייתכן שהמשפחה תירש חלק מההתחייבויות ללא כיסוי חד-פעמי — נקודה לבדיקה מול בעל רישיון.',
         }),
       )
     } else {
@@ -145,10 +175,12 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
           category: 'death',
           level: 'client',
           severity: 'info',
-          title: 'כיסוי המוות מכסה את ההתחייבויות',
+          title: 'ההון הזמין במקרה מוות מכסה את ההתחייבויות',
           description:
-            `הכיסוי הזמין במקרה מוות (כ-${formatCurrency(availableAtDeath)}) מכסה את ההתחייבויות ` +
-            `(כ-${formatCurrency(totalLiabilities)}). נקודה לבדיקה מול בעל רישיון.`,
+            `ההון הזמין במקרה מוות (כ-${formatCurrency(availableAtDeath)}${lumpNote}) מכסה את ההתחייבויות ` +
+            `(כ-${formatCurrency(totalLiabilities)}).` +
+            survivorsPensionNote +
+            ' נקודה לבדיקה מול בעל רישיון.',
         }),
       )
     }

@@ -65,7 +65,12 @@ export default function AdvisorPage() {
     return Number.isFinite(n) ? n : null
   }
 
-  function persist(fundsOverride?: TreasuryFundData[], allocsOverride?: TreasuryAllocation[], notesOverride?: AdvisorNote[]) {
+  function persist(
+    fundsOverride?: TreasuryFundData[],
+    allocsOverride?: TreasuryAllocation[],
+    notesOverride?: AdvisorNote[],
+    feesOverride?: Record<string, { deposit: string; accum: string }>,
+  ) {
     const updated = { ...supplementary }
     updated.treasuryFunds = fundsOverride ?? treasuryFunds
     updated.treasuryAllocations = allocsOverride ?? treasuryAllocations
@@ -74,7 +79,7 @@ export default function AdvisorPage() {
     updated.scenarioRealReturnPercent = num(scenario.realReturn)
     updated.scenarioSalaryGrowthPercent = num(scenario.salaryGrowth)
     updated.scenarioLifeExpectancy = num(scenario.lifeExp)
-    updated.feeAgreements = Object.entries(fees)
+    updated.feeAgreements = Object.entries(feesOverride ?? fees)
       .map(([policyNumber, v]): FeeAgreement => ({ policyNumber, agreedFeeFromDeposit: num(v.deposit), agreedFeeFromAccumulation: num(v.accum) }))
       .filter((a) => a.agreedFeeFromDeposit !== null || a.agreedFeeFromAccumulation !== null)
     updated.benchmarks = supplementary.benchmarks
@@ -115,12 +120,32 @@ export default function AdvisorPage() {
 
   async function handleEmployerFeeFile(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return
+    const portfolio = new Set(policies.map((p) => p.policyNumber))
     const log: string[] = []
+    const merged = { ...fees }
+    let appliedTotal = 0
     for (const file of fileList) {
       const text = await file.text()
-      log.push(`${file.name}: ${parseEmployerFeeFile(text, file.name).note}`)
+      const res = parseEmployerFeeFile(text, file.name)
+      let appliedFromFile = 0
+      for (const a of res.agreements) {
+        if (!portfolio.has(a.policyNumber)) continue // only fees for policies in this portfolio
+        merged[a.policyNumber] = {
+          deposit: a.agreedFeeFromDeposit?.toString() ?? merged[a.policyNumber]?.deposit ?? '',
+          accum: a.agreedFeeFromAccumulation?.toString() ?? merged[a.policyNumber]?.accum ?? '',
+        }
+        appliedFromFile += 1
+      }
+      appliedTotal += appliedFromFile
+      const suffix =
+        res.agreements.length > 0
+          ? ` הותאמו ${appliedFromFile} מתוך ${res.agreements.length} לפוליסות בתיק.`
+          : ''
+      log.push(`${file.name}: ${res.note}${suffix}`)
     }
+    setFees(merged)
     setEmployerFeeLog(log)
+    if (appliedTotal > 0) persist(undefined, undefined, undefined, merged) // re-run comparison against the loaded fees
   }
 
   function addNote() {

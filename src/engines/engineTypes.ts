@@ -26,6 +26,10 @@ export function effectiveSalary(
 }
 
 let counter = 0
+/** Reset finding-id numbering — called once per analysis run so ids are stable across runs. */
+export function resetFindingIds(): void {
+  counter = 0
+}
 export function makeFinding(finding: Omit<Finding, 'id'>): Finding {
   counter += 1
   return { id: `f-${counter}-${finding.category}`, ...finding }

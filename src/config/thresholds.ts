@@ -3,18 +3,8 @@
 // so applyThresholds() below can override any value at runtime — this is what
 // the Logic Editor screen uses to let an advisor tune the logic without code.
 
-import type { ProductType } from '../models/types'
-
-// --- Fees: market "worth checking" thresholds per product (percent) ---
-export interface FeeThreshold {
-  fromDeposit: number | null
-  fromAccumulation: number | null
-}
-
 // A flat, serializable snapshot of every threshold — the shape the editor edits.
 export interface ThresholdValues {
-  marketFees: Partial<Record<ProductType, FeeThreshold>>
-  feeAboveFundAvgTolerance: number
   ipTargetCoveragePercent: number
   ipCoveragePercentSlack: number
   ipCoveredSalaryRatio: number
@@ -34,15 +24,6 @@ export interface ThresholdValues {
 }
 
 export const DEFAULT_THRESHOLDS: ThresholdValues = {
-  // Fees: market "worth checking" thresholds per product (percent)
-  marketFees: {
-    pension: { fromDeposit: 3.0, fromAccumulation: 0.25 },
-    gemel: { fromDeposit: null, fromAccumulation: 0.7 },
-    gemelInvestment: { fromDeposit: null, fromAccumulation: 0.7 },
-    education: { fromDeposit: null, fromAccumulation: 0.7 },
-    managers: { fromDeposit: 4.0, fromAccumulation: 1.2 },
-  },
-  feeAboveFundAvgTolerance: 0.1, // tolerance above agreement / fund average (pp)
   ipTargetCoveragePercent: 73, // income protection target coverage (%)
   ipCoveragePercentSlack: 3, // below target-slack → finding
   ipCoveredSalaryRatio: 0.9, // covered salary < 90% of actual → gap
@@ -62,19 +43,12 @@ export const DEFAULT_THRESHOLDS: ThresholdValues = {
   largeLifeCoverThreshold: 500_000,
 }
 
-// Deep clone so overrides never mutate the defaults.
+// Clone so overrides never mutate the defaults (all values are flat scalars).
 export function cloneThresholds(t: ThresholdValues): ThresholdValues {
-  return {
-    ...t,
-    marketFees: Object.fromEntries(
-      Object.entries(t.marketFees).map(([k, v]) => [k, { ...v! }]),
-    ) as ThresholdValues['marketFees'],
-  }
+  return { ...t }
 }
 
 // --- Live bindings the engines read (see applyThresholds) ---
-export let MARKET_FEE_THRESHOLDS = DEFAULT_THRESHOLDS.marketFees
-export let FEE_ABOVE_FUND_AVG_TOLERANCE = DEFAULT_THRESHOLDS.feeAboveFundAvgTolerance
 export let IP_TARGET_COVERAGE_PERCENT = DEFAULT_THRESHOLDS.ipTargetCoveragePercent
 export let IP_COVERAGE_PERCENT_SLACK = DEFAULT_THRESHOLDS.ipCoveragePercentSlack
 export let IP_COVERED_SALARY_RATIO = DEFAULT_THRESHOLDS.ipCoveredSalaryRatio
@@ -94,8 +68,6 @@ export let LARGE_LIFE_COVER_THRESHOLD = DEFAULT_THRESHOLDS.largeLifeCoverThresho
 
 /** Override the active thresholds (called by buildAnalysis before running engines). */
 export function applyThresholds(t: ThresholdValues): void {
-  MARKET_FEE_THRESHOLDS = t.marketFees
-  FEE_ABOVE_FUND_AVG_TOLERANCE = t.feeAboveFundAvgTolerance
   IP_TARGET_COVERAGE_PERCENT = t.ipTargetCoveragePercent
   IP_COVERAGE_PERCENT_SLACK = t.ipCoveragePercentSlack
   IP_COVERED_SALARY_RATIO = t.ipCoveredSalaryRatio

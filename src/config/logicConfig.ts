@@ -7,7 +7,7 @@ import { DEFAULT_THRESHOLDS, cloneThresholds, type ThresholdValues } from './thr
 
 // A single editable numeric threshold, addressed by its flat key on ThresholdValues.
 export interface LogicParam {
-  key: Exclude<keyof ThresholdValues, 'marketFees'>
+  key: keyof ThresholdValues
   label: string
   unit?: '%' | '₪' | 'חודשים' | 'שנים' | 'יחס' | 'נק׳ אחוז'
 }
@@ -20,8 +20,7 @@ export interface LogicDef {
   condition: string // compact pseudo-expression of the trigger (display only, mono)
   products: ProductType[] // which products this logic touches ([] = all products)
   explanation: string // how the insight/finding is built, in plain Hebrew
-  params: LogicParam[] // editable flat thresholds (fees are edited separately)
-  editsMarketFees?: boolean // true → also render the per-product fee table
+  params: LogicParam[] // editable flat thresholds
 }
 
 export const LOGIC_CATALOG: LogicDef[] = [

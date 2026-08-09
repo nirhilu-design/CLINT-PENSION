@@ -6,9 +6,11 @@ import { costEngine } from './costEngine'
 import { incomeProtectionEngine } from './incomeProtectionEngine'
 import { dataQualityEngine } from './dataQualityEngine'
 import { deathPictureEngine } from './deathPictureEngine'
+import { pensionInsightEngine } from './pensionInsightEngine'
 import { stopIssueEngine, isBlockedByStopIssue } from './stopIssueEngine'
 import { sortFindings } from './findingPriority'
 import { makeFinding } from './engineTypes'
+import { parseEmployerFeeFile } from '../parser/parseEmployerFeeFile'
 
 const client = {
   id: '012345674',
@@ -250,6 +252,95 @@ describe('dataQualityEngine salary cross-check', () => {
   it('stays silent within tolerance', () => {
     const out = dataQualityEngine(input([makePolicy()], { currentGrossSalary: 15000 }))
     expect(out.some((f) => f.title.includes('שוני בין השכר'))).toBe(false)
+  })
+})
+
+describe('pensionInsightEngine survivors waiver', () => {
+  const survivorsCover = (cost: number) => ({
+    type: 'survivors' as const,
+    name: 'אלמן/ה',
+    amount: 3000,
+    percent: null,
+    coveredSalary: null,
+    cost,
+    status: 'active' as const,
+    policyNumber: 'P1',
+  })
+
+  it('waiver with dependents → attention (deficit) and notes the 2-year auto-renewal', () => {
+    const out = pensionInsightEngine(
+      input([makePolicy({ survivorsWaiver: true })], { hasSpouse: true, hasChildrenUnder21: false }),
+    )
+    const f = out.find((x) => x.title.includes('ויתור על כיסוי שאירים למרות'))
+    expect(f?.severity).toBe('attention')
+    expect(f?.description).toContain('לשנתיים')
+  })
+
+  it('waiver without dependents → info tracking note', () => {
+    const out = pensionInsightEngine(
+      input([makePolicy({ survivorsWaiver: true })], { hasSpouse: false, hasChildrenUnder21: false }),
+    )
+    const f = out.find((x) => x.title.includes('למעקב'))
+    expect(f?.severity).toBe('info')
+    expect(f?.description).toContain('מתחדש אוטומטית')
+  })
+
+  it('paying for survivors coverage without dependents → info (possibly unnecessary)', () => {
+    const out = pensionInsightEngine(
+      input([makePolicy({ survivorsWaiver: null, coverages: [survivorsCover(50)] })], {
+        hasSpouse: false,
+        hasChildrenUnder21: false,
+      }),
+    )
+    expect(out.some((x) => x.title.includes('בתשלום ללא תלויים'))).toBe(true)
+  })
+})
+
+describe('deathPictureEngine pension accumulation', () => {
+  it('excludes pension savings from the lump comparison when survivors exist', () => {
+    const out = deathPictureEngine(
+      input([makePolicy({ productType: 'pension', currentValue: 800000, survivorsWaiver: null })], {
+        mortgageBalance: 500000,
+        hasLiabilities: true,
+        hasSpouse: true,
+      }),
+    )
+    const f = out.find((x) => x.title.includes('נמוך מההתחייבויות'))
+    expect(f).toBeDefined() // pension accumulation not counted → shortfall
+    expect(f?.description).toContain('קצבת שאירים')
+  })
+
+  it('counts pension savings as a lump to beneficiaries when a survivors waiver exists', () => {
+    const out = deathPictureEngine(
+      input([makePolicy({ productType: 'pension', currentValue: 800000, survivorsWaiver: true })], {
+        mortgageBalance: 500000,
+        hasLiabilities: true,
+      }),
+    )
+    const f = out.find((x) => x.title.includes('מכסה את ההתחייבויות'))
+    expect(f).toBeDefined()
+    expect(f?.description).toContain('בהיעדר שאירים')
+  })
+})
+
+describe('parseEmployerFeeFile', () => {
+  it('parses a CSV with a Hebrew header row', () => {
+    const csv = 'מספר פוליסה,דמי ניהול מהפקדה,דמי ניהול מצבירה\nP1,1.5,0.2\nP2,2,0.3'
+    const res = parseEmployerFeeFile(csv, 'fees.csv')
+    expect(res.agreements).toHaveLength(2)
+    expect(res.agreements[0]).toMatchObject({ policyNumber: 'P1', agreedFeeFromDeposit: 1.5, agreedFeeFromAccumulation: 0.2 })
+  })
+
+  it('parses positional rows without a header', () => {
+    const res = parseEmployerFeeFile('P1,1.5,0.2', 'fees.csv')
+    expect(res.agreements).toHaveLength(1)
+    expect(res.agreements[0].agreedFeeFromAccumulation).toBe(0.2)
+  })
+
+  it('reports XML files as pending mapping (no agreements yet)', () => {
+    const res = parseEmployerFeeFile('<root></root>', 'fees.xml')
+    expect(res.agreements).toHaveLength(0)
+    expect(res.note).toContain('XML')
   })
 })
 

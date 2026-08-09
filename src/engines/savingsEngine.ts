@@ -3,6 +3,7 @@
 
 import type { Engine } from './engineTypes'
 import { makeFinding } from './engineTypes'
+import { EDUCATION_FUND_LIQUIDITY_YEARS } from '../config/thresholds'
 import {
   EDUCATION_FUND_MONTHLY_SALARY_CAP,
   educationFundLiquidDate,
@@ -26,7 +27,7 @@ export const savingsEngine: Engine = ({ policies, supplementary }) => {
           severity: 'info',
           title: 'קרן ההשתלמות נזילה',
           description:
-            `בקרן ${p.policyNumber} חלפו 6 שנים מההצטרפות — הצבירה (${formatCurrency(p.currentValue)}) נזילה וזמינה למשיכה פטורה ממס. ` +
+            `בקרן ${p.policyNumber} חלפו ${EDUCATION_FUND_LIQUIDITY_YEARS} שנים מההצטרפות — הצבירה (${formatCurrency(p.currentValue)}) נזילה וזמינה למשיכה פטורה ממס. ` +
             'המשך חיסכון שומר על הפטור גם להפקדות החדשות.',
           productType: p.productType,
           policyNumber: p.policyNumber,
