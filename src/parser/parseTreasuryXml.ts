@@ -40,7 +40,9 @@ function firstTag(row: string, names: string[]): string | null {
   return null
 }
 
-const MAIN_GROUPS_LABEL = '9 קבוצות'
+// The main asset-class breakdown: "9 קבוצות ראשיות" (גמל) or "10 קבוצות ראשיות"
+// (פנסיה). Other groupings (חשיפות, בארץ/חו"ל, סחירים…) are skipped.
+const MAIN_GROUPS_LABEL = 'קבוצות ראשיות'
 
 export function parseTreasuryXml(
   text: string,

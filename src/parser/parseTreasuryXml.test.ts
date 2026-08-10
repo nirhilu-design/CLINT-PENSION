@@ -87,6 +87,22 @@ describe('parseTreasuryXml', () => {
     })
   })
 
+  it('detects a pension allocation file keyed by ID_KRN with a 10-group breakdown', () => {
+    const pensionAlloc = `<ROWSET><ROW>
+      <ID_KRN>7002</ID_KRN><TKF_DIVUACH>202605</TKF_DIVUACH>
+      <KVUTZAT_NECHASIM>חלוקת נכסים ל-10 קבוצות ראשיות</KVUTZAT_NECHASIM>
+      <SHM_SUG_NECHES>מניות- אופציות ותעודות סל מנייתיות</SHM_SUG_NECHES><ACHUZ_SUG_NECHES>30</ACHUZ_SUG_NECHES>
+    </ROW><ROW>
+      <ID_KRN>7002</ID_KRN><TKF_DIVUACH>202605</TKF_DIVUACH>
+      <KVUTZAT_NECHASIM>חלוקת נכסים לפי בארץ / חוץ לארץ</KVUTZAT_NECHASIM>
+      <SHM_SUG_NECHES>נכסים בארץ</SHM_SUG_NECHES><ACHUZ_SUG_NECHES>80</ACHUZ_SUG_NECHES>
+    </ROW></ROWSET>`
+    const out = parseTreasuryXml(pensionAlloc, 'PensiaNet_12.xml', new Set(['7002']))
+    expect(out.type).toBe('allocation')
+    expect(out.allocations).toHaveLength(1) // only the main breakdown row is kept
+    expect(out.allocations[0]).toMatchObject({ mofid: '7002' })
+  })
+
   it('reports unknown format', () => {
     expect(parseTreasuryXml('<foo/>', 'x.xml', portfolio).type).toBe('unknown')
   })

@@ -77,6 +77,23 @@ describe('computeExposure', () => {
     expect(e.portfolio.equity.equityPercent).toBeNull()
   })
 
+  it('sums multiple equity groups (pension 10-group breakdown)', () => {
+    const p = policy({ productType: 'gemel', mofid: '5', currentValue: 100000 })
+    const allocs: TreasuryAllocation[] = [
+      {
+        mofid: '5',
+        period: null,
+        groups: [
+          { name: 'מניות- אופציות ותעודות סל מנייתיות', percent: 30 },
+          { name: 'מניות- קרנות נאמנות ותעודות סל מנייתיות', percent: 12 },
+          { name: 'אג"ח ממשלתיות', percent: 58 },
+        ],
+      },
+    ]
+    const e = computeExposure([p], allocs)
+    expect(e.gemel.equity.equityPercent).toBe(42) // 30 + 12
+  })
+
   it('matches allocation via a track-level candidate code, not only the primary mofid', () => {
     // gemel lehashkaa: product code 8207 has no treasury data; the track code 13254 does.
     const p = policy({ productType: 'gemelInvestment', mofid: '8207', mofidCandidates: ['8207', '13254'], currentValue: 50000 })

@@ -62,11 +62,14 @@ function equityBreakdown(policies: Policy[], allocations: TreasuryAllocation[]):
       .map((code) => byMofid.get(code))
       .find((a): a is TreasuryAllocation => !!a)
     if (!alloc) continue
-    const equityGroup = alloc.groups.find((g) => g.name?.includes('מניות'))
-    if (!equityGroup) continue
+    // Sum every equity group in the main breakdown — pension's 10-group split
+    // lists equities in more than one line (direct + funds/ETFs).
+    const equityPercent = alloc.groups
+      .filter((g) => g.name?.includes('מניות'))
+      .reduce((s, g) => s + g.percent, 0)
     const value = valueOf(p)
     coveredValue += value
-    equityValue += value * (equityGroup.percent / 100)
+    equityValue += value * (equityPercent / 100)
   }
   return {
     coveredValue,
