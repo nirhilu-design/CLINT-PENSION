@@ -9,19 +9,11 @@ export interface CompletenessReport {
 }
 
 export function assessCompleteness(analysis: Analysis): CompletenessReport {
-  const { policies, findings, supplementary } = analysis
+  const { findings, supplementary } = analysis
   const missing: string[] = []
 
-  // Treasury benchmark coverage per fund
-  const mofids = [...new Set(policies.map((p) => p.mofid).filter(Boolean))] as string[]
-  const covered = new Set(supplementary.treasuryFunds.map((f) => f.mofid))
-  const manual = new Set(supplementary.benchmarks.map((b) => b.mofid))
-  const unbenchmarked = mofids.filter((m) => !covered.has(m) && !manual.has(m))
-  if (unbenchmarked.length > 0) {
-    missing.push(
-      `נתוני השוואה (אוצר) חסרים עבור ${unbenchmarked.length} מתוך ${mofids.length} קופות — השוואת תשואות ודמי ניהול לא בוצעה עבורן`,
-    )
-  }
+  // Treasury benchmark comparison is intentionally disabled for now, so its
+  // absence is no longer reported as a completeness gap.
 
   // Fee agreements
   if (supplementary.feeAgreements.length === 0) {

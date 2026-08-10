@@ -284,7 +284,7 @@ export default function ProductPage() {
             </div>
           )}
 
-          {tab === 'returns' && <ReturnsTab policies={policies} funds={analysis.supplementary.treasuryFunds} />}
+          {tab === 'returns' && <ReturnsTab policies={policies} />}
         </div>
 
         {/* Right rail */}
@@ -320,32 +320,25 @@ export default function ProductPage() {
   )
 }
 
-function ReturnsTab({ policies, funds }: { policies: Policy[]; funds: { mofid: string; return12m: number | null; sharpe: number | null }[] }) {
+function ReturnsTab({ policies }: { policies: Policy[] }) {
   const rows = policies
-    .map((p) => {
-      const fund = p.mofid ? funds.find((f) => f.mofid === p.mofid) : undefined
-      return { company: p.managingCompany ?? p.policyNumber, reported: p.netReturn, treasury: fund?.return12m ?? null, sharpe: fund?.sharpe ?? null }
-    })
-    .filter((r) => r.reported !== null || r.treasury !== null)
-  const max = Math.max(10, ...rows.flatMap((r) => [r.reported ?? 0, r.treasury ?? 0])) * 1.1
+    .map((p) => ({ company: p.managingCompany ?? p.policyNumber, reported: p.netReturn }))
+    .filter((r) => r.reported !== null)
+  const max = Math.max(10, ...rows.map((r) => r.reported ?? 0)) * 1.1
 
   return (
     <Card>
-      <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 18 }}>תשואה מדווחת מול אוצר</div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 6 }}>תשואה נטו מדווחת</div>
+      <p style={{ margin: '0 0 18px', fontSize: 12, color: 'var(--color-text-tertiary)' }}>
+        מתוך קבצי המסלקה. השוואה מול נתוני אוצר תתווסף בהמשך.
+      </p>
       {rows.length === 0 ? (
         <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)', margin: 0 }}>אין נתוני תשואה להצגה</p>
       ) : (
         rows.map((r, i) => (
-          <div key={i} style={{ marginBottom: 18 }}>
+          <div key={i} style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: 8 }}>{r.company}</div>
             <ReturnBar label="מדווחת" value={r.reported} max={max} color="var(--clint-600)" strong />
-            <div style={{ height: 6 }} />
-            <ReturnBar label="אוצר" value={r.treasury} max={max} color="var(--neutral-400)" />
-            {r.sharpe !== null && (
-              <div style={{ marginTop: 6, fontSize: 11, color: 'var(--color-text-tertiary)' }}>
-                שארפ: <b style={{ color: 'var(--color-text-secondary)', fontFamily: 'var(--font-mono)' }}>{r.sharpe.toFixed(2)}</b>
-              </div>
-            )}
           </div>
         ))
       )}
