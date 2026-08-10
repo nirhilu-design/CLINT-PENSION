@@ -10,6 +10,7 @@ import type {
 import { productTypeLabels } from '../models/labels'
 import { parseTreasuryXml } from '../parser/parseTreasuryXml'
 import { parseEmployerFeeFile } from '../parser/parseEmployerFeeFile'
+import { policyFundCodes } from '../utils/mofid'
 import Card from '../components/ds/Card'
 import Spinner from '../components/Spinner'
 import { ArrowRight } from 'lucide-react'
@@ -91,7 +92,7 @@ export default function AdvisorPage() {
     if (!fileList || fileList.length === 0) return
     setParsing(true)
     await new Promise((r) => setTimeout(r, 30))
-    const portfolioMofids = new Set(policies.map((p) => p.mofid).filter((m): m is string => !!m))
+    const portfolioMofids = new Set(policies.flatMap((p) => policyFundCodes(p)))
     const log: string[] = []
     let nextFunds = [...treasuryFunds]
     let nextAllocs = [...treasuryAllocations]
@@ -194,7 +195,7 @@ export default function AdvisorPage() {
           <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 4 }}>הסכמי דמי ניהול מפעליים</div>
           <p style={{ margin: '0 0 14px', fontSize: 12, color: 'var(--color-text-tertiary)' }}>הזנת הסכם מול היצרן/מעסיק לכל פוליסה. בדיקת פער מול ההסכם תרוץ רק היכן שהוזן.</p>
           {policies.map((p) => {
-            const fund = p.mofid ? treasuryFunds.find((f) => f.mofid === p.mofid) : undefined
+            const fund = treasuryFunds.find((f) => policyFundCodes(p).includes(f.mofid))
             const agreedAccum = num(fees[p.policyNumber]?.accum ?? '')
             let badge: { label: string; bg: string; color: string } | null = null
             if (fund?.avgFeeFromAccumulation != null && agreedAccum != null) {

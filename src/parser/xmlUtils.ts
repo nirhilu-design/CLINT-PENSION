@@ -47,3 +47,21 @@ export function mofidFromKidodAchid(kidod: string | null): string | null {
   const code = kidod.slice(18, 23).replace(/^0+/, '')
   return code || null
 }
+
+// Treasury (גמל-נט / פנסיה-נט) keys funds differently per product: pension and
+// education match the product-level code (KIDOD-ACHID digits 19–23), while gemel
+// lehashkaa is keyed by the investment-track (מסלול) code — the last 5 digits of
+// KOD-MASLUL-HASHKAA. We collect every plausible code so matching can try them
+// all, since a single account may span several tracks (each its own kupa).
+export function fundCandidatesFromCodes(kidod: string | null, maslulCodes: string[]): string[] {
+  const set = new Set<string>()
+  const primary = mofidFromKidodAchid(kidod)
+  if (primary) set.add(primary)
+  for (const code of maslulCodes) {
+    if (code && code.length >= 5) {
+      const last5 = code.slice(-5).replace(/^0+/, '')
+      if (last5) set.add(last5)
+    }
+  }
+  return [...set]
+}

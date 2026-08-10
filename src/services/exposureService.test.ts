@@ -9,6 +9,7 @@ function policy(over: Partial<Policy>): Policy {
     productName: null,
     managingCompany: 'חברה א',
     mofid: null,
+    mofidCandidates: [],
     openDate: null,
     status: 'active',
     statusCode: '1',
@@ -74,6 +75,14 @@ describe('computeExposure', () => {
   it('returns null equity when no allocation data', () => {
     const e = computeExposure(policies, [])
     expect(e.portfolio.equity.equityPercent).toBeNull()
+  })
+
+  it('matches allocation via a track-level candidate code, not only the primary mofid', () => {
+    // gemel lehashkaa: product code 8207 has no treasury data; the track code 13254 does.
+    const p = policy({ productType: 'gemelInvestment', mofid: '8207', mofidCandidates: ['8207', '13254'], currentValue: 50000 })
+    const allocs: TreasuryAllocation[] = [{ mofid: '13254', period: null, groups: [{ name: 'מניות', percent: 60 }] }]
+    const e = computeExposure([p], allocs)
+    expect(e.gemel.equity.equityPercent).toBe(60)
   })
 
   it('sums the capital-status (הון) balances for the gemel scope', () => {

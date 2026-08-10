@@ -12,7 +12,7 @@ import type {
   Policy,
   ProductType,
 } from '../models/types'
-import { getNumber, getText, mofidFromKidodAchid, normalizeClientId, parseDate } from './xmlUtils'
+import { fundCandidatesFromCodes, getNumber, getText, mofidFromKidodAchid, normalizeClientId, parseDate } from './xmlUtils'
 import { beneficiaryRelationLabels } from '../models/labels'
 
 export class XmlParseError extends Error {}
@@ -311,6 +311,13 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
       const tracks = [...trackByName.values()]
       const currentValue = tracks.reduce((sum, t) => sum + (t.value ?? 0), 0) || null
 
+      // Fund codes for treasury matching: product-level (KIDOD-ACHID) + each
+      // investment-track code (KOD-MASLUL-HASHKAA).
+      const kidodAchid = getText(heshbon, 'KIDOD-ACHID')
+      const maslulCodes = [...heshbon.querySelectorAll('PerutMasluleiHashkaa')]
+        .map((m) => getText(m, 'KOD-MASLUL-HASHKAA'))
+        .filter((c): c is string => !!c)
+
       const planName = getText(heshbon, 'SHEM-TOCHNIT')
       const coverages = parseCoverages(heshbon, policyNumber)
       const hasDeathCoverage = coverages.some((c) => c.type === 'death' || c.type === 'survivors')
@@ -360,7 +367,8 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
         productType,
         productName: planName,
         managingCompany,
-        mofid: mofidFromKidodAchid(getText(heshbon, 'KIDOD-ACHID')),
+        mofid: mofidFromKidodAchid(kidodAchid),
+        mofidCandidates: fundCandidatesFromCodes(kidodAchid, maslulCodes),
         openDate,
         status: statusRaw === '1' ? 'active' : statusRaw ? 'inactive' : null,
         statusCode: statusRaw,

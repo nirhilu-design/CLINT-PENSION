@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mofidFromKidodAchid, normalizeClientId, parseDate } from './xmlUtils'
+import { fundCandidatesFromCodes, mofidFromKidodAchid, normalizeClientId, parseDate } from './xmlUtils'
 
 describe('normalizeClientId', () => {
   it('treats every zero-padding of the same ID as one person', () => {
@@ -37,5 +37,20 @@ describe('mofidFromKidodAchid', () => {
   })
   it('returns null for short input', () => {
     expect(mofidFromKidodAchid('123')).toBeNull()
+  })
+})
+
+describe('fundCandidatesFromCodes', () => {
+  it('gemel lehashkaa: adds each track (מסלול) code alongside the product code', () => {
+    // Product code = 8207 (not in treasury); tracks 13254 / 8211 are the gemel-net keys.
+    const kidod = '000000000000000000082071325400'
+    const tracks = ['000000000000000000082070013254', '000000000000000000082070008211']
+    expect(fundCandidatesFromCodes(kidod, tracks).sort()).toEqual(['13254', '8207', '8211'].sort())
+  })
+
+  it('pension: product code plus any track codes', () => {
+    const kidod = '000000000000000000002090000000' // → 209
+    const tracks = ['000000000000000000002090002187'] // → 2187
+    expect(fundCandidatesFromCodes(kidod, tracks).sort()).toEqual(['209', '2187'].sort())
   })
 })

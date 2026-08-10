@@ -78,7 +78,8 @@ export interface Policy {
   productType: ProductType
   productName: string | null
   managingCompany: string | null
-  mofid: string | null // מספר אוצר derived from KIDOD-ACHID
+  mofid: string | null // מספר אוצר derived from KIDOD-ACHID (product-level, for display)
+  mofidCandidates: string[] // all fund codes to try when matching treasury data (product + track level)
   openDate: string | null // ISO
   status: 'active' | 'inactive' | null
   statusCode: string | null // raw STATUS-POLISA-O-CHESHBON

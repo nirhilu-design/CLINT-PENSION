@@ -9,6 +9,7 @@ import AdvisorPage from './pages/AdvisorPage'
 import LogicEditorPage from './pages/LogicEditorPage'
 import PolicyDrawer from './components/PolicyDrawer'
 import Sidebar from './components/Sidebar'
+import { policyFundCodes } from './utils/mofid'
 
 // Screens that live inside the sidebar app shell.
 const SHELL_STEPS: Step[] = ['dashboard', 'product', 'summary', 'advisor', 'logic']
@@ -67,8 +68,8 @@ export default function App() {
         <PolicyDrawer
           policy={selectedPolicy}
           findings={state.analysis.findings}
-          allocation={state.analysis.supplementary.treasuryAllocations.find(
-            (a) => a.mofid === selectedPolicy.mofid,
+          allocation={state.analysis.supplementary.treasuryAllocations.find((a) =>
+            policyFundCodes(selectedPolicy).includes(a.mofid),
           )}
           onClose={() => dispatch({ type: 'CLOSE_POLICY' })}
         />

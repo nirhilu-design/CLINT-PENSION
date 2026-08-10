@@ -51,7 +51,9 @@ export function parseTreasuryXml(
   const isCompanies = text.includes('<ID_GUF>')
   const isReturns =
     text.includes('<TSUA_MITZTABERET_LETKUFA>') || text.includes('<SHARP_') || isCompanies
-  const isAllocation = text.includes('<ID_KUPA>') && text.includes('<SHM_SUG_NECHES>')
+  // Allocation files are keyed by ID_KUPA (גמל-נט) or ID_KRN (פנסיה-נט).
+  const isAllocation =
+    (text.includes('<ID_KUPA>') || text.includes('<ID_KRN>')) && text.includes('<SHM_SUG_NECHES>')
 
   const result: TreasuryParseResult = {
     type: isReturns ? 'returns' : isAllocation ? 'allocation' : 'unknown',
@@ -70,7 +72,7 @@ export function parseTreasuryXml(
     // Same concepts, different tag names between the two returns formats.
     const F = isCompanies
       ? {
-          id: 'ID_GUF',
+          idNames: ['ID_GUF'],
           names: ['SHEM_GUF'],
           company: null,
           feeAccum: 'SHIUR_D_NIHUL_NECHASIM',
@@ -78,7 +80,8 @@ export function parseTreasuryXml(
           ret: 'TSUA_MITZ_LE_TKUFA',
         }
       : {
-          id: 'ID',
+          // id: ID in gemel/השתלמות files, ID_KRN in pension (פנסיה-נט)
+          idNames: ['ID', 'ID_KRN', 'ID_KUPA'],
           // fund name: SHM_KUPA in gemel/השתלמות files, SHM_KRN in pension (פנסיה-נט)
           names: ['SHM_KUPA', 'SHM_KRN'],
           company: 'SHM_HEVRA_MENAHELET',
@@ -87,7 +90,7 @@ export function parseTreasuryXml(
           ret: 'TSUA_MITZTABERET_LETKUFA',
         }
     for (const row of rows) {
-      const id = tag(row, F.id)
+      const id = firstTag(row, F.idNames)
       if (!id || !portfolioMofids.has(id) || matched.has(id)) continue
       matched.add(id)
       result.funds.push({
@@ -108,7 +111,7 @@ export function parseTreasuryXml(
   } else {
     const byMofid = new Map<string, TreasuryAllocation>()
     for (const row of rows) {
-      const id = tag(row, 'ID_KUPA')
+      const id = firstTag(row, ['ID_KUPA', 'ID_KRN'])
       if (!id || !portfolioMofids.has(id)) continue
       // Keep only the main 9-group breakdown (other groupings exist in the file)
       const grouping = tag(row, 'KVUTZAT_NECHASIM')
