@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import type { Finding } from '../models/types'
-import { sortFindings } from '../engines/findingPriority'
-import FindingCard from './FindingCard'
+import { sortFindings, findingTier } from '../engines/findingPriority'
+import { useApp } from '../hooks/useAppState'
+import FindingList from './FindingList'
 import { AlertTriangle, Lightbulb, TrendingUp, Check, type LucideIcon } from 'lucide-react'
 
 // Three business buckets shown as circles, mirroring the dashboard structure.
@@ -70,6 +71,11 @@ export default function ProductFindingCategories({ findings }: { findings: Findi
   const [selected, setSelected] = useState<Bucket | null>(defaultKey)
   const active = groups.find((g) => g.key === (selected ?? defaultKey)) ?? null
 
+  const { state } = useApp()
+  const clientView = state.viewMode === 'client'
+  const visibleCount = (g: Group) =>
+    clientView ? g.findings.filter((f) => findingTier(f) !== 'note').length : g.findings.length
+
   return (
     <div>
       {/* Category circles */}
@@ -77,7 +83,7 @@ export default function ProductFindingCategories({ findings }: { findings: Findi
         {groups.map((g) => {
           const t = tone(g)
           const isActive = active?.key === g.key
-          const empty = g.findings.length === 0
+          const empty = visibleCount(g) === 0
           return (
             <button
               key={g.key}
@@ -131,7 +137,7 @@ export default function ProductFindingCategories({ findings }: { findings: Findi
                     border: '2px solid var(--color-bg-card)',
                   }}
                 >
-                  {empty ? <Check size={12} /> : g.findings.length}
+                  {empty ? <Check size={12} /> : visibleCount(g)}
                 </span>
               </span>
               <span
@@ -151,17 +157,7 @@ export default function ProductFindingCategories({ findings }: { findings: Findi
       {/* Selected bucket panel */}
       {active && (
         <div style={{ marginTop: 18, borderTop: '1px solid var(--color-border-base)', paddingTop: 18 }}>
-          {active.findings.length === 0 ? (
-            <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)', margin: 0 }}>
-              אין {active.label} במוצר זה
-            </p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {active.findings.map((f) => (
-                <FindingCard key={f.id} finding={f} />
-              ))}
-            </div>
-          )}
+          <FindingList findings={active.findings} />
         </div>
       )}
     </div>

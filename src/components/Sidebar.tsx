@@ -1,5 +1,5 @@
-import { Shield, LayoutDashboard, FileText, Briefcase, SlidersHorizontal, RefreshCw } from 'lucide-react'
-import { useApp, type Step } from '../hooks/useAppState'
+import { Shield, LayoutDashboard, FileText, Briefcase, SlidersHorizontal, RefreshCw, Eye, UserCog } from 'lucide-react'
+import { useApp, type Step, type ViewMode } from '../hooks/useAppState'
 import type { AppAction } from '../hooks/useAppState'
 
 type NavItem = {
@@ -102,6 +102,46 @@ export default function Sidebar() {
           )
         })}
       </nav>
+
+      {/* View mode: advisor sees everything (notes collapsed); client view hides background notes */}
+      <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginBottom: 8 }}>
+          תצוגה
+        </div>
+        <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 'var(--radius-md)', padding: 3 }}>
+          {([
+            { mode: 'advisor', label: 'יועץ', icon: UserCog },
+            { mode: 'client', label: 'לקוח', icon: Eye },
+          ] as { mode: ViewMode; label: string; icon: typeof Eye }[]).map(({ mode, label, icon: Icon }) => {
+            const on = state.viewMode === mode
+            return (
+              <button
+                key={mode}
+                onClick={() => dispatch({ type: 'SET_VIEW_MODE', viewMode: mode })}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  padding: '6px 8px',
+                  borderRadius: 'calc(var(--radius-md) - 3px)',
+                  background: on ? 'rgba(255,255,255,0.14)' : 'transparent',
+                  color: on ? '#fff' : 'rgba(255,255,255,0.55)',
+                  fontSize: 12.5,
+                  fontWeight: on ? 700 : 500,
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                <Icon size={14} />
+                {label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
 
       {/* Client footer + new analysis */}
       <div style={{ padding: '14px 16px 22px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>

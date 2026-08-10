@@ -8,7 +8,7 @@ import { dataQualityEngine } from './dataQualityEngine'
 import { deathPictureEngine } from './deathPictureEngine'
 import { pensionInsightEngine } from './pensionInsightEngine'
 import { stopIssueEngine, isBlockedByStopIssue } from './stopIssueEngine'
-import { sortFindings } from './findingPriority'
+import { sortFindings, findingTier } from './findingPriority'
 import { makeFinding } from './engineTypes'
 import { parseEmployerFeeFile } from '../parser/parseEmployerFeeFile'
 
@@ -341,6 +341,25 @@ describe('parseEmployerFeeFile', () => {
     const res = parseEmployerFeeFile('<root></root>', 'fees.xml')
     expect(res.agreements).toHaveLength(0)
     expect(res.note).toContain('XML')
+  })
+})
+
+describe('findingTier', () => {
+  const mk = (
+    category: Parameters<typeof makeFinding>[0]['category'],
+    severity: Parameters<typeof makeFinding>[0]['severity'],
+  ) => makeFinding({ category, level: 'client', severity, title: '', description: '' })
+
+  it('treats gaps and points-to-check as important regardless of category', () => {
+    expect(findingTier(mk('cost', 'gap'))).toBe('important')
+    expect(findingTier(mk('deposits', 'attention'))).toBe('important')
+    expect(findingTier(mk('limitation', 'attention'))).toBe('important')
+  })
+
+  it('treats info-level insights as insight, and other info as background note', () => {
+    expect(findingTier(mk('insight', 'info'))).toBe('insight')
+    expect(findingTier(mk('information', 'info'))).toBe('note')
+    expect(findingTier(mk('dataQuality', 'info'))).toBe('note')
   })
 })
 

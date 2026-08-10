@@ -5,6 +5,10 @@ import { defaultLogicConfig, type LogicConfig } from '../config/logicConfig'
 
 export type Step = 'upload' | 'form' | 'dashboard' | 'product' | 'summary' | 'advisor' | 'logic'
 
+// Client view hides background/note-tier findings so the client isn't overloaded;
+// advisor view shows everything (notes collapsed but available).
+export type ViewMode = 'advisor' | 'client'
+
 export interface AppState {
   step: Step
   parsedFiles: ParsedFile[]
@@ -12,6 +16,7 @@ export interface AppState {
   logicConfig: LogicConfig
   selectedProduct: ProductType | null
   selectedPolicyNumber: string | null
+  viewMode: ViewMode
   error: string | null
 }
 
@@ -28,6 +33,7 @@ export type AppAction =
   | { type: 'GO_LOGIC' }
   | { type: 'ANALYSIS_UPDATED'; analysis: Analysis }
   | { type: 'LOGIC_UPDATED'; logicConfig: LogicConfig; analysis: Analysis }
+  | { type: 'SET_VIEW_MODE'; viewMode: ViewMode }
   | { type: 'RESET' }
 
 const initialState: AppState = {
@@ -37,6 +43,7 @@ const initialState: AppState = {
   logicConfig: defaultLogicConfig(),
   selectedProduct: null,
   selectedPolicyNumber: null,
+  viewMode: 'advisor',
   error: null,
 }
 
@@ -66,6 +73,8 @@ function reducer(state: AppState, action: AppAction): AppState {
       return { ...state, analysis: action.analysis }
     case 'LOGIC_UPDATED':
       return { ...state, logicConfig: action.logicConfig, analysis: action.analysis }
+    case 'SET_VIEW_MODE':
+      return { ...state, viewMode: action.viewMode }
     case 'RESET':
       return initialState
     default:

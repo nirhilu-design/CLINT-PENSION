@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import type { Finding, ProductType, Policy } from '../models/types'
 import { productTypeLabels } from '../models/labels'
-import { sortFindings } from '../engines/findingPriority'
-import FindingCard from './FindingCard'
+import { sortFindings, findingTier } from '../engines/findingPriority'
+import { useApp } from '../hooks/useAppState'
+import FindingList from './FindingList'
 import {
   Landmark,
   Briefcase,
@@ -137,6 +138,12 @@ export default function ProductFindingGroups({
   const [selected, setSelected] = useState<GroupKey | null>(defaultKey)
   const active = groups.find((g) => g.key === (selected ?? defaultKey)) ?? null
 
+  const { state } = useApp()
+  const clientView = state.viewMode === 'client'
+  // Count only what the client will actually see (notes are hidden in client view).
+  const visibleCount = (g: Group) =>
+    clientView ? g.findings.filter((f) => findingTier(f) !== 'note').length : g.findings.length
+
   if (groups.length === 0) return null
 
   return (
@@ -152,7 +159,7 @@ export default function ProductFindingGroups({
         {groups.map((g) => {
           const tone = severityTone(g)
           const isActive = active?.key === g.key
-          const empty = g.findings.length === 0
+          const empty = visibleCount(g) === 0
           return (
             <button
               key={g.key}
@@ -207,7 +214,7 @@ export default function ProductFindingGroups({
                     border: '2px solid var(--color-bg-page)',
                   }}
                 >
-                  {empty ? <Check size={12} /> : g.findings.length}
+                  {empty ? <Check size={12} /> : visibleCount(g)}
                 </span>
               </span>
               <span
@@ -238,25 +245,10 @@ export default function ProductFindingGroups({
         >
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 12 }}>
             <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)' }}>
-              הארות · {active.label}
-            </span>
-            <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>
-              {active.findings.length > 0
-                ? `${active.findings.length} הארות`
-                : 'לא עלו הארות למוצר זה'}
+              {active.label}
             </span>
           </div>
-          {active.findings.length === 0 ? (
-            <p style={{ fontSize: 14, color: 'var(--color-text-tertiary)', margin: 0 }}>
-              לא נמצאו נקודות לבדיקה במוצר זה על בסיס הנתונים שנקלטו.
-            </p>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 12 }}>
-              {active.findings.map((f) => (
-                <FindingCard key={f.id} finding={f} />
-              ))}
-            </div>
-          )}
+          <FindingList findings={active.findings} />
         </div>
       )}
     </div>

@@ -37,3 +37,18 @@ export function sortFindings(findings: Finding[]): Finding[] {
       severityWeight[a.severity] - severityWeight[b.severity],
   )
 }
+
+// Presentation tier — how prominently a finding should be shown to the client,
+// so we don't overload them with background facts. Derived from the existing
+// severity/category, no per-engine changes needed.
+//   important — gaps and points-to-check; always shown.
+//   insight   — neutral observations (הארות) that may matter; shown, lighter.
+//   note      — pure background/context (מידע, איכות נתונים, מגבלות); collapsed
+//               for the advisor, hidden from the client.
+export type FindingTier = 'important' | 'insight' | 'note'
+
+export function findingTier(f: Finding): FindingTier {
+  if (f.severity === 'gap' || f.severity === 'attention') return 'important'
+  if (f.category === 'insight') return 'insight'
+  return 'note'
+}
