@@ -126,6 +126,9 @@ export type FindingLevel = 'analysis' | 'client' | 'product' | 'policy' | 'cover
 
 export type FindingSeverity = 'info' | 'attention' | 'gap'
 
+// Presentation tier — how prominently a finding is shown (see engines/findingPriority).
+export type FindingTier = 'important' | 'insight' | 'note'
+
 export interface Finding {
   id: string
   category: FindingCategory

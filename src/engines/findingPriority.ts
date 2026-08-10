@@ -3,7 +3,7 @@
 // track → deposits/continuity → retirement → data quality → information.
 // Shared by the dashboard and the executive summary.
 
-import type { Finding } from '../models/types'
+import type { Finding, FindingTier } from '../models/types'
 
 const severityWeight: Record<Finding['severity'], number> = { gap: 0, attention: 1, info: 2 }
 
@@ -45,7 +45,7 @@ export function sortFindings(findings: Finding[]): Finding[] {
 //   insight   — neutral observations (הארות) that may matter; shown, lighter.
 //   note      — pure background/context (מידע, איכות נתונים, מגבלות); collapsed
 //               for the advisor, hidden from the client.
-export type FindingTier = 'important' | 'insight' | 'note'
+export type { FindingTier }
 
 export function findingTier(f: Finding): FindingTier {
   if (f.severity === 'gap' || f.severity === 'attention') return 'important'

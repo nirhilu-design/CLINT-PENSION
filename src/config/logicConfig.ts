@@ -2,7 +2,7 @@
 // Each entry documents what the logic does and which numeric thresholds an
 // advisor may tune. The `id` matches the engine id in engines/index.ts.
 
-import type { FindingSeverity, ProductType } from '../models/types'
+import type { FindingSeverity, FindingTier, ProductType } from '../models/types'
 import { DEFAULT_THRESHOLDS, cloneThresholds, type ThresholdValues } from './thresholds'
 
 // A single editable numeric threshold, addressed by its flat key on ThresholdValues.
@@ -17,6 +17,7 @@ export interface LogicDef {
   label: string
   category: string // rule family, for the category filter in the editor (design language)
   severity: FindingSeverity // the finding severity this logic typically raises
+  tier: FindingTier // how prominently this logic's output is shown to the client
   condition: string // compact pseudo-expression of the trigger (display only, mono)
   products: ProductType[] // which products this logic touches ([] = all products)
   explanation: string // how the insight/finding is built, in plain Hebrew
@@ -29,6 +30,7 @@ export const LOGIC_CATALOG: LogicDef[] = [
     label: 'דורות ביטוח מנהלים',
     category: 'מנהלים',
     severity: 'attention',
+    tier: 'important',
     condition: 'דור_פוליסה × מקדם_קצבה × חלוקת_שכר',
     products: ['managers'],
     explanation:
@@ -43,6 +45,7 @@ export const LOGIC_CATALOG: LogicDef[] = [
     label: 'דמי ניהול',
     category: 'עלויות',
     severity: 'gap',
+    tier: 'important',
     condition: 'דמי_ניהול_בפועל > הסכם_מעסיק',
     products: [],
     explanation:
@@ -54,6 +57,7 @@ export const LOGIC_CATALOG: LogicDef[] = [
     label: 'קצבת פרישה',
     category: 'פרישה',
     severity: 'attention',
+    tier: 'important',
     condition: 'קצבה_צפויה / שכר < יחס_מינימלי',
     products: ['pension', 'managers'],
     explanation:
@@ -65,6 +69,7 @@ export const LOGIC_CATALOG: LogicDef[] = [
     label: 'תשואות והשקעה',
     category: 'השקעות',
     severity: 'attention',
+    tier: 'important',
     condition: 'תשואה_נטו < בנצ׳מרק − סבילות',
     products: [],
     explanation:
@@ -76,6 +81,7 @@ export const LOGIC_CATALOG: LogicDef[] = [
     label: 'אובדן כושר עבודה (אכ״ע)',
     category: 'ביטוח',
     severity: 'gap',
+    tier: 'important',
     condition: 'שיעור_כיסוי_אכ״ע < יעד_כיסוי',
     products: ['incomeProtection', 'pension', 'managers'],
     explanation:
@@ -91,6 +97,7 @@ export const LOGIC_CATALOG: LogicDef[] = [
     label: 'תמונת מוות',
     category: 'תמונת מוות',
     severity: 'attention',
+    tier: 'important',
     condition: 'כיסוי_מוות_זמין < התחייבויות',
     products: ['life', 'pension', 'managers'],
     explanation:
@@ -105,6 +112,7 @@ export const LOGIC_CATALOG: LogicDef[] = [
     label: 'איכות נתונים',
     category: 'איכות נתונים',
     severity: 'attention',
+    tier: 'important',
     condition: '|שכר_מוזן − שכר_מבוטח| > סף_פער',
     products: [],
     explanation:
@@ -116,6 +124,7 @@ export const LOGIC_CATALOG: LogicDef[] = [
     label: 'חיסכון ונזילות',
     category: 'חיסכון ונזילות',
     severity: 'info',
+    tier: 'note',
     condition: 'ותק < נזילות  |  בסיס_הפקדה > תקרה',
     products: ['gemel', 'gemelInvestment', 'education'],
     explanation:
@@ -130,6 +139,7 @@ export const LOGIC_CATALOG: LogicDef[] = [
     label: 'תובנות מנהלים',
     category: 'מנהלים',
     severity: 'info',
+    tier: 'insight',
     condition: 'רובד מעל תקרת_מקיפה × מקדם × אכ״ע',
     products: ['managers', 'incomeProtection'],
     explanation:
@@ -141,6 +151,7 @@ export const LOGIC_CATALOG: LogicDef[] = [
     label: 'תובנות פנסיה',
     category: 'פנסיה',
     severity: 'info',
+    tier: 'insight',
     condition: 'כיסוי_נכות < סף → בדיקת אכ״ע חוצת-מוצר',
     products: ['pension'],
     explanation:
@@ -155,6 +166,7 @@ export const LOGIC_CATALOG: LogicDef[] = [
     label: 'הפקדות ורציפות',
     category: 'הפקדות ורציפות',
     severity: 'attention',
+    tier: 'important',
     condition: 'חודשים_מהפקדה > סף  |  ריסק זמני',
     products: ['pension', 'managers', 'gemel', 'education'],
     explanation:

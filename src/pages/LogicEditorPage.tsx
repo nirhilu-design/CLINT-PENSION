@@ -4,7 +4,7 @@ import { buildAnalysis } from '../services/analysisService'
 import { findingCountsByLogic } from '../engines'
 import { productTypeLabels } from '../models/labels'
 import { ArrowRight } from 'lucide-react'
-import type { FindingSeverity, ProductType } from '../models/types'
+import type { FindingSeverity, FindingTier, ProductType } from '../models/types'
 import Card from '../components/ds/Card'
 import {
   LOGIC_CATALOG,
@@ -22,6 +22,19 @@ const SEVERITY_STYLE: Record<FindingSeverity, { label: string; bg: string; color
   attention: { label: 'לבדיקה', bg: 'var(--color-warning-bg)', color: 'var(--color-warning-dark)' },
   info: { label: 'הארה', bg: 'var(--teal-50)', color: 'var(--teal-700)' },
 }
+
+// Prominence tier — how prominently the logic's output is shown to the client.
+const TIER_META: Record<FindingTier, { label: string; dot: string }> = {
+  important: { label: 'חשוב', dot: 'var(--color-warning)' },
+  insight: { label: 'הארה', dot: 'var(--teal-500)' },
+  note: { label: 'רקע', dot: 'var(--neutral-400)' },
+}
+const TIER_FILTERS: { key: FindingTier | 'all'; label: string }[] = [
+  { key: 'all', label: 'הכל' },
+  { key: 'important', label: 'חשוב' },
+  { key: 'insight', label: 'הארות' },
+  { key: 'note', label: 'רקע' },
+]
 
 function cloneConfig(c: LogicConfig): LogicConfig {
   return { thresholds: cloneThresholds(c.thresholds), disabledLogics: [...c.disabledLogics] }
@@ -66,9 +79,13 @@ export default function LogicEditorPage() {
   const { state, dispatch } = useApp()
   const [cfg, setCfg] = useState<LogicConfig>(() => cloneConfig(state.logicConfig))
   const [product, setProduct] = useState<ProductType>('pension')
+  const [tierFilter, setTierFilter] = useState<FindingTier | 'all'>('all')
   const [saved, setSaved] = useState(false)
 
-  const logicsForProduct = (p: ProductType) => LOGIC_CATALOG.filter((l) => l.products.length === 0 || l.products.includes(p))
+  const logicsForProduct = (p: ProductType) =>
+    LOGIC_CATALOG.filter((l) => l.products.length === 0 || l.products.includes(p)).filter(
+      (l) => tierFilter === 'all' || l.tier === tierFilter,
+    )
 
   // "X התאמות" — how many findings each logic currently raises for the loaded client.
   const matchCounts = useMemo<Record<string, number>>(() => {
@@ -142,8 +159,43 @@ export default function LogicEditorPage() {
         ))}
       </div>
 
+      {/* Prominence-tier filter — how prominently each logic's output is shown to the client */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>בולטות:</span>
+        {TIER_FILTERS.map((t) => {
+          const on = tierFilter === t.key
+          const dot = t.key === 'all' ? null : TIER_META[t.key].dot
+          return (
+            <button
+              key={t.key}
+              onClick={() => setTierFilter(t.key)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                borderRadius: 'var(--radius-full)',
+                padding: '5px 12px',
+                fontSize: 12.5,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                border: `1px solid ${on ? 'var(--clint-600)' : 'var(--color-border-base)'}`,
+                background: on ? 'var(--clint-50)' : 'var(--color-bg-card)',
+                color: on ? 'var(--clint-700)' : 'var(--color-text-secondary)',
+              }}
+            >
+              {dot && <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot }} />}
+              {t.label}
+            </button>
+          )
+        })}
+      </div>
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {logicsForProduct(product).map((logic) => (
+        {logicsForProduct(product).length === 0 ? (
+          <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)' }}>אין לוגיקות בסינון זה.</p>
+        ) : (
+          logicsForProduct(product).map((logic) => (
           <LogicCard
             key={logic.id}
             logic={logic}
@@ -153,7 +205,8 @@ export default function LogicEditorPage() {
             onParam={setParam}
             onToggle={(en) => toggleLogic(logic.id, en)}
           />
-        ))}
+          ))
+        )}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 24 }}>
@@ -210,6 +263,13 @@ function LogicCard({
             <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: enabled ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)' }}>{logic.label}</h3>
             <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 9px', borderRadius: 'var(--radius-full)', background: sev.bg, color: sev.color }}>
               {sev.label}
+            </span>
+            <span
+              title="בולטות בתצוגת הלקוח"
+              style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, padding: '2px 9px', borderRadius: 'var(--radius-full)', border: '1px solid var(--color-border-base)', color: 'var(--color-text-secondary)' }}
+            >
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: TIER_META[logic.tier].dot }} />
+              {TIER_META[logic.tier].label}
             </span>
             {changed && (
               <span style={{ fontSize: 10, borderRadius: 'var(--radius-full)', background: 'var(--color-warning-bg)', color: 'var(--color-warning-dark)', padding: '2px 8px', fontWeight: 700 }}>
