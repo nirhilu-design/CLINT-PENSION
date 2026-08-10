@@ -6,6 +6,7 @@ import { costEngine } from './costEngine'
 import { incomeProtectionEngine } from './incomeProtectionEngine'
 import { dataQualityEngine } from './dataQualityEngine'
 import { deathPictureEngine } from './deathPictureEngine'
+import { investmentEngine } from './investmentEngine'
 import { pensionInsightEngine } from './pensionInsightEngine'
 import { stopIssueEngine, isBlockedByStopIssue } from './stopIssueEngine'
 import { sortFindings, findingTier } from './findingPriority'
@@ -253,6 +254,44 @@ describe('dataQualityEngine salary cross-check', () => {
   it('stays silent within tolerance', () => {
     const out = dataQualityEngine(input([makePolicy()], { currentGrossSalary: 15000 }))
     expect(out.some((f) => f.title.includes('שוני בין השכר'))).toBe(false)
+  })
+})
+
+describe('investmentEngine benchmark comparison', () => {
+  const fund = (over: Partial<import('../models/types').TreasuryFundData> = {}) => ({
+    mofid: '1093',
+    name: 'קרן אוצר',
+    managingCompany: null,
+    avgFeeFromAccumulation: null,
+    avgFeeFromDeposit: null,
+    return12m: 12,
+    return3yAnnualized: null,
+    return5yAnnualized: null,
+    stdDev36m: null,
+    sharpe: 0.8,
+    liquidityRatio: null,
+    periodTo: '202606',
+    ...over,
+  })
+
+  it('flags a return materially below the benchmark and reports Sharpe', () => {
+    const p = makePolicy({ mofid: '1093', mofidCandidates: ['1093'], netReturn: 8 })
+    const out = investmentEngine(input([p], { treasuryFunds: [fund({ return12m: 12 })] }))
+    expect(out.some((f) => f.title.includes('נמוכה מנתוני ההשוואה'))).toBe(true)
+    expect(out.some((f) => f.title.includes('שארפ'))).toBe(true)
+  })
+
+  it('matches treasury by a track-level candidate code, not only the primary mofid', () => {
+    // gemel lehashkaa: product code 8207 has no treasury data; the track code 13254 does.
+    const p = makePolicy({ productType: 'gemelInvestment', mofid: '8207', mofidCandidates: ['8207', '13254'], netReturn: 3 })
+    const out = investmentEngine(input([p], { treasuryFunds: [fund({ mofid: '13254', return12m: 10 })] }))
+    expect(out.some((f) => f.title.includes('נמוכה מנתוני ההשוואה'))).toBe(true)
+  })
+
+  it('reports the raw return when no benchmark is available', () => {
+    const p = makePolicy({ mofid: '9', mofidCandidates: ['9'], netReturn: 5 })
+    const out = investmentEngine(input([p]))
+    expect(out.some((f) => f.title.includes('ללא נתוני השוואה'))).toBe(true)
   })
 })
 

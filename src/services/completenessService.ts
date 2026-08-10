@@ -2,6 +2,7 @@
 // "all clear" when checks simply could not run for lack of data.
 
 import type { Analysis } from '../models/types'
+import { policyFundCodes } from '../utils/mofid'
 
 export interface CompletenessReport {
   complete: boolean
@@ -9,11 +10,21 @@ export interface CompletenessReport {
 }
 
 export function assessCompleteness(analysis: Analysis): CompletenessReport {
-  const { findings, supplementary } = analysis
+  const { policies, findings, supplementary } = analysis
   const missing: string[] = []
 
-  // Treasury benchmark comparison is intentionally disabled for now, so its
-  // absence is no longer reported as a completeness gap.
+  // Treasury benchmark coverage per fund (matched by any of the policy's codes)
+  const withMofid = policies.filter((p) => policyFundCodes(p).length > 0)
+  const covered = new Set(supplementary.treasuryFunds.map((f) => f.mofid))
+  const manual = new Set(supplementary.benchmarks.map((b) => b.mofid))
+  const unbenchmarked = withMofid.filter(
+    (p) => !policyFundCodes(p).some((c) => covered.has(c) || manual.has(c)),
+  )
+  if (unbenchmarked.length > 0) {
+    missing.push(
+      `נתוני השוואה (אוצר) חסרים עבור ${unbenchmarked.length} מתוך ${withMofid.length} קופות — השוואת תשואות לא בוצעה עבורן`,
+    )
+  }
 
   // Fee agreements
   if (supplementary.feeAgreements.length === 0) {

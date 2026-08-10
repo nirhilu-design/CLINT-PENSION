@@ -366,7 +366,7 @@ export default function DashboardPage() {
         {/* Returns */}
         <section style={{ marginBottom: 24 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 12px' }}>תשואות</h2>
-          <ReturnsTable policies={policies} />
+          <ReturnsTable policies={policies} treasuryFunds={supp.treasuryFunds} />
         </section>
 
         {/* Products */}

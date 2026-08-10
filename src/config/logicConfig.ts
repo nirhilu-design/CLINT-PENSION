@@ -68,13 +68,13 @@ export const LOGIC_CATALOG: LogicDef[] = [
     id: 'investment',
     label: 'תשואות והשקעה',
     category: 'השקעות',
-    severity: 'info',
-    tier: 'note',
-    condition: 'תשואה_נטו מדווחת (מ-XML)',
+    severity: 'attention',
+    tier: 'important',
+    condition: 'תשואה_נטו < בנצ׳מרק − סבילות',
     products: [],
     explanation:
-      'מציג את התשואה נטו המדווחת בקבצי המסלקה בלבד. השוואה מול נתוני האוצר (גמל-נט/פנסיה-נט) ומדד שארפ תתווסף בהמשך, לאחר בניית מנגנון התאמה אמין של מספרי הקופה (מ"ה).',
-    params: [],
+      'משווה את התשואה נטו המדווחת מול נתוני האוצר (בנצ׳מרק) ומול מדד שארפ. הקופות מותאמות לפי מספרי הקופה/מסלול (מ"ה). פער מתחת לסבילות מהבנצ׳מרק פותח הארה.',
+    params: [{ key: 'returnBelowBenchmarkTolerance', label: 'סבילות מתחת לבנצ׳מרק', unit: 'נק׳ אחוז' }],
   },
   {
     id: 'incomeProtection',

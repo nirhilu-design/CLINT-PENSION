@@ -1,32 +1,98 @@
-// Investment Engine: reports the net return from the clearinghouse XML only.
-// Comparison against treasury benchmarks (גמל-נט / פנסיה-נט) is intentionally
-// disabled for now — matching policies to treasury funds by מספר אוצר (מ"ה) is
-// not reliable yet, so a dedicated matching engine will be built later. Until
-// then we surface only what the XML itself reports. Information only.
+// Investment Engine: compares the net return reported in the clearinghouse XML
+// against official treasury data (גמל-נט / פנסיה-נט / ביטוח-נט) and Sharpe.
+// Funds are matched by any of the policy's fund codes (product + track level),
+// since treasury data may be keyed by the track code (e.g. pension returns).
+// Benchmark source order: uploaded treasury files win over manual figures.
+// Information and neutral findings only — never a recommendation.
 
 import type { Engine } from './engineTypes'
 import { makeFinding } from './engineTypes'
 import { formatPercent } from '../utils/format'
+import { policyFundCodes } from '../utils/mofid'
+import { RETURN_BELOW_BENCHMARK_TOLERANCE } from '../config/thresholds'
 
-export const investmentEngine: Engine = ({ policies }) => {
+export const investmentEngine: Engine = ({ policies, supplementary }) => {
   const findings = []
 
   for (const policy of policies) {
     if (policy.netReturn === null) continue
-    findings.push(
-      makeFinding({
-        category: 'information',
-        level: 'policy',
-        severity: 'info',
-        title: 'תשואה נטו מדווחת',
-        description:
-          `בפוליסה ${policy.policyNumber} התשואה נטו המדווחת בקבצי המסלקה היא ${formatPercent(policy.netReturn)} ` +
-          '(לאחר ניכוי דמי ניהול). לא בוצעה השוואה מול נתוני אוצר בשלב זה.',
-        basedOn: 'שדה התשואה נטו (SHEUR-TSUA-NETO) בקובץ המסלקה',
-        productType: policy.productType,
-        policyNumber: policy.policyNumber,
-      }),
-    )
+
+    const codes = policyFundCodes(policy)
+    const treasury = supplementary.treasuryFunds.find((f) => codes.includes(f.mofid))
+    const manual = supplementary.benchmarks.find((b) => codes.includes(b.mofid))
+
+    const benchmarkReturn = treasury?.return12m ?? manual?.annualReturn ?? null
+    const benchmarkSharpe = treasury?.sharpe ?? manual?.sharpe ?? null
+    const sourceLabel = treasury ? 'נתוני האוצר שהועלו' : 'נתוני ההשוואה שהוזנו'
+
+    if (benchmarkReturn !== null) {
+      const diff = policy.netReturn - benchmarkReturn
+      if (diff < -RETURN_BELOW_BENCHMARK_TOLERANCE) {
+        findings.push(
+          makeFinding({
+            category: 'investment',
+            level: 'policy',
+            severity: 'attention',
+            title: 'תשואה נמוכה מנתוני ההשוואה',
+            description:
+              `בפוליסה ${policy.policyNumber} התשואה נטו המדווחת היא ${formatPercent(policy.netReturn)} ` +
+              `לעומת ${formatPercent(benchmarkReturn)} ב${sourceLabel} (12 חודשים, ברוטו). ` +
+              'נקודה לבדיקה מול בעל רישיון.',
+            basedOn: treasury
+              ? `תשואת המסלקה מול קובץ נתוני האוצר (מ"ה ${treasury.mofid}, לתקופה ${treasury.periodTo ?? '—'})`
+              : 'תשואת המסלקה מול נתוני השוואה שהוזנו ידנית באזור היועץ',
+            productType: policy.productType,
+            policyNumber: policy.policyNumber,
+          }),
+        )
+      } else {
+        findings.push(
+          makeFinding({
+            category: 'investment',
+            level: 'policy',
+            severity: 'info',
+            title: 'תשואה בהתאם לנתוני ההשוואה',
+            description:
+              `בפוליסה ${policy.policyNumber} התשואה נטו ${formatPercent(policy.netReturn)} ` +
+              `אינה נמוכה מהותית מ${sourceLabel} (${formatPercent(benchmarkReturn)}).`,
+            productType: policy.productType,
+            policyNumber: policy.policyNumber,
+          }),
+        )
+      }
+
+      if (benchmarkSharpe !== null) {
+        findings.push(
+          makeFinding({
+            category: 'investment',
+            level: 'policy',
+            severity: 'info',
+            title: 'מדד שארפ של הקופה',
+            description:
+              `מדד שארפ (תשואה ביחס לסיכון) של הקופה בפוליסה ${policy.policyNumber}: ${benchmarkSharpe.toFixed(2)}` +
+              (treasury?.stdDev36m != null ? ` · סטיית תקן 36 חודשים: ${treasury.stdDev36m.toFixed(2)}` : '') +
+              '.',
+            productType: policy.productType,
+            policyNumber: policy.policyNumber,
+          }),
+        )
+      }
+    } else {
+      findings.push(
+        makeFinding({
+          category: 'information',
+          level: 'policy',
+          severity: 'info',
+          title: 'תשואה מדווחת (ללא נתוני השוואה)',
+          description:
+            `בפוליסה ${policy.policyNumber} התשואה נטו המדווחת היא ${formatPercent(policy.netReturn)}. ` +
+            'לא נמצאו נתוני אוצר עבור מספר האוצר של הקופה ולא הוזנו נתוני השוואה, ולכן לא בוצעה השוואה.',
+          missingInfo: `קובץ נתוני אוצר הכולל את מ"ה ${policy.mofid ?? '(לא זוהה)'} או הזנת נתוני השוואה באזור היועץ`,
+          productType: policy.productType,
+          policyNumber: policy.policyNumber,
+        }),
+      )
+    }
   }
 
   return findings
