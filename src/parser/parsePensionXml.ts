@@ -227,6 +227,10 @@ function parseContributions(heshbon: Element): Contribution[] {
 
 function parseBeneficiaries(heshbon: Element): Beneficiary[] {
   const beneficiaries: Beneficiary[] = []
+  // The same beneficiary is often repeated across sub-accounts/tracks (one Mutav
+  // block each), producing identical rows. Collapse rows that match on identity
+  // and allocation so the same beneficiary/percent is shown only once.
+  const seen = new Set<string>()
   for (const mutav of heshbon.querySelectorAll('Mutav')) {
     const first = getText(mutav, 'SHEM-PRATI-MUTAV')
     const last = getText(mutav, 'SHEM-MISHPACHA-MUTAV')
@@ -238,11 +242,11 @@ function parseBeneficiaries(heshbon: Element): Beneficiary[] {
     const name = [first, last].filter(Boolean).join(' ') || null
     const relation = relationCode ? (beneficiaryRelationLabels[relationCode] ?? relationCode) : null
     if (name || relation) {
-      beneficiaries.push({
-        name,
-        relation,
-        allocationPercent: getNumber(mutav, 'ACHUZ-MUTAV'),
-      })
+      const allocationPercent = getNumber(mutav, 'ACHUZ-MUTAV')
+      const key = `${name ?? ''}|${relation ?? ''}|${allocationPercent ?? ''}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      beneficiaries.push({ name, relation, allocationPercent })
     }
   }
   return beneficiaries

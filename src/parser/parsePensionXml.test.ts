@@ -45,6 +45,7 @@ function fixture({ clientId = '100000009', clientId2 = '', sugMutzar = '2' } = {
     <PirteiKisuiBeMutzar><SUG-KISUY-BITOCHI>8</SUG-KISUY-BITOCHI><SCHUM-BITUACH>12345.00</SCHUM-BITUACH></PirteiKisuiBeMutzar>
   </ZihuiKisui></Kisuim>
   <Mutav><SUG-ZIHUY-MUTAV>1</SUG-ZIHUY-MUTAV><SHEM-PRATI-MUTAV>דנה</SHEM-PRATI-MUTAV><SHEM-MISHPACHA-MUTAV>כהן</SHEM-MISHPACHA-MUTAV><ACHUZ-MUTAV>60.00</ACHUZ-MUTAV></Mutav>
+  <Mutav><SUG-ZIHUY-MUTAV>1</SUG-ZIHUY-MUTAV><SHEM-PRATI-MUTAV>דנה</SHEM-PRATI-MUTAV><SHEM-MISHPACHA-MUTAV>כהן</SHEM-MISHPACHA-MUTAV><ACHUZ-MUTAV>60.00</ACHUZ-MUTAV></Mutav>
   <Mutav><SUG-ZIHUY-MUTAV>3</SUG-ZIHUY-MUTAV><ACHUZ-MUTAV>40.00</ACHUZ-MUTAV></Mutav>
   <Mutav><SUG-ZIHUY-MUTAV>7</SUG-ZIHUY-MUTAV></Mutav>
   <PerutMasluleiHashkaa><SCHUM-TZVIRA-BAMASLUL>100000</SCHUM-TZVIRA-BAMASLUL><SHEM-MASLUL-HASHKAA>מסלול א</SHEM-MASLUL-HASHKAA><TSUA-NETO>9.5</TSUA-NETO></PerutMasluleiHashkaa>
@@ -115,8 +116,9 @@ describe('parsePensionXml', () => {
     )
   })
 
-  it('parses beneficiaries with correct share and identity type, skipping "none set"', () => {
-    // ACHUZ-MUTAV (not ACHUZ-HALUKA); SUG-ZIHUY-MUTAV identity type, not kinship
+  it('parses beneficiaries with correct share and identity type, skipping "none set" and deduping repeats', () => {
+    // ACHUZ-MUTAV (not ACHUZ-HALUKA); SUG-ZIHUY-MUTAV identity type, not kinship.
+    // The fixture repeats the "דנה כהן 60%" Mutav; identical rows collapse to one.
     expect(p.beneficiaries).toEqual([
       { name: 'דנה כהן', relation: 'פרטי', allocationPercent: 60 },
       { name: null, relation: 'יורשים חוקיים', allocationPercent: 40 },
