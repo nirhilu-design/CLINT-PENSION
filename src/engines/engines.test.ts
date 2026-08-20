@@ -8,7 +8,7 @@ import { dataQualityEngine } from './dataQualityEngine'
 import { deathPictureEngine } from './deathPictureEngine'
 import { stopIssueEngine, isBlockedByStopIssue } from './stopIssueEngine'
 import { sortFindings } from './findingPriority'
-import { makeFinding } from './engineTypes'
+import { makeFinding, salaryFromPolicies, fullSalaryReference } from './engineTypes'
 
 const client = {
   id: '012345674',
@@ -195,10 +195,14 @@ describe('managers generation engine (stopIssueEngine)', () => {
   })
 
   it('2004–2013 new factor beside a pension: fee above threshold → attention, at/below → info', () => {
-    const high = managers('2004-to-2013', { fees: { fromDeposit: null, fromAccumulation: 1.2 } })
-    const low = managers('2004-to-2013', { fees: { fromDeposit: null, fromAccumulation: 0.5 } })
-    expect(sev(stopIssueEngine(input([high, pension])))).toBe('attention')
-    expect(sev(stopIssueEngine(input([low, pension])))).toBe('info')
+    // Salaries kept low so the summed salary stays below the מקיפה cap and the
+    // severity reflects the fee level, not the cap.
+    const lowSalary = { coveredSalary: 8000 }
+    const pen = makePolicy({ policyNumber: 'PEN', productType: 'pension', coveredSalary: 8000 })
+    const high = managers('2004-to-2013', { ...lowSalary, fees: { fromDeposit: null, fromAccumulation: 1.2 } })
+    const low = managers('2004-to-2013', { ...lowSalary, fees: { fromDeposit: null, fromAccumulation: 0.5 } })
+    expect(sev(stopIssueEngine(input([high, pen])))).toBe('attention')
+    expect(sev(stopIssueEngine(input([low, pen])))).toBe('info')
   })
 
   it('inactive policy → short paid-up note, no deposit-split analysis', () => {
@@ -280,6 +284,53 @@ describe('dataQualityEngine salary cross-check', () => {
   it('stays silent within tolerance', () => {
     const out = dataQualityEngine(input([makePolicy()], { currentGrossSalary: 15000 }))
     expect(out.some((f) => f.title.includes('שוני בין השכר'))).toBe(false)
+  })
+})
+
+describe('salary from pension products', () => {
+  const p = (over: Partial<Policy>) => makePolicy(over)
+
+  it('sums insured salary across active pension + managers, excluding אכע', () => {
+    const sum = salaryFromPolicies([
+      p({ policyNumber: 'PEN', productType: 'pension', coveredSalary: 9000 }),
+      p({ policyNumber: 'MNG', productType: 'managers', coveredSalary: 6000 }),
+      p({ policyNumber: 'AKV', productType: 'incomeProtection', coveredSalary: 15000 }),
+    ])
+    expect(sum).toBe(15000)
+  })
+
+  it('ignores inactive products in the sum', () => {
+    const sum = salaryFromPolicies([
+      p({ policyNumber: 'PEN', productType: 'pension', coveredSalary: 9000 }),
+      p({ policyNumber: 'OLD', productType: 'managers', status: 'inactive', coveredSalary: 6000 }),
+    ])
+    expect(sum).toBe(9000)
+  })
+
+  it('uses a study-fund base below the cap as the full-salary reference', () => {
+    const ref = fullSalaryReference(
+      [p({ policyNumber: 'EDU', productType: 'education', coveredSalary: 12000 })],
+      15712,
+    )
+    expect(ref).toBe(12000)
+  })
+
+  it('ignores a study-fund base at/above the cap (truncated, uninformative)', () => {
+    const ref = fullSalaryReference(
+      [p({ policyNumber: 'EDU', productType: 'education', coveredSalary: 15712 })],
+      15712,
+    )
+    expect(ref).toBeNull()
+  })
+
+  it('hints when the summed salary is materially below the study-fund reference', () => {
+    const out = dataQualityEngine(
+      input([
+        makePolicy({ policyNumber: 'PEN', productType: 'pension', coveredSalary: 8000 }),
+        makePolicy({ policyNumber: 'EDU', productType: 'education', coveredSalary: 14000 }),
+      ]),
+    )
+    expect(out.some((f) => f.title.includes('נמוך מנתון ההשוואה'))).toBe(true)
   })
 })
 
