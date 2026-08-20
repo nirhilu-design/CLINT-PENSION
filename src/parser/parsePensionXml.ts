@@ -399,7 +399,13 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
         beneficiaries: parseBeneficiaries(heshbon),
         managersGeneration:
           productType === 'managers' ? classifyManagersGeneration(openDate) : null,
-        hasGuaranteedFactor: (getNumber(yitra, 'MEKADEM-MOVTACH-LEPRISHA') ?? 0) > 0,
+        // Guaranteed annuity coefficients were abolished for policies opened from
+        // Jan 2013. Insurers still populate MEKADEM-MOVTACH-LEPRISHA with an
+        // illustrative coefficient on newer policies, so a positive value alone
+        // isn't proof — a policy opened in 2013+ cannot carry a guaranteed factor.
+        hasGuaranteedFactor:
+          (getNumber(yitra, 'MEKADEM-MOVTACH-LEPRISHA') ?? 0) > 0 &&
+          (openDate === null || openDate < '2013-01-01'),
         reportDate: parseDate(getText(heshbon, 'TAARICH-NECHONUT')),
         lastDepositMonth,
         lastDepositTotal,

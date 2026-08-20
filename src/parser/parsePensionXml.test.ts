@@ -50,7 +50,7 @@ function fixture({ clientId = '100000009', clientId2 = '', sugMutzar = '2' } = {
   <Mutav><SUG-ZIHUY-MUTAV>7</SUG-ZIHUY-MUTAV></Mutav>
   <PerutMasluleiHashkaa><SCHUM-TZVIRA-BAMASLUL>100000</SCHUM-TZVIRA-BAMASLUL><SHEM-MASLUL-HASHKAA>מסלול א</SHEM-MASLUL-HASHKAA><TSUA-NETO>9.5</TSUA-NETO></PerutMasluleiHashkaa>
   <PerutMasluleiHashkaa><SCHUM-TZVIRA-BAMASLUL>50000</SCHUM-TZVIRA-BAMASLUL><SHEM-MASLUL-HASHKAA>מסלול א</SHEM-MASLUL-HASHKAA></PerutMasluleiHashkaa>
-  <YitraLefiGilPrisha><GIL-PRISHA>67.00</GIL-PRISHA><TOTAL-CHISACHON-MITZTABER-TZAFUY>2000000.00</TOTAL-CHISACHON-MITZTABER-TZAFUY><TZVIRAT-CHISACHON-CHAZUYA-LELO-PREMIYOT>900000.00</TZVIRAT-CHISACHON-CHAZUYA-LELO-PREMIYOT><Kupot><Kupa><SCHUM-KITZVAT-ZIKNA>9000.00</SCHUM-KITZVAT-ZIKNA><KITZVAT-HODSHIT-TZFUYA>5000.00</KITZVAT-HODSHIT-TZFUYA></Kupa></Kupot></YitraLefiGilPrisha>
+  <YitraLefiGilPrisha><GIL-PRISHA>67.00</GIL-PRISHA><MEKADEM-MOVTACH-LEPRISHA>200.00</MEKADEM-MOVTACH-LEPRISHA><TOTAL-CHISACHON-MITZTABER-TZAFUY>2000000.00</TOTAL-CHISACHON-MITZTABER-TZAFUY><TZVIRAT-CHISACHON-CHAZUYA-LELO-PREMIYOT>900000.00</TZVIRAT-CHISACHON-CHAZUYA-LELO-PREMIYOT><Kupot><Kupa><SCHUM-KITZVAT-ZIKNA>9000.00</SCHUM-KITZVAT-ZIKNA><KITZVAT-HODSHIT-TZFUYA>5000.00</KITZVAT-HODSHIT-TZFUYA></Kupa></Kupot></YitraLefiGilPrisha>
 </HeshbonOPolisa></HeshbonotOPolisot></Mutzar>
 ${secondMutzar}
 </Mutzarim></YeshutYatzran></Mimshak>`
@@ -123,6 +123,22 @@ describe('parsePensionXml', () => {
       { name: 'דנה כהן', relation: 'פרטי', allocationPercent: 60 },
       { name: null, relation: 'יורשים חוקיים', allocationPercent: 40 },
     ])
+  })
+
+  it('ignores a reported coefficient on policies opened from 2013 (no guaranteed factor)', () => {
+    // Fixture opens 2019-12-22 and reports MEKADEM-MOVTACH-LEPRISHA=200 — an
+    // illustrative coefficient, not a guaranteed one, since guaranteed factors
+    // were abolished for policies opened from Jan 2013.
+    expect(p.hasGuaranteedFactor).toBe(false)
+  })
+
+  it('keeps the guaranteed factor on policies opened before 2013', () => {
+    const preCutoff = fixture().replace(
+      '<TAARICH-HITZTARFUT-MUTZAR>20191222</TAARICH-HITZTARFUT-MUTZAR>',
+      '<TAARICH-HITZTARFUT-MUTZAR>20101222</TAARICH-HITZTARFUT-MUTZAR>',
+    )
+    const { policies: pre } = parsePensionXml(preCutoff, 'test.xml')
+    expect(pre[0].hasGuaranteedFactor).toBe(true)
   })
 
   it('aggregates monthly deposits across contribution types', () => {
