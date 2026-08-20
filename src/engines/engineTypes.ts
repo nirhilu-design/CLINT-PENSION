@@ -8,16 +8,21 @@ export interface EngineInput {
 
 export type Engine = (input: EngineInput) => Finding[]
 
-// Pension-savings products that insure a portion of the salary. Income protection
-// (אכע) is deliberately excluded — its insured salary is typically the full salary
-// and would double-count — but it serves as a cross-check reference below.
-const PENSION_SALARY_PRODUCTS: ProductType[] = ['pension', 'managers']
+// Pension-savings products that can receive a portion of the salary. A client may
+// direct part of the pension contribution to a קופת גמל (gemel behirah) instead of
+// a pension fund or managers policy, so gemel counts too. Income protection (אכע)
+// is excluded — its insured salary is typically the full salary and would
+// double-count — as is קרן השתלמות (a separate track on the full salary, used only
+// as the cross-check reference below) and גמל להשקעה (not funded from salary).
+const PENSION_SALARY_PRODUCTS: ProductType[] = ['pension', 'managers', 'gemel']
 
 /**
  * Full monthly salary estimated from the XML by SUMMING the insured salary across
- * the active pension-savings products (pension + managers). A person's salary is
- * split between products, so summing the per-product insured salaries reconstructs
- * the full salary; taking the max would under-count a split. אכע is excluded.
+ * the active pension-savings products (pension + managers + gemel). A person's
+ * salary is split between products, so summing the per-product insured salaries
+ * reconstructs the full salary; taking the max would under-count a split. Products
+ * with no reported salary base (coveredSalary null/0 — e.g. a חיסכון-לכל-ילד gemel)
+ * drop out naturally and never inflate the total.
  */
 export function salaryFromPolicies(policies: Policy[]): number | null {
   const salaries = policies

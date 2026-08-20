@@ -299,6 +299,22 @@ describe('salary from pension products', () => {
     expect(sum).toBe(15000)
   })
 
+  it('includes a gemel behirah that receives directed salary', () => {
+    const sum = salaryFromPolicies([
+      p({ policyNumber: 'PEN', productType: 'pension', coveredSalary: 9000 }),
+      p({ policyNumber: 'GML', productType: 'gemel', coveredSalary: 5000 }),
+    ])
+    expect(sum).toBe(14000)
+  })
+
+  it('drops a gemel with no salary base (e.g. חיסכון לכל ילד)', () => {
+    const sum = salaryFromPolicies([
+      p({ policyNumber: 'PEN', productType: 'pension', coveredSalary: 9000 }),
+      p({ policyNumber: 'KID', productType: 'gemel', coveredSalary: null }),
+    ])
+    expect(sum).toBe(9000)
+  })
+
   it('ignores inactive products in the sum', () => {
     const sum = salaryFromPolicies([
       p({ policyNumber: 'PEN', productType: 'pension', coveredSalary: 9000 }),
