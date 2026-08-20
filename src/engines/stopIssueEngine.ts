@@ -45,9 +45,59 @@ export const stopIssueEngine: Engine = ({ policies, supplementary }) => {
 
   return managers.map((p) => {
     const gen = p.managersGeneration!
+    const genLabel = generationLabels[gen] ?? gen
     const factorNote = p.hasGuaranteedFactor
       ? 'זוהה מקדם קצבה מובטח בדיווח — יתרון משמעותי ששוויו בפועל תלוי בגיל, בוותק ובתמונה הכוללת. '
       : 'לא זוהה מקדם קצבה מובטח בדיווח. '
+
+    // Inactive policy: no ongoing deposits, so the deposit-split / deposit-
+    // efficiency analysis is irrelevant. Keep it short — a paid-up policy with a
+    // guaranteed factor is an asset to preserve, nothing to divert.
+    if (p.status !== 'active') {
+      return makeFinding({
+        category: 'insight',
+        level: 'policy',
+        severity: 'info',
+        title: 'דור ביטוח המנהלים ומקדם הקצבה',
+        description:
+          `פוליסה ${p.policyNumber} — דור ${genLabel}, אינה פעילה (אין הפקדות שוטפות). ` +
+          (p.hasGuaranteedFactor
+            ? 'פוליסה עם מקדם קצבה מובטח — נכס שכדאי לשמר. אין סוגיית חלוקת הפקדות. '
+            : 'אין סוגיית חלוקת הפקדות שוטפות. ') +
+          'נקודה לבדיקה מול בעל רישיון.',
+        productType: 'managers',
+        policyNumber: p.policyNumber,
+      })
+    }
+
+    // Deposit-efficiency clause for active policies: a high accumulation fee makes
+    // ongoing deposits expensive, so — when a cheaper pension fund exists — new
+    // deposits are better directed there. Below the pension deposit ceiling the
+    // fund can absorb the full salary; if disability is covered separately and the
+    // savings sit in pension funds, cancelling the policy is worth weighing.
+    const fee = p.fees.fromAccumulation
+    const feeHigh = fee === null || fee > MANAGERS_NEW_FACTOR_FEE_THRESHOLD
+    const hasSeparateDisability = policies.some(
+      (o) =>
+        o.policyNumber !== p.policyNumber &&
+        (o.productType === 'incomeProtection' || o.coverages.some((c) => c.type === 'disability')),
+    )
+    const depositEfficiencyClause = () => {
+      if (!feeHigh) return ''
+      let eff =
+        `דמי ניהול מצבירה ${fee !== null ? fee.toFixed(2) + '%' : 'לא דווחו'}` +
+        (fee !== null ? ' (גבוהים יחסית)' : '') +
+        ' — הפקדה שוטפת לפוליסה זו יקרה. '
+      if (hasActivePension)
+        eff += 'קיימת קרן פנסיה פעילה כאלטרנטיבה זולה יותר; כדאי לשקול הפניית ההפקדות השוטפות אליה. '
+      if (!aboveMekifaCap)
+        eff += 'השכר אינו מעל תקרת ההפקדה לפנסיה, כך שניתן להפקיד את מלוא ההפקדה לקרן הפנסיה. '
+      if (hasSeparateDisability && hasActivePension)
+        eff +=
+          'ככל שכיסוי אכ"ע מוסדר בנפרד והחיסכון מנוהל בקרנות פנסיה — ניתן לשקול ביטול הפוליסה, ' +
+          'שכן מעל תקרת ההפקדה לקרן הפנסיה אין חובת הפקדה לאכ"ע. '
+      return eff
+    }
 
     let clause = ''
     let severity: 'info' | 'attention' = 'info'
@@ -84,16 +134,13 @@ export const stopIssueEngine: Engine = ({ policies, supplementary }) => {
     } else if (gen === '2001-06-to-2004') {
       clause = 'בדור זה נהוג לבחון האם עדיף להפנות את ההפקדות למוצר אחר. '
       severity = 'attention'
-    } else if (gen === '2004-to-2013' && !p.hasGuaranteedFactor && hasActivePension) {
-      // New (non-guaranteed) factor alongside a pension fund → the factor isn't a
-      // reason to keep it; whether it's worth touching depends on the fee level.
-      const fee = p.fees.fromAccumulation
-      const feeWorthChecking = fee === null || fee > MANAGERS_NEW_FACTOR_FEE_THRESHOLD
-      if (feeWorthChecking) {
-        clause =
-          `הפוליסה מדור 2004–2013 עם מקדם חדש (אינו מובטח) לצד קרן פנסיה, ` +
-          `ודמי הניהול מצבירה ${fee !== null ? fee.toFixed(2) + '%' : 'לא דווחו'} — ` +
-          'נקודה לבחינת השילוב. '
+      clause += depositEfficiencyClause()
+    } else if (gen === '2004-to-2013') {
+      // Whether it's worth touching depends mainly on the fee level: a high
+      // accumulation fee makes ongoing deposits expensive relative to a pension fund.
+      const eff = depositEfficiencyClause()
+      if (eff) {
+        clause = eff
         severity = aboveMekifaCap ? 'info' : 'attention'
         if (aboveMekifaCap) clause += 'מאחר שהשכר מעל תקרת המקיפה, חומרת הנקודה פחותה. '
       }

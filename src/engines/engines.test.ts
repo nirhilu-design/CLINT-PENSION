@@ -200,6 +200,36 @@ describe('managers generation engine (stopIssueEngine)', () => {
     expect(sev(stopIssueEngine(input([high, pension])))).toBe('attention')
     expect(sev(stopIssueEngine(input([low, pension])))).toBe('info')
   })
+
+  it('inactive policy → short paid-up note, no deposit-split analysis', () => {
+    const paidUp = managers('before-2001-06', { status: 'inactive', hasGuaranteedFactor: true })
+    const desc = stopIssueEngine(input([paidUp, pension]))[0].description
+    expect(desc).toContain('אינה פעילה')
+    expect(desc).toContain('נכס שכדאי לשמר')
+    expect(desc).not.toContain('חלוקת הפקדות)')
+    expect(sev(stopIssueEngine(input([paidUp, pension])))).toBe('info')
+  })
+
+  it('expensive active 2004–2013 beside a pension → deposit-redirect note', () => {
+    const pricey = managers('2004-to-2013', {
+      hasGuaranteedFactor: true,
+      coveredSalary: 12000,
+      fees: { fromDeposit: null, fromAccumulation: 2 },
+    })
+    const desc = stopIssueEngine(input([pricey, pension]))[0].description
+    expect(desc).toContain('הפקדה שוטפת לפוליסה זו יקרה')
+    expect(desc).toContain('הפניית ההפקדות השוטפות')
+  })
+
+  it('expensive active 2004–2013 with separate disability + pension savings → cancellation note', () => {
+    const pricey = managers('2004-to-2013', {
+      coveredSalary: 12000,
+      fees: { fromDeposit: null, fromAccumulation: 2 },
+    })
+    const akv = makePolicy({ policyNumber: 'AKV', productType: 'incomeProtection' })
+    const desc = stopIssueEngine(input([pricey, pension, akv]))[0].description
+    expect(desc).toContain('ניתן לשקול ביטול הפוליסה')
+  })
 })
 
 describe('incomeProtectionEngine', () => {
