@@ -62,17 +62,6 @@ export const LOGIC_CATALOG: LogicDef[] = [
     params: [{ key: 'pensionToSalaryMinRatio', label: 'יחס קצבה-לשכר מינימלי', unit: 'יחס' }],
   },
   {
-    id: 'investment',
-    label: 'תשואות והשקעה',
-    category: 'השקעות',
-    severity: 'attention',
-    condition: 'תשואה_נטו < בנצ׳מרק − סבילות',
-    products: [],
-    explanation:
-      'משווה את התשואה נטו המדווחת מול נתוני האוצר (בנצ׳מרק) ומול מדד שארפ. פער מתחת לסבילות מהבנצ׳מרק פותח הארה.',
-    params: [{ key: 'returnBelowBenchmarkTolerance', label: 'סבילות מתחת לבנצ׳מרק', unit: 'נק׳ אחוז' }],
-  },
-  {
     id: 'incomeProtection',
     label: 'אובדן כושר עבודה (אכ״ע)',
     category: 'ביטוח',
