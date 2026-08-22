@@ -321,7 +321,7 @@ export default function DashboardPage() {
             position: 'sticky',
             top: 0,
             zIndex: 20,
-            background: 'var(--clint-950)',
+            background: '#001233',
             borderBottom: '1px solid rgba(255,255,255,0.08)',
             padding: '10px 32px',
             display: 'flex',
@@ -343,12 +343,14 @@ export default function DashboardPage() {
       {/* Hero */}
       <div
         style={{
+          position: 'relative',
           background:
-            'radial-gradient(700px circle at 12% 15%, rgba(10,175,150,0.32), transparent 60%),radial-gradient(550px circle at 88% 25%, rgba(245,158,11,0.16), transparent 55%),linear-gradient(120deg,var(--clint-950),var(--clint-800) 55%,var(--clint-700))',
+            'radial-gradient(720px circle at 88% 6%, rgba(255,39,86,0.20), transparent 60%),radial-gradient(560px circle at 4% 96%, rgba(226,209,191,0.14), transparent 58%),linear-gradient(125deg,#001233,var(--accent-navy) 52%,#06306e)',
           color: '#fff',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}
       >
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '36px 32px 40px' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '34px 32px 38px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
             <div>
               <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }}>
@@ -360,24 +362,29 @@ export default function DashboardPage() {
             </div>
             <span
               style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 7,
                 fontSize: 11,
                 fontWeight: 700,
-                padding: '6px 12px',
+                padding: '6px 13px',
                 borderRadius: 'var(--radius-full)',
-                background: 'rgba(255,255,255,0.1)',
-                border: '1px solid rgba(255,255,255,0.15)',
-                color: 'rgba(255,255,255,0.75)',
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.16)',
+                color: 'rgba(255,255,255,0.85)',
                 whiteSpace: 'nowrap',
                 flexShrink: 0,
+                backdropFilter: 'blur(6px)',
               }}
             >
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-coral)', boxShadow: '0 0 0 3px rgba(255,39,86,0.25)' }} />
               מנוע ניתוח
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 14, marginTop: 28 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 14, marginTop: 26 }}>
             {heroKpis.map((k) => (
-              <HeroKpi key={k.label} label={k.label} value={k.value} sub={k.sub} />
+              <HeroKpi key={k.label} label={k.label} value={k.value} sub={k.sub} dot={k.dot} meter={k.meter} />
             ))}
           </div>
         </div>
