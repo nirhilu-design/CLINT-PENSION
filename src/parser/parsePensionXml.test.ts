@@ -101,6 +101,24 @@ describe('parsePensionXml', () => {
     expect(p.coverages.some((c) => c.amount === 12345)).toBe(false)
   })
 
+  it('derives the אכ"ע insured salary from benefit ÷ rate (insurance side)', () => {
+    // 9000 monthly benefit at 75% → insured salary 12,000
+    const oka = p.coverages.find((c) => c.type === 'disability' && c.name === 'אכ"ע')
+    expect(oka!.coveredSalary).toBe(12000)
+  })
+
+  it('normalizes a fractional ACHUZ-MESACHAR (0.75 → 75%) and still derives salary', () => {
+    const frac = fixture().replace(
+      '<ACHUZ-MESACHAR>75.00</ACHUZ-MESACHAR>',
+      '<ACHUZ-MESACHAR>0.75</ACHUZ-MESACHAR>',
+    )
+    const oka = parsePensionXml(frac, 'f.xml').policies[0].coverages.find(
+      (c) => c.type === 'disability' && c.name === 'אכ"ע',
+    )
+    expect(oka!.percent).toBe(75)
+    expect(oka!.coveredSalary).toBe(12000)
+  })
+
   it('maps SUG-MUTZAR across all product codes', () => {
     // 9 = קופת גמל להשקעה → gemelInvestment (previously fell through to unknown)
     expect(parsePensionXml(fixture({ sugMutzar: '9' }), 'f.xml').policies[0].productType).toBe(

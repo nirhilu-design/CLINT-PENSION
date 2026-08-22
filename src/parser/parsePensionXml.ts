@@ -189,12 +189,27 @@ function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
     for (const cover of kisui.querySelectorAll('PirteiKisuiBeMutzar')) {
       const type = coverageTypeFromKisuyBituchi(getText(cover, 'SUG-KISUY-BITOCHI'))
       if (type === null) continue // savings / premium-waiver rows are not risk covers
+      const amount = getNumber(cover, 'SCHUM-BITUACH')
+      // ACHUZ-MESACHAR is the אכ"ע rate of salary. Per the מבנה אחיד it is a decimal
+      // fraction (0.75), but many issuers report a whole percent (75) — normalize
+      // ≤1 ⇒ ×100. For death it is a salary multiple, so it is left untouched.
+      const rawPercent = getNumber(cover, 'ACHUZ-MESACHAR')
+      const percent =
+        type === 'disability' && rawPercent !== null && rawPercent <= 1
+          ? rawPercent * 100
+          : rawPercent
+      // The insurance side carries no explicit insured salary (SACHAR-KOVEA exists
+      // only on the pension side), so derive it: monthly benefit ÷ rate.
+      const coveredSalary =
+        type === 'disability' && amount !== null && percent !== null && percent > 0
+          ? Math.round(amount / (percent / 100))
+          : null
       coverages.push({
         type,
         name,
-        amount: getNumber(cover, 'SCHUM-BITUACH'),
-        percent: getNumber(cover, 'ACHUZ-MESACHAR'),
-        coveredSalary: null,
+        amount,
+        percent,
+        coveredSalary,
         cost: getNumber(cover, 'DMEI-BITUAH-LETASHLUM-BAPOAL'),
         status: coverageStatusFromEndDate(getText(cover, 'TAARICH-TOM-KISUY')),
         policyNumber,
