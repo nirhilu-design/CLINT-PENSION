@@ -41,7 +41,7 @@ export default function Sidebar() {
       style={{
         width: 240,
         flexShrink: 0,
-        background: 'var(--clint-950)',
+        background: 'linear-gradient(180deg,#001a45,#000f2b)',
         display: 'flex',
         flexDirection: 'column',
         height: '100vh',
@@ -89,24 +89,39 @@ export default function Sidebar() {
               key={item.label}
               onClick={() => dispatch(item.action)}
               style={{
+                position: 'relative',
                 width: '100%',
                 textAlign: 'right',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 10,
-                padding: '9px 14px',
+                padding: '10px 14px',
                 borderRadius: 'var(--radius-md)',
-                background: active ? 'rgba(255,255,255,0.1)' : 'transparent',
-                color: active ? '#fff' : 'rgba(255,255,255,0.65)',
+                background: active ? 'rgba(255,255,255,0.09)' : 'transparent',
+                color: active ? '#fff' : 'rgba(255,255,255,0.62)',
                 fontSize: 14,
                 fontWeight: active ? 700 : 500,
                 marginBottom: 2,
                 border: 'none',
                 cursor: 'pointer',
                 fontFamily: 'inherit',
+                transition: 'background 160ms, color 160ms',
               }}
             >
-              <Icon size={17} style={{ flexShrink: 0 }} />
+              {active && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    insetInlineStart: -10,
+                    top: 9,
+                    bottom: 9,
+                    width: 3,
+                    borderRadius: 3,
+                    background: 'var(--accent-coral)',
+                  }}
+                />
+              )}
+              <Icon size={17} style={{ flexShrink: 0, color: active ? 'var(--accent-coral)' : 'rgba(255,255,255,0.5)' }} />
               {item.label}
             </button>
           )
