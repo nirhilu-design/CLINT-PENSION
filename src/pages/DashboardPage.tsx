@@ -31,14 +31,19 @@ import {
 
 const PRODUCT_ORDER: ProductType[] = ['pension', 'managers', 'gemel', 'gemelInvestment', 'education', 'life', 'incomeProtection']
 
-const productMeta: Record<ProductType, { icon: LucideIcon; grad: string }> = {
-  pension: { icon: Landmark, grad: 'linear-gradient(135deg,var(--clint-600),var(--clint-700))' },
-  managers: { icon: Briefcase, grad: 'linear-gradient(135deg,#4a3aa7,#372c7d)' },
-  gemel: { icon: Wallet, grad: 'linear-gradient(135deg,var(--teal-600),#0b6f63)' },
-  gemelInvestment: { icon: TrendingUp, grad: 'linear-gradient(135deg,#1baf7a,#12805a)' },
-  education: { icon: GraduationCap, grad: 'linear-gradient(135deg,#eda100,#c07f00)' },
-  life: { icon: HeartPulse, grad: 'linear-gradient(135deg,#e87ba4,#c25579)' },
-  incomeProtection: { icon: Umbrella, grad: 'linear-gradient(135deg,#eb6834,#bf4d20)' },
+// Brand-mapped icon colors (per the mockup): navy for pension-savings products,
+// coral for risk/insurance products, beige for gemel/capital.
+const NAVY_GRAD = 'linear-gradient(135deg,#0a3a86,var(--accent-navy))'
+const CORAL_GRAD = 'linear-gradient(135deg,#ff5476,var(--accent-coral))'
+const SAND_GRAD = 'linear-gradient(135deg,#efe4d3,var(--accent-beige))'
+const productMeta: Record<ProductType, { icon: LucideIcon; grad: string; sand?: boolean }> = {
+  pension: { icon: Landmark, grad: NAVY_GRAD },
+  managers: { icon: Briefcase, grad: NAVY_GRAD },
+  gemel: { icon: Wallet, grad: SAND_GRAD, sand: true },
+  gemelInvestment: { icon: TrendingUp, grad: SAND_GRAD, sand: true },
+  education: { icon: GraduationCap, grad: SAND_GRAD, sand: true },
+  life: { icon: HeartPulse, grad: CORAL_GRAD },
+  incomeProtection: { icon: Umbrella, grad: CORAL_GRAD },
   unknown: { icon: HelpCircle, grad: 'linear-gradient(135deg,var(--neutral-400),var(--neutral-500))' },
 }
 
@@ -59,7 +64,9 @@ function ageFrom(birthISO: string | null): string {
   return String(age)
 }
 
-function HeroKpi({ label, value, sub }: { label: string; value: string; sub?: string }) {
+type HeroMeter = { fill: number; target?: number; color: string }
+
+function HeroKpi({ label, value, sub, dot, meter }: { label: string; value: string; sub?: string; dot?: string; meter?: HeroMeter }) {
   return (
     <div
       style={{
@@ -70,13 +77,20 @@ function HeroKpi({ label, value, sub }: { label: string; value: string; sub?: st
         padding: 16,
       }}
     >
-      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.03em', color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase' }}>
-        {label}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        {dot && <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot, flexShrink: 0 }} />}
+        <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.03em', color: 'rgba(255,255,255,0.55)' }}>{label}</span>
       </div>
       <div style={{ fontSize: 24, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em', marginTop: 6, color: '#fff' }}>
         {value}
       </div>
-      {sub && <div style={{ marginTop: 4, fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{sub}</div>}
+      {meter && (
+        <div style={{ marginTop: 10, height: 6, borderRadius: 4, background: 'rgba(255,255,255,0.16)', position: 'relative' }}>
+          <span style={{ position: 'absolute', insetInlineEnd: 0, top: 0, bottom: 0, width: `${Math.max(0, Math.min(100, meter.fill))}%`, borderRadius: 4, background: meter.color, display: 'block' }} />
+          {meter.target !== undefined && <span style={{ position: 'absolute', top: -3, bottom: -3, insetInlineEnd: `${meter.target}%`, width: 2, background: '#fff', opacity: 0.85 }} />}
+        </div>
+      )}
+      {sub && <div style={{ marginTop: 8, fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{sub}</div>}
     </div>
   )
 }
@@ -226,14 +240,51 @@ export default function DashboardPage() {
   const asOf = reportDates.length ? formatDate(reportDates.sort()[reportDates.length - 1]) : 'לא דווח'
   const retirementAge = Math.max(0, ...policies.map((p) => p.retirementAge ?? 0)) || null
 
-  const heroKpis = [
-    { label: 'סך נכסים', value: formatCurrency(totalAssets) },
-    { label: 'קצבה חודשית צפויה', value: formatCurrency(totalPensionWithDeposits), sub: 'בהמשך הפקדות' },
-    { label: 'קצבה ללא הפקדות', value: formatCurrency(totalPensionWithoutDeposits), sub: 'ללא המשך הפקדות' },
-    { label: 'מוצרים · פוליסות', value: `${productTypes.size} · ${policies.length}` },
+  // Health-oriented KPI metrics (mirroring the mockup's KPI row)
+  const GOOD = 'var(--color-success)'
+  const WARN = 'var(--color-warning)'
+  const DANGER = 'var(--color-danger)'
+  const exposure = computeExposure(policies, supp.treasuryAllocations)
+  const equityPct = exposure.portfolio.equity.equityPercent
+  const gemelSharePct = exposure.gemelShare
+  const age = client.birthDate ? Number(ageFrom(client.birthDate)) : null
+  const equityTarget = age && !isNaN(age) ? Math.max(20, Math.min(75, 110 - age)) : null
+
+  let feeWeighted = 0
+  let feeBase = 0
+  for (const p of policies) {
+    if (p.fees.fromAccumulation !== null && p.currentValue) {
+      feeWeighted += p.currentValue * p.fees.fromAccumulation
+      feeBase += p.currentValue
+    }
+  }
+  const weightedFee = feeBase > 0 ? feeWeighted / feeBase : null
+  const MARKET_FEE = 1.0 // ≈ market average accumulation fee (%)
+
+  const heroKpis: { label: string; value: string; sub?: string; dot?: string; meter?: HeroMeter }[] = [
+    {
+      label: 'סך נכסים',
+      value: formatCurrency(totalAssets),
+      sub: gemelSharePct > 0 ? `${Math.round(gemelSharePct)}% בקופות גמל` : undefined,
+    },
+    {
+      label: 'דמי ניהול משוקללים',
+      value: weightedFee !== null ? `${weightedFee.toFixed(2)}%` : '—',
+      dot: weightedFee === null ? undefined : weightedFee <= MARKET_FEE ? GOOD : WARN,
+      meter: weightedFee === null ? undefined : { fill: (weightedFee / 2) * 100, target: (MARKET_FEE / 2) * 100, color: weightedFee <= MARKET_FEE ? GOOD : WARN },
+      sub: `מול ממוצע השוק ≈${MARKET_FEE.toFixed(1)}%`,
+    },
+    {
+      label: 'חשיפה מנייתית',
+      value: equityPct !== null ? `${Math.round(equityPct)}%` : '—',
+      dot: equityPct === null || equityTarget === null ? undefined : Math.abs(equityPct - equityTarget) <= 10 ? GOOD : WARN,
+      meter: equityPct === null || equityTarget === null ? undefined : { fill: equityPct, target: equityTarget, color: Math.abs(equityPct - equityTarget) <= 10 ? GOOD : WARN },
+      sub: equityPct === null ? 'אין נתוני אוצר' : equityTarget !== null ? `יעד ≈${Math.round(equityTarget)}% לגיל ${age}` : undefined,
+    },
     {
       label: 'ממצאים לתשומת לב',
       value: String(actionable.length),
+      dot: gapCount > 0 ? DANGER : attentionCount > 0 ? WARN : GOOD,
       sub:
         actionable.length > 0
           ? [gapCount > 0 ? `${gapCount} פערים` : '', attentionCount > 0 ? `${attentionCount} לבדיקה` : ''].filter(Boolean).join(' · ')
@@ -389,46 +440,6 @@ export default function DashboardPage() {
           />
         )}
 
-        <ExposureAnalysis exposure={computeExposure(policies, supp.treasuryAllocations)} />
-
-        {/* Findings */}
-        <section style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
-              נקודות הדורשות תשומת לב
-            </h2>
-            {actionable.length > centralFindings.length && (
-              <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>
-                מוצגים {centralFindings.length} מתוך {actionable.length} · המלא בסיכום המנהלים
-              </span>
-            )}
-          </div>
-          {centralFindings.length === 0 ? (
-            <p style={{ fontSize: 14, color: 'var(--color-text-tertiary)' }}>
-              {completeness.complete ? 'לא נמצאו ממצאים הדורשים בדיקה' : 'לא עלו ממצאים — אך הבדיקה חלקית בשל מידע חסר (פירוט למטה).'}
-            </p>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 12 }}>
-              {centralFindings.map((f) => (
-                <FindingCard key={f.id} finding={f} />
-              ))}
-            </div>
-          )}
-          {!completeness.complete && (
-            <Card padding={16} style={{ marginTop: 16, background: 'var(--neutral-50)' }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: 6 }}>שלמות הנתונים</div>
-              <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-                {completeness.missing.map((m, i) => (
-                  <li key={i} style={{ fontSize: 12, color: 'var(--color-text-tertiary)', display: 'flex', gap: 6 }}>
-                    <span style={{ color: 'var(--neutral-300)' }}>•</span>
-                    {m}
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          )}
-        </section>
-
         {/* Smart coverage cards */}
         <section style={{ marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, margin: '0 0 12px', flexWrap: 'wrap' }}>
@@ -473,22 +484,6 @@ export default function DashboardPage() {
               הפקדה אחרונה שנקלטה בתיק: {lastDeposit}
             </p>
           )}
-        </section>
-
-        {/* Distribution */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 16, marginBottom: 24 }}>
-          <PieChartCard title="פיזור לפי סוג מוצר" data={byProduct} onSliceClick={(key) => setSlice({ kind: 'product', key })} />
-          <PieChartCard title="פיזור לפי חברה מנהלת" data={byCompany} onSliceClick={(key) => setSlice({ kind: 'company', key })} />
-        </div>
-
-        {slice && (
-          <SliceDrawer selection={slice} policies={policies} portfolioTotal={totalAssets} onClose={() => setSlice(null)} />
-        )}
-
-        {/* Returns */}
-        <section style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 12px' }}>תשואות</h2>
-          <ReturnsTable policies={policies} treasuryFunds={supp.treasuryFunds} />
         </section>
 
         {/* Products */}
@@ -539,7 +534,7 @@ export default function DashboardPage() {
                         display: 'grid',
                         placeItems: 'center',
                         background: meta.grad,
-                        color: '#fff',
+                        color: meta.sand ? 'var(--accent-navy)' : '#fff',
                         flexShrink: 0,
                       }}
                     >
@@ -571,6 +566,68 @@ export default function DashboardPage() {
               )
             })}
           </div>
+        </section>
+
+        {/* ===== Detailed analysis ===== */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '36px 0 20px' }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>ניתוח מפורט</h2>
+          <div style={{ flex: 1, height: 1, background: 'var(--color-border-base)' }} />
+        </div>
+
+        <ExposureAnalysis exposure={exposure} />
+
+        {/* Findings */}
+        <section style={{ margin: '24px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
+              נקודות הדורשות תשומת לב
+            </h3>
+            {actionable.length > centralFindings.length && (
+              <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>
+                מוצגים {centralFindings.length} מתוך {actionable.length} · המלא בסיכום המנהלים
+              </span>
+            )}
+          </div>
+          {centralFindings.length === 0 ? (
+            <p style={{ fontSize: 14, color: 'var(--color-text-tertiary)' }}>
+              {completeness.complete ? 'לא נמצאו ממצאים הדורשים בדיקה' : 'לא עלו ממצאים — אך הבדיקה חלקית בשל מידע חסר (פירוט למטה).'}
+            </p>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 12 }}>
+              {centralFindings.map((f) => (
+                <FindingCard key={f.id} finding={f} />
+              ))}
+            </div>
+          )}
+          {!completeness.complete && (
+            <Card padding={16} style={{ marginTop: 16, background: 'var(--neutral-50)' }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: 6 }}>שלמות הנתונים</div>
+              <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+                {completeness.missing.map((m, i) => (
+                  <li key={i} style={{ fontSize: 12, color: 'var(--color-text-tertiary)', display: 'flex', gap: 6 }}>
+                    <span style={{ color: 'var(--neutral-300)' }}>•</span>
+                    {m}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+        </section>
+
+        {/* Distribution */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 16, marginBottom: 24 }}>
+          <PieChartCard title="פיזור לפי סוג מוצר" data={byProduct} onSliceClick={(key) => setSlice({ kind: 'product', key })} />
+          <PieChartCard title="פיזור לפי חברה מנהלת" data={byCompany} onSliceClick={(key) => setSlice({ kind: 'company', key })} />
+        </div>
+
+        {slice && (
+          <SliceDrawer selection={slice} policies={policies} portfolioTotal={totalAssets} onClose={() => setSlice(null)} />
+        )}
+
+        {/* Returns */}
+        <section style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 12px' }}>תשואות</h3>
+          <ReturnsTable policies={policies} treasuryFunds={supp.treasuryFunds} />
         </section>
       </div>
     </>
