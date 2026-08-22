@@ -14,6 +14,7 @@ import {
   type LogicParam,
 } from '../config/logicConfig'
 import { applyThresholds, cloneThresholds, DEFAULT_THRESHOLDS, type ThresholdValues } from '../config/thresholds'
+import { cloneHealthWeights, HEALTH_DIMENSIONS, type HealthDimensionKey } from '../config/healthWeights'
 
 const PRODUCT_TABS: ProductType[] = ['pension', 'managers', 'life', 'incomeProtection', 'gemel', 'gemelInvestment', 'education']
 
@@ -24,7 +25,11 @@ const SEVERITY_STYLE: Record<FindingSeverity, { label: string; bg: string; color
 }
 
 function cloneConfig(c: LogicConfig): LogicConfig {
-  return { thresholds: cloneThresholds(c.thresholds), disabledLogics: [...c.disabledLogics] }
+  return {
+    thresholds: cloneThresholds(c.thresholds),
+    disabledLogics: [...c.disabledLogics],
+    healthWeights: cloneHealthWeights(c.healthWeights),
+  }
 }
 
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
@@ -91,6 +96,13 @@ export default function LogicEditorPage() {
       marketFees[pt] = { ...cur, [field]: n !== null && Number.isFinite(n) ? n : null }
       return { ...c, thresholds: { ...c.thresholds, marketFees } }
     })
+    setSaved(false)
+  }
+  const weightSum = Math.round(Object.values(cfg.healthWeights).reduce((s, n) => s + (n || 0), 0))
+
+  function setWeight(key: HealthDimensionKey, value: string) {
+    const n = value.trim() === '' ? 0 : parseFloat(value)
+    setCfg((c) => ({ ...c, healthWeights: { ...c.healthWeights, [key]: Number.isFinite(n) && n >= 0 ? n : 0 } }))
     setSaved(false)
   }
   function toggleLogic(id: string, enabled: boolean) {
@@ -167,6 +179,39 @@ export default function LogicEditorPage() {
           />
         ))}
       </div>
+
+      {/* Health-score weights */}
+      <Card style={{ marginTop: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>מדד</span>
+          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)' }}>מדד בריאות התיק — משקלים</h3>
+          <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 9px', borderRadius: 'var(--radius-full)', background: 'var(--teal-50)', color: 'var(--teal-700)' }}>
+            סה״כ {weightSum}%
+          </span>
+        </div>
+        <p style={{ margin: '6px 0 0', fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+          המדד הוא ממוצע משוקלל של הממדים למטה (0–100). לא חובה שהמשקלים יסתכמו ל־100 — הם מנורמלים אוטומטית,
+          וממד ללא נתונים יורד מהחישוב.
+        </p>
+        <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 12 }}>
+          {HEALTH_DIMENSIONS.map((d) => (
+            <label key={d.key} style={{ fontSize: 13 }}>
+              <span style={{ display: 'block', fontSize: 11, color: 'var(--color-text-tertiary)', marginBottom: 4 }}>
+                {d.label} <span style={{ opacity: 0.7 }}>(%)</span>
+              </span>
+              <input
+                type="number"
+                step="any"
+                min="0"
+                value={String(cfg.healthWeights[d.key] ?? '')}
+                onChange={(e) => setWeight(d.key, e.target.value)}
+                style={{ width: '100%', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border-base)', padding: '8px 10px', fontSize: 13, fontFamily: 'var(--font-mono)', background: '#fff' }}
+              />
+              <span style={{ display: 'block', fontSize: 10.5, color: 'var(--color-text-tertiary)', marginTop: 4 }}>{d.hint}</span>
+            </label>
+          ))}
+        </div>
+      </Card>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 24 }}>
         <button
