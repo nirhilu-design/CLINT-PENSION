@@ -7,7 +7,7 @@ import FindingCard from '../components/FindingCard'
 import ReturnsTable from '../components/ReturnsTable'
 import ReplacementGauge from '../components/ReplacementGauge'
 import ExposureAnalysis from '../components/ExposureAnalysis'
-import Card, { CardHeader } from '../components/ds/Card'
+import Card from '../components/ds/Card'
 import { computeExposure } from '../services/exposureService'
 import { sortFindings } from '../engines/findingPriority'
 import { assessCompleteness } from '../services/completenessService'
@@ -25,6 +25,7 @@ import {
   Umbrella,
   HelpCircle,
   User,
+  ChevronDown,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -191,6 +192,7 @@ export default function DashboardPage() {
 
   const [slice, setSlice] = useState<SliceSelection | null>(null)
   const [compact, setCompact] = useState(false)
+  const [detailsOpen, setDetailsOpen] = useState(false)
 
   // Sticky compact KPI bar once the main area is scrolled past the hero
   useEffect(() => {
@@ -331,17 +333,51 @@ export default function DashboardPage() {
       </div>
 
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 32px 48px' }}>
-        {/* Client details */}
-        <Card style={{ marginBottom: 24 }}>
-          <CardHeader icon={<User size={17} />} title="פרטי לקוח" />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 16 }}>
-            {clientDetails.map((d) => (
-              <div key={d.label}>
-                <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>{d.label}</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-primary)', marginTop: 3 }}>{d.value}</div>
-              </div>
-            ))}
-          </div>
+        {/* Client details — collapsible */}
+        <Card style={{ marginBottom: 24 }} padding={0}>
+          <button
+            onClick={() => setDetailsOpen((v) => !v)}
+            aria-expanded={detailsOpen}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '16px 20px',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              textAlign: 'right',
+            }}
+          >
+            <span style={{ width: 34, height: 34, borderRadius: 'var(--radius-md)', background: 'var(--clint-50)', display: 'grid', placeItems: 'center', flexShrink: 0, color: 'var(--clint-600)' }}>
+              <User size={17} />
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)' }}>פרטי לקוח</div>
+              {!detailsOpen && (
+                <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {clientDetails.filter((d) => ['תעודת זהות', 'תאריך לידה', 'גיל פרישה יעד'].includes(d.label)).map((d) => d.value).join(' · ')}
+                </div>
+              )}
+            </div>
+            <ChevronDown
+              size={18}
+              color="var(--color-text-tertiary)"
+              style={{ flexShrink: 0, transform: detailsOpen ? 'rotate(180deg)' : 'none', transition: 'transform 180ms var(--ease-out)' }}
+            />
+          </button>
+          {detailsOpen && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 16, padding: '0 20px 20px' }}>
+              {clientDetails.map((d) => (
+                <div key={d.label}>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>{d.label}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-primary)', marginTop: 3 }}>{d.value}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
 
         {(totalPensionWithDeposits > 0 || totalPensionWithoutDeposits > 0) && (
