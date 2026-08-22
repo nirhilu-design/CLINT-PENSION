@@ -1,6 +1,8 @@
 import { Shield, LayoutDashboard, FileText, Briefcase, SlidersHorizontal, RefreshCw } from 'lucide-react'
 import { useApp, type Step } from '../hooks/useAppState'
 import type { AppAction } from '../hooks/useAppState'
+import HealthMeter from './HealthMeter'
+import { computeHealthScore } from '../services/healthScoreService'
 
 type NavItem = {
   label: string
@@ -28,8 +30,11 @@ function initials(name: string): string {
 
 export default function Sidebar() {
   const { state, dispatch } = useApp()
-  const client = state.analysis?.client
-  if (!client) return null
+  const analysis = state.analysis
+  const client = analysis?.client
+  if (!analysis || !client) return null
+
+  const health = computeHealthScore(analysis, state.logicConfig.healthWeights)
 
   return (
     <aside
@@ -67,6 +72,11 @@ export default function Sidebar() {
           <Shield size={16} color="#fff" />
         </span>
         <span style={{ color: '#fff', fontWeight: 800, fontSize: 16, letterSpacing: '-0.01em' }}>clint</span>
+      </div>
+
+      {/* Portfolio health */}
+      <div style={{ padding: '14px 12px 4px' }}>
+        <HealthMeter health={health} />
       </div>
 
       {/* Nav */}

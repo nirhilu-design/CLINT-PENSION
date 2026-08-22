@@ -45,11 +45,12 @@ function fixture({ clientId = '100000009', clientId2 = '', sugMutzar = '2' } = {
     <PirteiKisuiBeMutzar><SUG-KISUY-BITOCHI>8</SUG-KISUY-BITOCHI><SCHUM-BITUACH>12345.00</SCHUM-BITUACH></PirteiKisuiBeMutzar>
   </ZihuiKisui></Kisuim>
   <Mutav><SUG-ZIHUY-MUTAV>1</SUG-ZIHUY-MUTAV><SHEM-PRATI-MUTAV>דנה</SHEM-PRATI-MUTAV><SHEM-MISHPACHA-MUTAV>כהן</SHEM-MISHPACHA-MUTAV><ACHUZ-MUTAV>60.00</ACHUZ-MUTAV></Mutav>
+  <Mutav><SUG-ZIHUY-MUTAV>1</SUG-ZIHUY-MUTAV><SHEM-PRATI-MUTAV>דנה</SHEM-PRATI-MUTAV><SHEM-MISHPACHA-MUTAV>כהן</SHEM-MISHPACHA-MUTAV><ACHUZ-MUTAV>60.00</ACHUZ-MUTAV></Mutav>
   <Mutav><SUG-ZIHUY-MUTAV>3</SUG-ZIHUY-MUTAV><ACHUZ-MUTAV>40.00</ACHUZ-MUTAV></Mutav>
   <Mutav><SUG-ZIHUY-MUTAV>7</SUG-ZIHUY-MUTAV></Mutav>
   <PerutMasluleiHashkaa><SCHUM-TZVIRA-BAMASLUL>100000</SCHUM-TZVIRA-BAMASLUL><SHEM-MASLUL-HASHKAA>מסלול א</SHEM-MASLUL-HASHKAA><TSUA-NETO>9.5</TSUA-NETO></PerutMasluleiHashkaa>
   <PerutMasluleiHashkaa><SCHUM-TZVIRA-BAMASLUL>50000</SCHUM-TZVIRA-BAMASLUL><SHEM-MASLUL-HASHKAA>מסלול א</SHEM-MASLUL-HASHKAA></PerutMasluleiHashkaa>
-  <YitraLefiGilPrisha><GIL-PRISHA>67.00</GIL-PRISHA><TOTAL-CHISACHON-MITZTABER-TZAFUY>2000000.00</TOTAL-CHISACHON-MITZTABER-TZAFUY><TZVIRAT-CHISACHON-CHAZUYA-LELO-PREMIYOT>900000.00</TZVIRAT-CHISACHON-CHAZUYA-LELO-PREMIYOT><Kupot><Kupa><SCHUM-KITZVAT-ZIKNA>9000.00</SCHUM-KITZVAT-ZIKNA><KITZVAT-HODSHIT-TZFUYA>5000.00</KITZVAT-HODSHIT-TZFUYA></Kupa></Kupot></YitraLefiGilPrisha>
+  <YitraLefiGilPrisha><GIL-PRISHA>67.00</GIL-PRISHA><MEKADEM-MOVTACH-LEPRISHA>200.00</MEKADEM-MOVTACH-LEPRISHA><TOTAL-CHISACHON-MITZTABER-TZAFUY>2000000.00</TOTAL-CHISACHON-MITZTABER-TZAFUY><TZVIRAT-CHISACHON-CHAZUYA-LELO-PREMIYOT>900000.00</TZVIRAT-CHISACHON-CHAZUYA-LELO-PREMIYOT><Kupot><Kupa><SCHUM-KITZVAT-ZIKNA>9000.00</SCHUM-KITZVAT-ZIKNA><KITZVAT-HODSHIT-TZFUYA>5000.00</KITZVAT-HODSHIT-TZFUYA></Kupa></Kupot></YitraLefiGilPrisha>
 </HeshbonOPolisa></HeshbonotOPolisot></Mutzar>
 ${secondMutzar}
 </Mutzarim></YeshutYatzran></Mimshak>`
@@ -100,6 +101,24 @@ describe('parsePensionXml', () => {
     expect(p.coverages.some((c) => c.amount === 12345)).toBe(false)
   })
 
+  it('derives the אכ"ע insured salary from benefit ÷ rate (insurance side)', () => {
+    // 9000 monthly benefit at 75% → insured salary 12,000
+    const oka = p.coverages.find((c) => c.type === 'disability' && c.name === 'אכ"ע')
+    expect(oka!.coveredSalary).toBe(12000)
+  })
+
+  it('normalizes a fractional ACHUZ-MESACHAR (0.75 → 75%) and still derives salary', () => {
+    const frac = fixture().replace(
+      '<ACHUZ-MESACHAR>75.00</ACHUZ-MESACHAR>',
+      '<ACHUZ-MESACHAR>0.75</ACHUZ-MESACHAR>',
+    )
+    const oka = parsePensionXml(frac, 'f.xml').policies[0].coverages.find(
+      (c) => c.type === 'disability' && c.name === 'אכ"ע',
+    )
+    expect(oka!.percent).toBe(75)
+    expect(oka!.coveredSalary).toBe(12000)
+  })
+
   it('maps SUG-MUTZAR across all product codes', () => {
     // 9 = קופת גמל להשקעה → gemelInvestment (previously fell through to unknown)
     expect(parsePensionXml(fixture({ sugMutzar: '9' }), 'f.xml').policies[0].productType).toBe(
@@ -115,12 +134,29 @@ describe('parsePensionXml', () => {
     )
   })
 
-  it('parses beneficiaries with correct share and identity type, skipping "none set"', () => {
-    // ACHUZ-MUTAV (not ACHUZ-HALUKA); SUG-ZIHUY-MUTAV identity type, not kinship
+  it('parses beneficiaries with correct share and identity type, skipping "none set" and deduping repeats', () => {
+    // ACHUZ-MUTAV (not ACHUZ-HALUKA); SUG-ZIHUY-MUTAV identity type, not kinship.
+    // The fixture repeats the "דנה כהן 60%" Mutav; identical rows collapse to one.
     expect(p.beneficiaries).toEqual([
       { name: 'דנה כהן', relation: 'פרטי', allocationPercent: 60 },
       { name: null, relation: 'יורשים חוקיים', allocationPercent: 40 },
     ])
+  })
+
+  it('ignores a reported coefficient on policies opened from 2013 (no guaranteed factor)', () => {
+    // Fixture opens 2019-12-22 and reports MEKADEM-MOVTACH-LEPRISHA=200 — an
+    // illustrative coefficient, not a guaranteed one, since guaranteed factors
+    // were abolished for policies opened from Jan 2013.
+    expect(p.hasGuaranteedFactor).toBe(false)
+  })
+
+  it('keeps the guaranteed factor on policies opened before 2013', () => {
+    const preCutoff = fixture().replace(
+      '<TAARICH-HITZTARFUT-MUTZAR>20191222</TAARICH-HITZTARFUT-MUTZAR>',
+      '<TAARICH-HITZTARFUT-MUTZAR>20101222</TAARICH-HITZTARFUT-MUTZAR>',
+    )
+    const { policies: pre } = parsePensionXml(preCutoff, 'test.xml')
+    expect(pre[0].hasGuaranteedFactor).toBe(true)
   })
 
   it('aggregates monthly deposits across contribution types', () => {

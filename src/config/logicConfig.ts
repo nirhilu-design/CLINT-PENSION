@@ -4,6 +4,7 @@
 
 import type { FindingSeverity, ProductType } from '../models/types'
 import { DEFAULT_THRESHOLDS, cloneThresholds, type ThresholdValues } from './thresholds'
+import { DEFAULT_HEALTH_WEIGHTS, cloneHealthWeights, type HealthWeights } from './healthWeights'
 
 // A single editable numeric threshold, addressed by its flat key on ThresholdValues.
 export interface LogicParam {
@@ -60,17 +61,6 @@ export const LOGIC_CATALOG: LogicDef[] = [
     explanation:
       'מסכם את הקצבה החודשית הצפויה מהמוצרים הפעילים ובוחן את יחסה לשכר. אם הקצבה נמוכה מהיחס המינימלי לשכר — נפתחת הארה.',
     params: [{ key: 'pensionToSalaryMinRatio', label: 'יחס קצבה-לשכר מינימלי', unit: 'יחס' }],
-  },
-  {
-    id: 'investment',
-    label: 'תשואות והשקעה',
-    category: 'השקעות',
-    severity: 'attention',
-    condition: 'תשואה_נטו < בנצ׳מרק − סבילות',
-    products: [],
-    explanation:
-      'משווה את התשואה נטו המדווחת מול נתוני האוצר (בנצ׳מרק) ומול מדד שארפ. פער מתחת לסבילות מהבנצ׳מרק פותח הארה.',
-    params: [{ key: 'returnBelowBenchmarkTolerance', label: 'סבילות מתחת לבנצ׳מרק', unit: 'נק׳ אחוז' }],
   },
   {
     id: 'incomeProtection',
@@ -171,8 +161,13 @@ export const LOGIC_CATALOG: LogicDef[] = [
 export interface LogicConfig {
   thresholds: ThresholdValues
   disabledLogics: string[] // logic ids turned off
+  healthWeights: HealthWeights // weights of the portfolio health score
 }
 
 export function defaultLogicConfig(): LogicConfig {
-  return { thresholds: cloneThresholds(DEFAULT_THRESHOLDS), disabledLogics: [] }
+  return {
+    thresholds: cloneThresholds(DEFAULT_THRESHOLDS),
+    disabledLogics: [],
+    healthWeights: cloneHealthWeights(DEFAULT_HEALTH_WEIGHTS),
+  }
 }

@@ -5,12 +5,14 @@ import { formatCurrency, formatDate } from '../utils/format'
 import PieChartCard from '../components/PieChartCard'
 import FindingCard from '../components/FindingCard'
 import ReturnsTable from '../components/ReturnsTable'
-import PensionScenarioBar from '../components/PensionScenarioBar'
+import ReplacementGauge from '../components/ReplacementGauge'
 import ExposureAnalysis from '../components/ExposureAnalysis'
 import Card, { CardHeader } from '../components/ds/Card'
 import { computeExposure } from '../services/exposureService'
 import { sortFindings } from '../engines/findingPriority'
 import { assessCompleteness } from '../services/completenessService'
+import { effectiveSalary } from '../engines/engineTypes'
+import { PENSION_TO_SALARY_MIN_RATIO } from '../config/thresholds'
 import { useEffect, useState } from 'react'
 import SliceDrawer, { type SliceSelection } from '../components/SliceDrawer'
 import {
@@ -78,18 +80,72 @@ function HeroKpi({ label, value, sub }: { label: string; value: string; sub?: st
   )
 }
 
-function SnapshotTile({ label, value, sub, ok }: { label: string; value: string; sub: string; ok: boolean }) {
+type Status = 'good' | 'warn' | 'bad'
+
+const STATUS_META: Record<Status, { label: string; bg: string; color: string; fill: string }> = {
+  good: { label: 'קיים', bg: 'var(--color-success-bg)', color: 'var(--color-success-dark)', fill: 'var(--color-success)' },
+  warn: { label: 'חלקי', bg: 'var(--color-warning-bg)', color: 'var(--color-warning-dark)', fill: 'var(--color-warning)' },
+  bad: { label: 'פער', bg: 'var(--color-danger-bg)', color: 'var(--color-danger-dark)', fill: 'var(--color-danger)' },
+}
+
+function CoverageCard({
+  title,
+  status,
+  value,
+  note,
+  fill,
+  targetPct,
+  labels,
+}: {
+  title: string
+  status: Status
+  value: string
+  note: string
+  fill: number // 0–100
+  targetPct?: number
+  labels: [string, string]
+}) {
+  const m = STATUS_META[status]
   return (
-    <Card padding={16}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span style={{ width: 8, height: 8, borderRadius: '50%', background: ok ? 'var(--teal-500)' : 'var(--neutral-300)' }} />
-        <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-text-tertiary)' }}>{label}</span>
+    <Card padding={18}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+        <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--color-text-primary)' }}>{title}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 'var(--radius-full)', background: m.bg, color: m.color }}>
+          ● {m.label}
+        </span>
       </div>
-      <div style={{ marginTop: 4, fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-mono)', color: ok ? 'var(--color-text-primary)' : 'var(--neutral-400)' }}>
-        {value}
+      <div style={{ fontSize: 27, fontWeight: 800, margin: '13px 0 2px', color: 'var(--color-text-primary)', fontFamily: 'var(--font-mono)' }}>{value}</div>
+      <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>{note}</div>
+      <div style={{ marginTop: 14, height: 7, borderRadius: 5, background: 'var(--neutral-200)', position: 'relative' }}>
+        <span style={{ position: 'absolute', insetInlineEnd: 0, top: 0, bottom: 0, width: `${Math.max(0, Math.min(100, fill))}%`, borderRadius: 5, background: m.fill, display: 'block' }} />
+        {targetPct !== undefined && (
+          <span style={{ position: 'absolute', top: -3, bottom: -3, insetInlineEnd: `${targetPct}%`, width: 2, borderRadius: 2, background: 'var(--color-text-secondary)' }} />
+        )}
       </div>
-      <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 2 }}>{sub}</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 7, fontSize: 10.5, color: 'var(--color-text-tertiary)' }}>
+        <span>{labels[0]}</span>
+        <span>{labels[1]}</span>
+      </div>
     </Card>
+  )
+}
+
+function FindingBubbles({ gap, attention, info }: { gap: number; attention: number; info: number }) {
+  const bubbles: { n: number; label: string; color: string; bg: string }[] = [
+    { n: gap, label: 'פער', color: 'var(--color-danger)', bg: 'var(--color-danger-bg)' },
+    { n: attention, label: 'לבדיקה', color: 'var(--color-warning)', bg: 'var(--color-warning-bg)' },
+    { n: info, label: 'הארה', color: 'var(--accent-navy)', bg: 'var(--clint-50)' },
+  ].filter((b) => b.n > 0)
+  if (bubbles.length === 0) return <span style={{ fontSize: 11.5, color: 'var(--color-text-tertiary)' }}>אין ממצאים</span>
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+      {bubbles.map((b) => (
+        <span key={b.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '3px 8px 3px 4px', borderRadius: 'var(--radius-full)', background: b.bg, color: b.color }}>
+          <span style={{ width: 17, height: 17, borderRadius: '50%', display: 'grid', placeItems: 'center', background: b.color, color: '#fff', fontSize: 10.5, fontFamily: 'var(--font-mono)' }}>{b.n}</span>
+          {b.label}
+        </span>
+      ))}
+    </div>
   )
 }
 
@@ -105,7 +161,17 @@ export default function DashboardPage() {
     0,
   )
   const totalPensionWithoutDeposits = policies.reduce((s, p) => s + (p.expectedPensionWithoutDeposits ?? 0), 0)
+  const salary = effectiveSalary(policies, supp)
   const productTypes = new Set(policies.map((p) => p.productType))
+
+  const findingsByProduct = (t: ProductType) => {
+    const fs = findings.filter((f) => f.productType === t)
+    return {
+      gap: fs.filter((f) => f.severity === 'gap').length,
+      attention: fs.filter((f) => f.severity === 'attention').length,
+      info: fs.filter((f) => f.severity === 'info').length,
+    }
+  }
 
   const byProduct = PRODUCT_ORDER.filter((t) => productTypes.has(t))
     .map((t) => ({
@@ -279,7 +345,12 @@ export default function DashboardPage() {
         </Card>
 
         {(totalPensionWithDeposits > 0 || totalPensionWithoutDeposits > 0) && (
-          <PensionScenarioBar withDeposits={totalPensionWithDeposits} withoutDeposits={totalPensionWithoutDeposits} />
+          <ReplacementGauge
+            withDeposits={totalPensionWithDeposits}
+            withoutDeposits={totalPensionWithoutDeposits}
+            salary={salary}
+            target={PENSION_TO_SALARY_MIN_RATIO}
+          />
         )}
 
         <ExposureAnalysis exposure={computeExposure(policies, supp.treasuryAllocations)} />
@@ -322,37 +393,50 @@ export default function DashboardPage() {
           )}
         </section>
 
-        {/* Coverage snapshot */}
+        {/* Smart coverage cards */}
         <section style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 12px' }}>
-            כיסויים והפקדות במבט מהיר
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 }}>
-            <SnapshotTile
-              label="אובדן כושר עבודה"
-              value={ipPercents.length > 0 ? `${Math.max(...ipPercents).toFixed(0)}%` : 'לא נמצא'}
-              sub={ipPercents.length > 0 ? 'שיעור הכיסוי הגבוה בתיק' : 'לא אותר כיסוי'}
-              ok={ipPercents.length > 0}
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, margin: '0 0 12px', flexWrap: 'wrap' }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>כיסויים ביטוחיים — מול יעד</h2>
+            <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>כל כיסוי נמדד מול היעד המקובל, עם רמזור מצב</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 14 }}>
+            {(() => {
+              const ip = ipPercents.length > 0 ? Math.max(...ipPercents) : null
+              const ipStatus: Status = ip === null ? 'bad' : ip >= 73 ? 'good' : 'warn'
+              return (
+                <CoverageCard
+                  title="אובדן כושר עבודה"
+                  status={ipStatus}
+                  value={ip !== null ? `${ip.toFixed(0)}%` : '₪0'}
+                  note={ip !== null ? 'שיעור הכיסוי הגבוה בתיק' : 'לא אותר כיסוי אכ"ע'}
+                  fill={ip !== null ? Math.min(100, ip) : 3}
+                  targetPct={75}
+                  labels={['0%', 'יעד 75%']}
+                />
+              )
+            })()}
+            <CoverageCard
+              title="קצבת שאירים"
+              status={survivorsMonthly > 0 ? 'good' : 'bad'}
+              value={formatCurrency(survivorsMonthly)}
+              note={survivorsMonthly > 0 ? 'קצבה חודשית מקרן הפנסיה' : 'לא אותר כיסוי שאירים'}
+              fill={survivorsMonthly > 0 ? 100 : 3}
+              labels={['0', 'לחודש']}
             />
-            <SnapshotTile
-              label="קצבת שאירים"
-              value={survivorsMonthly > 0 ? formatCurrency(survivorsMonthly) : 'לא נמצא'}
-              sub={survivorsMonthly > 0 ? 'לחודש, מקרן הפנסיה' : 'לא אותר כיסוי שאירים'}
-              ok={survivorsMonthly > 0}
-            />
-            <SnapshotTile
-              label="ביטוח חיים"
-              value={deathLump > 0 ? formatCurrency(deathLump) : 'לא נמצא'}
-              sub={deathLump > 0 ? 'סכום חד-פעמי למקרה מוות' : 'לא אותר ביטוח למקרה מוות'}
-              ok={deathLump > 0}
-            />
-            <SnapshotTile
-              label="הפקדה אחרונה"
-              value={lastDeposit ?? 'לא דווח'}
-              sub={lastDeposit ? 'החודש האחרון שנקלט בתיק' : 'לא דווחו הפקדות'}
-              ok={!!lastDeposit}
+            <CoverageCard
+              title="ביטוח חיים (מוות)"
+              status={deathLump > 0 ? 'good' : 'bad'}
+              value={formatCurrency(deathLump)}
+              note={deathLump > 0 ? 'סכום חד-פעמי למקרה מוות' : 'לא אותר ביטוח למקרה מוות'}
+              fill={deathLump > 0 ? 100 : 3}
+              labels={['0', 'סכום ביטוח']}
             />
           </div>
+          {lastDeposit && (
+            <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', margin: '10px 2px 0' }}>
+              הפקדה אחרונה שנקלטה בתיק: {lastDeposit}
+            </p>
+          )}
         </section>
 
         {/* Distribution */}
@@ -373,7 +457,18 @@ export default function DashboardPage() {
 
         {/* Products */}
         <section>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 12px' }}>מוצרים</h2>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, margin: '0 0 12px', flexWrap: 'wrap' }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>מוצרים בתיק</h2>
+            <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>לחיצה על מוצר פותחת את הפירוט</span>
+            <div style={{ display: 'flex', gap: 12, marginInlineStart: 'auto', flexWrap: 'wrap' }}>
+              {([['var(--color-danger)', 'פער'], ['var(--color-warning)', 'לבדיקה'], ['var(--accent-navy)', 'הארה']] as const).map(([c, l]) => (
+                <span key={l} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--color-text-tertiary)' }}>
+                  <span style={{ width: 9, height: 9, borderRadius: '50%', background: c }} />
+                  {l}
+                </span>
+              ))}
+            </div>
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 16 }}>
             {PRODUCT_ORDER.map((t) => {
               const productPolicies = policies.filter((p) => p.productType === t)
@@ -424,12 +519,17 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   {has && (
-                    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 12 }}>
-                      <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-text-primary)' }}>
-                        {formatCurrency(value)}
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 12 }}>
+                        <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-text-primary)' }}>
+                          {formatCurrency(value)}
+                        </div>
+                        <span style={{ fontSize: 12, color: 'var(--clint-600)' }}>לפירוט ←</span>
                       </div>
-                      <span style={{ fontSize: 12, color: 'var(--clint-600)' }}>לפירוט ←</span>
-                    </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 12, paddingTop: 11, borderTop: '1px solid var(--color-border-base)' }}>
+                        <FindingBubbles {...findingsByProduct(t)} />
+                      </div>
+                    </>
                   )}
                 </button>
               )

@@ -2,10 +2,13 @@
 // Optional fields never fail the analysis.
 
 import type { Engine } from './engineTypes'
-import { makeFinding, salaryFromPolicies } from './engineTypes'
+import { makeFinding, salaryFromPolicies, fullSalaryReference } from './engineTypes'
 import { isBlockedByStopIssue } from './stopIssueEngine'
 import { formatCurrency } from '../utils/format'
-import { SALARY_CROSSCHECK_DIFF_RATIO } from '../config/thresholds'
+import {
+  SALARY_CROSSCHECK_DIFF_RATIO,
+  EDUCATION_FUND_MONTHLY_SALARY_CAP,
+} from '../config/thresholds'
 
 export const dataQualityEngine: Engine = ({ policies, supplementary }) => {
   const findings = []
@@ -32,6 +35,32 @@ export const dataQualityEngine: Engine = ({ policies, supplementary }) => {
           basedOn: 'השכר שהוזן בטופס השאלות מול SACHAR-POLISA הגבוה בקבצי המסלקה',
         }),
       )
+    }
+  }
+
+  // Confidence check on the summed pension salary: a קרן השתלמות deposit base (below
+  // the מוטבת cap) or an אכע insured salary is an independent reference for the full
+  // salary. A material gap hints the per-product sum may be incomplete (e.g. a
+  // product missing from the files, or a salary reported on only part of the wage).
+  if (!statedSalary && xmlSalary && xmlSalary > 0) {
+    const reference = fullSalaryReference(policies, EDUCATION_FUND_MONTHLY_SALARY_CAP)
+    if (reference !== null && reference > xmlSalary) {
+      const diffRatio = (reference - xmlSalary) / xmlSalary
+      if (diffRatio > SALARY_CROSSCHECK_DIFF_RATIO) {
+        findings.push(
+          makeFinding({
+            category: 'dataQuality',
+            level: 'client',
+            severity: 'info',
+            title: 'סכום השכר המבוטח נמוך מנתון ההשוואה',
+            description:
+              `חיבור השכר המבוטח מהמוצרים הפנסיוניים (${formatCurrency(xmlSalary)}) נמוך ` +
+              `מנתון ההשוואה לשכר המלא (${formatCurrency(reference)}, מקרן השתלמות/אכ"ע). ` +
+              'ייתכן שחסר מוצר בקבצים או שהשכר מדווח על חלק מהשכר בלבד — כדאי לאמת את השכר המלא.',
+            basedOn: 'סכום SACHAR-POLISA במוצרים הפנסיוניים מול בסיס ההפקדה בקרן השתלמות/אכ"ע',
+          }),
+        )
+      }
     }
   }
 

@@ -3,7 +3,6 @@ import type { Finding } from '../models/types'
 import { stopIssueEngine } from './stopIssueEngine'
 import { costEngine } from './costEngine'
 import { retirementEngine } from './retirementEngine'
-import { investmentEngine } from './investmentEngine'
 import { incomeProtectionEngine } from './incomeProtectionEngine'
 import { deathPictureEngine } from './deathPictureEngine'
 import { dataQualityEngine } from './dataQualityEngine'
@@ -19,7 +18,6 @@ const engines: { id: string; engine: Engine }[] = [
   { id: 'managersGeneration', engine: stopIssueEngine },
   { id: 'cost', engine: costEngine },
   { id: 'retirement', engine: retirementEngine },
-  { id: 'investment', engine: investmentEngine },
   { id: 'incomeProtection', engine: incomeProtectionEngine },
   { id: 'deathPicture', engine: deathPictureEngine },
   { id: 'dataQuality', engine: dataQualityEngine },

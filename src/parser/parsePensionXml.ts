@@ -189,12 +189,27 @@ function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
     for (const cover of kisui.querySelectorAll('PirteiKisuiBeMutzar')) {
       const type = coverageTypeFromKisuyBituchi(getText(cover, 'SUG-KISUY-BITOCHI'))
       if (type === null) continue // savings / premium-waiver rows are not risk covers
+      const amount = getNumber(cover, 'SCHUM-BITUACH')
+      // ACHUZ-MESACHAR is the אכ"ע rate of salary. Per the מבנה אחיד it is a decimal
+      // fraction (0.75), but many issuers report a whole percent (75) — normalize
+      // ≤1 ⇒ ×100. For death it is a salary multiple, so it is left untouched.
+      const rawPercent = getNumber(cover, 'ACHUZ-MESACHAR')
+      const percent =
+        type === 'disability' && rawPercent !== null && rawPercent <= 1
+          ? rawPercent * 100
+          : rawPercent
+      // The insurance side carries no explicit insured salary (SACHAR-KOVEA exists
+      // only on the pension side), so derive it: monthly benefit ÷ rate.
+      const coveredSalary =
+        type === 'disability' && amount !== null && percent !== null && percent > 0
+          ? Math.round(amount / (percent / 100))
+          : null
       coverages.push({
         type,
         name,
-        amount: getNumber(cover, 'SCHUM-BITUACH'),
-        percent: getNumber(cover, 'ACHUZ-MESACHAR'),
-        coveredSalary: null,
+        amount,
+        percent,
+        coveredSalary,
         cost: getNumber(cover, 'DMEI-BITUAH-LETASHLUM-BAPOAL'),
         status: coverageStatusFromEndDate(getText(cover, 'TAARICH-TOM-KISUY')),
         policyNumber,
@@ -227,6 +242,10 @@ function parseContributions(heshbon: Element): Contribution[] {
 
 function parseBeneficiaries(heshbon: Element): Beneficiary[] {
   const beneficiaries: Beneficiary[] = []
+  // The same beneficiary is often repeated across sub-accounts/tracks (one Mutav
+  // block each), producing identical rows. Collapse rows that match on identity
+  // and allocation so the same beneficiary/percent is shown only once.
+  const seen = new Set<string>()
   for (const mutav of heshbon.querySelectorAll('Mutav')) {
     const first = getText(mutav, 'SHEM-PRATI-MUTAV')
     const last = getText(mutav, 'SHEM-MISHPACHA-MUTAV')
@@ -238,11 +257,11 @@ function parseBeneficiaries(heshbon: Element): Beneficiary[] {
     const name = [first, last].filter(Boolean).join(' ') || null
     const relation = relationCode ? (beneficiaryRelationLabels[relationCode] ?? relationCode) : null
     if (name || relation) {
-      beneficiaries.push({
-        name,
-        relation,
-        allocationPercent: getNumber(mutav, 'ACHUZ-MUTAV'),
-      })
+      const allocationPercent = getNumber(mutav, 'ACHUZ-MUTAV')
+      const key = `${name ?? ''}|${relation ?? ''}|${allocationPercent ?? ''}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      beneficiaries.push({ name, relation, allocationPercent })
     }
   }
   return beneficiaries
@@ -395,7 +414,13 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
         beneficiaries: parseBeneficiaries(heshbon),
         managersGeneration:
           productType === 'managers' ? classifyManagersGeneration(openDate) : null,
-        hasGuaranteedFactor: (getNumber(yitra, 'MEKADEM-MOVTACH-LEPRISHA') ?? 0) > 0,
+        // Guaranteed annuity coefficients were abolished for policies opened from
+        // Jan 2013. Insurers still populate MEKADEM-MOVTACH-LEPRISHA with an
+        // illustrative coefficient on newer policies, so a positive value alone
+        // isn't proof — a policy opened in 2013+ cannot carry a guaranteed factor.
+        hasGuaranteedFactor:
+          (getNumber(yitra, 'MEKADEM-MOVTACH-LEPRISHA') ?? 0) > 0 &&
+          (openDate === null || openDate < '2013-01-01'),
         reportDate: parseDate(getText(heshbon, 'TAARICH-NECHONUT')),
         lastDepositMonth,
         lastDepositTotal,
