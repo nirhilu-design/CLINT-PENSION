@@ -17,19 +17,26 @@ export type Engine = (input: EngineInput) => Finding[]
 const PENSION_SALARY_PRODUCTS: ProductType[] = ['pension', 'managers', 'gemel']
 
 /**
- * Full monthly salary estimated from the XML by SUMMING the insured salary across
+ * Full monthly salary estimated from the XML by summing the insured salary across
  * the active pension-savings products (pension + managers + gemel). A person's
- * salary is split between products, so summing the per-product insured salaries
- * reconstructs the full salary; taking the max would under-count a split. Products
- * with no reported salary base (coveredSalary null/0 — e.g. a חיסכון-לכל-ילד gemel)
- * drop out naturally and never inflate the total.
+ * salary can be split between products, so summing reconstructs the full salary;
+ * taking the max would under-count a split.
+ *
+ * BUT products very often each echo the FULL salary rather than a split portion
+ * (e.g. a pension fund and a managers policy both reporting 14,442). Summing those
+ * would double the salary and, for instance, make an אכ"ע that covers the real
+ * salary look like a gap. So identical insured-salary values are collapsed — an
+ * echo counts once — while genuinely different values (a real split, 9,000 +
+ * 5,000) still sum. Products with no salary base (null/0) drop out.
  */
 export function salaryFromPolicies(policies: Policy[]): number | null {
   const salaries = policies
     .filter((p) => p.status === 'active' && PENSION_SALARY_PRODUCTS.includes(p.productType))
     .map((p) => p.coveredSalary)
     .filter((s): s is number => s !== null && s > 0)
-  return salaries.length ? salaries.reduce((sum, s) => sum + s, 0) : null
+  if (!salaries.length) return null
+  const distinct = [...new Set(salaries.map((s) => Math.round(s)))]
+  return distinct.reduce((sum, s) => sum + s, 0)
 }
 
 /**

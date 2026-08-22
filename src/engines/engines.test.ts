@@ -271,6 +271,20 @@ describe('incomeProtectionEngine', () => {
     )
     expect(out.some((x) => x.title.includes('נמוך מהיעד'))).toBe(false)
   })
+
+  it('does not flag a salary gap when the אכ"ע covers the salary echoed across products', () => {
+    // Managers אכ"ע insures the full 14,000, and a pension fund echoes the same
+    // 14,000. The salary must collapse to 14,000 (not double to 28,000), so the
+    // covered-salary check must NOT fire.
+    const fullCover = { ...disabilityCover, percent: 75, coveredSalary: 14000 }
+    const out = incomeProtectionEngine(
+      input([
+        makePolicy({ policyNumber: 'MNG', productType: 'managers', coveredSalary: 14000, coverages: [fullCover] }),
+        makePolicy({ policyNumber: 'PEN', productType: 'pension', coveredSalary: 14000 }),
+      ]),
+    )
+    expect(out.some((x) => x.title.includes('פער בין השכר המבוטח'))).toBe(false)
+  })
 })
 
 describe('dataQualityEngine salary cross-check', () => {
@@ -313,6 +327,14 @@ describe('salary from pension products', () => {
       p({ policyNumber: 'KID', productType: 'gemel', coveredSalary: null }),
     ])
     expect(sum).toBe(9000)
+  })
+
+  it('collapses identical salaries echoed across products (no double-count)', () => {
+    const sum = salaryFromPolicies([
+      p({ policyNumber: 'PEN', productType: 'pension', coveredSalary: 14442 }),
+      p({ policyNumber: 'MNG', productType: 'managers', coveredSalary: 14442 }),
+    ])
+    expect(sum).toBe(14442)
   })
 
   it('ignores inactive products in the sum', () => {
