@@ -2,11 +2,7 @@ import { useApp } from '../hooks/useAppState'
 import { productTypeLabels } from '../models/labels'
 import type { ProductType } from '../models/types'
 import { formatCurrency, formatDate } from '../utils/format'
-import PieChartCard from '../components/PieChartCard'
-import FindingCard from '../components/FindingCard'
-import ReturnsTable from '../components/ReturnsTable'
 import ReplacementGauge from '../components/ReplacementGauge'
-import ExposureAnalysis from '../components/ExposureAnalysis'
 import Card from '../components/ds/Card'
 import { computeExposure } from '../services/exposureService'
 import { sortFindings } from '../engines/findingPriority'
@@ -14,7 +10,6 @@ import { assessCompleteness } from '../services/completenessService'
 import { effectiveSalary } from '../engines/engineTypes'
 import { PENSION_TO_SALARY_MIN_RATIO } from '../config/thresholds'
 import { useEffect, useState } from 'react'
-import SliceDrawer, { type SliceSelection } from '../components/SliceDrawer'
 import {
   Landmark,
   Briefcase,
@@ -177,7 +172,6 @@ export default function DashboardPage() {
   )
   const totalPensionWithoutDeposits = policies.reduce((s, p) => s + (p.expectedPensionWithoutDeposits ?? 0), 0)
   const salary = effectiveSalary(policies, supp)
-  const productTypes = new Set(policies.map((p) => p.productType))
 
   const findingsByProduct = (t: ProductType) => {
     const fs = findings.filter((f) => f.productType === t)
@@ -188,23 +182,6 @@ export default function DashboardPage() {
     }
   }
 
-  const byProduct = PRODUCT_ORDER.filter((t) => productTypes.has(t))
-    .map((t) => ({
-      name: productTypeLabels[t],
-      key: t,
-      value: policies.filter((p) => p.productType === t).reduce((s, p) => s + (p.currentValue ?? 0), 0),
-    }))
-    .filter((d) => d.value > 0)
-
-  const byCompany = [...new Set(policies.map((p) => p.managingCompany).filter(Boolean))]
-    .map((c) => ({
-      name: c!,
-      key: c!,
-      value: policies.filter((p) => p.managingCompany === c).reduce((s, p) => s + (p.currentValue ?? 0), 0),
-    }))
-    .filter((d) => d.value > 0)
-
-  const [slice, setSlice] = useState<SliceSelection | null>(null)
   const [compact, setCompact] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
 
@@ -218,7 +195,6 @@ export default function DashboardPage() {
   }, [])
 
   const actionable = sortFindings(findings.filter((f) => f.severity !== 'info'))
-  const centralFindings = actionable.slice(0, 6)
   const gapCount = actionable.filter((f) => f.severity === 'gap').length
   const attentionCount = actionable.filter((f) => f.severity === 'attention').length
   const completeness = assessCompleteness(analysis)
@@ -573,68 +549,6 @@ export default function DashboardPage() {
               )
             })}
           </div>
-        </section>
-
-        {/* ===== Detailed analysis ===== */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '36px 0 20px' }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>ניתוח מפורט</h2>
-          <div style={{ flex: 1, height: 1, background: 'var(--color-border-base)' }} />
-        </div>
-
-        <ExposureAnalysis exposure={exposure} />
-
-        {/* Findings */}
-        <section style={{ margin: '24px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
-              נקודות הדורשות תשומת לב
-            </h3>
-            {actionable.length > centralFindings.length && (
-              <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>
-                מוצגים {centralFindings.length} מתוך {actionable.length} · המלא בסיכום המנהלים
-              </span>
-            )}
-          </div>
-          {centralFindings.length === 0 ? (
-            <p style={{ fontSize: 14, color: 'var(--color-text-tertiary)' }}>
-              {completeness.complete ? 'לא נמצאו ממצאים הדורשים בדיקה' : 'לא עלו ממצאים — אך הבדיקה חלקית בשל מידע חסר (פירוט למטה).'}
-            </p>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 12 }}>
-              {centralFindings.map((f) => (
-                <FindingCard key={f.id} finding={f} />
-              ))}
-            </div>
-          )}
-          {!completeness.complete && (
-            <Card padding={16} style={{ marginTop: 16, background: 'var(--neutral-50)' }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: 6 }}>שלמות הנתונים</div>
-              <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-                {completeness.missing.map((m, i) => (
-                  <li key={i} style={{ fontSize: 12, color: 'var(--color-text-tertiary)', display: 'flex', gap: 6 }}>
-                    <span style={{ color: 'var(--neutral-300)' }}>•</span>
-                    {m}
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          )}
-        </section>
-
-        {/* Distribution */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 16, marginBottom: 24 }}>
-          <PieChartCard title="פיזור לפי סוג מוצר" data={byProduct} onSliceClick={(key) => setSlice({ kind: 'product', key })} />
-          <PieChartCard title="פיזור לפי חברה מנהלת" data={byCompany} onSliceClick={(key) => setSlice({ kind: 'company', key })} />
-        </div>
-
-        {slice && (
-          <SliceDrawer selection={slice} policies={policies} portfolioTotal={totalAssets} onClose={() => setSlice(null)} />
-        )}
-
-        {/* Returns */}
-        <section style={{ marginBottom: 24 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 12px' }}>תשואות</h3>
-          <ReturnsTable policies={policies} treasuryFunds={supp.treasuryFunds} />
         </section>
       </div>
     </>
