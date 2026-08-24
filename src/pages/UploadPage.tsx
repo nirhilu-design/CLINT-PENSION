@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useApp } from '../hooks/useAppState'
-import { parseFiles, XmlParseError } from '../services/analysisService'
+import { parseFiles, buildAnalysis, emptySupplementary, XmlParseError } from '../services/analysisService'
 import StepsIndicator from '../components/StepsIndicator'
 import Spinner from '../components/Spinner'
 
@@ -18,7 +18,11 @@ export default function UploadPage() {
         [...fileList].map(async (f) => ({ name: f.name, text: await f.text() })),
       )
       const parsed = parseFiles(files)
+      // Flip the old flow: go straight to the dashboard with an immediate
+      // analysis. Client-context questions are refined afterwards, in context.
+      const analysis = buildAnalysis(parsed, emptySupplementary(), state.logicConfig)
       dispatch({ type: 'FILES_PARSED', parsedFiles: parsed })
+      dispatch({ type: 'ANALYSIS_READY', analysis })
     } catch (e) {
       const message =
         e instanceof XmlParseError ? e.message : 'אירעה שגיאה בלתי צפויה בקריאת הקבצים'

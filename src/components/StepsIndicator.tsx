@@ -1,6 +1,6 @@
-const steps = ['העלאת קבצים', 'מידע משלים', 'ניתוח']
+const steps = ['העלאת קבצים', 'ניתוח']
 
-export default function StepsIndicator({ current }: { current: 1 | 2 | 3 }) {
+export default function StepsIndicator({ current }: { current: 1 | 2 }) {
   return (
     <div className="flex items-center justify-center gap-2 mb-8" dir="rtl">
       {steps.map((label, i) => {

@@ -12,10 +12,12 @@ import { parseTreasuryXml } from '../parser/parseTreasuryXml'
 import { parseEmployerFeeFile } from '../parser/parseEmployerFeeFile'
 import Card from '../components/ds/Card'
 import Spinner from '../components/Spinner'
+import ContextQuestions from '../components/ContextQuestions'
 import { ArrowRight } from 'lucide-react'
 
-type Tab = 'fees' | 'treasury' | 'notes' | 'scenario'
+type Tab = 'context' | 'fees' | 'treasury' | 'notes' | 'scenario'
 const TABS: { id: Tab; label: string }[] = [
+  { id: 'context', label: 'פרטי לקוח' },
   { id: 'fees', label: 'הסכמי דמי ניהול' },
   { id: 'treasury', label: 'נתוני אוצר' },
   { id: 'notes', label: 'הערות יועץ' },
@@ -37,7 +39,7 @@ export default function AdvisorPage() {
   const policies = analysis.policies
   const supplementary = analysis.supplementary
 
-  const [tab, setTab] = useState<Tab>('fees')
+  const [tab, setTab] = useState<Tab>('context')
   const [saved, setSaved] = useState(false)
   const [treasuryFunds, setTreasuryFunds] = useState<TreasuryFundData[]>(supplementary.treasuryFunds)
   const [treasuryAllocations, setTreasuryAllocations] = useState<TreasuryAllocation[]>(supplementary.treasuryAllocations)
@@ -163,6 +165,8 @@ export default function AdvisorPage() {
           </button>
         ))}
       </div>
+
+      {tab === 'context' && <ContextQuestions />}
 
       {tab === 'fees' && (
         <Card>

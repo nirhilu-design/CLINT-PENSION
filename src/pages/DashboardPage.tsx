@@ -3,6 +3,7 @@ import { productTypeLabels } from '../models/labels'
 import type { ProductType } from '../models/types'
 import { formatCurrency, formatDate } from '../utils/format'
 import ReplacementGauge from '../components/ReplacementGauge'
+import ContextQuestions from '../components/ContextQuestions'
 import Card from '../components/ds/Card'
 import { computeExposure } from '../services/exposureService'
 import { sortFindings } from '../engines/findingPriority'
@@ -21,6 +22,7 @@ import {
   HelpCircle,
   User,
   ChevronDown,
+  ClipboardList,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -184,6 +186,20 @@ export default function DashboardPage() {
 
   const [compact, setCompact] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
+  const [contextOpen, setContextOpen] = useState(false)
+
+  // How many of the core context questions the advisor has answered.
+  const contextQuestions = [
+    supp.employmentStatus,
+    supp.currentGrossSalary,
+    supp.familyReliesOnIncome,
+    supp.hasSpouse,
+    supp.hasChildrenUnder21,
+    supp.hasOtherMaterialAssets,
+    supp.hasLiabilities,
+  ]
+  const contextAnswered = contextQuestions.filter((v) => v !== null).length
+  const contextTotal = contextQuestions.length
 
   // Sticky compact KPI bar once the main area is scrolled past the hero
   useEffect(() => {
@@ -367,6 +383,66 @@ export default function DashboardPage() {
       </div>
 
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 32px 48px' }}>
+        {/* Context questions — slide-down. Completing them refines the analysis. */}
+        <Card style={{ marginBottom: 24 }} padding={0}>
+          <button
+            onClick={() => setContextOpen((v) => !v)}
+            aria-expanded={contextOpen}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '16px 20px',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              textAlign: 'right',
+            }}
+          >
+            <span style={{ width: 34, height: 34, borderRadius: 'var(--radius-md)', background: 'var(--clint-50)', display: 'grid', placeItems: 'center', flexShrink: 0, color: 'var(--clint-600)' }}>
+              <ClipboardList size={17} />
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)' }}>פרטי הקשר ללקוח</div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)', marginTop: 2 }}>
+                {contextAnswered === 0
+                  ? 'טרם נענו — מענה מחדד את דיוק הניתוח (אכ"ע, מקרה מוות, כיסויים)'
+                  : contextAnswered < contextTotal
+                    ? `${contextAnswered} מתוך ${contextTotal} נענו · השלמה מחדדת את הניתוח`
+                    : 'כל פרטי ההקשר נענו'}
+              </div>
+            </div>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                padding: '3px 9px',
+                borderRadius: 'var(--radius-full)',
+                background: contextAnswered === 0 ? 'var(--color-warning-bg)' : contextAnswered < contextTotal ? 'var(--clint-50)' : 'var(--color-success-bg)',
+                color: contextAnswered === 0 ? 'var(--color-warning-dark)' : contextAnswered < contextTotal ? 'var(--clint-600)' : 'var(--color-success-dark)',
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {contextAnswered}/{contextTotal}
+            </span>
+            <ChevronDown
+              size={18}
+              color="var(--color-text-tertiary)"
+              style={{ flexShrink: 0, transform: contextOpen ? 'rotate(180deg)' : 'none', transition: 'transform 180ms var(--ease-out)' }}
+            />
+          </button>
+          <div style={{ display: 'grid', gridTemplateRows: contextOpen ? '1fr' : '0fr', transition: 'grid-template-rows 260ms var(--ease-out)' }}>
+            <div style={{ overflow: 'hidden' }}>
+              <div style={{ padding: '0 20px 20px' }}>
+                <ContextQuestions onSaved={() => setContextOpen(false)} />
+              </div>
+            </div>
+          </div>
+        </Card>
+
         {/* Client details — collapsible */}
         <Card style={{ marginBottom: 24 }} padding={0}>
           <button
