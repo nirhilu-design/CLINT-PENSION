@@ -7,6 +7,7 @@
 // keeping only rows whose fund id (מ"ה / מספר אוצר) exists in the portfolio.
 
 import type { TreasuryAllocation, TreasuryFundData } from '../models/types'
+import { normalizeMofid } from './xmlUtils'
 
 export type TreasuryFileType = 'returns' | 'allocation' | 'unknown'
 
@@ -87,7 +88,7 @@ export function parseTreasuryXml(
           ret: 'TSUA_MITZTABERET_LETKUFA',
         }
     for (const row of rows) {
-      const id = tag(row, F.id)
+      const id = normalizeMofid(tag(row, F.id))
       if (!id || !portfolioMofids.has(id) || matched.has(id)) continue
       matched.add(id)
       result.funds.push({
@@ -108,7 +109,7 @@ export function parseTreasuryXml(
   } else {
     const byMofid = new Map<string, TreasuryAllocation>()
     for (const row of rows) {
-      const id = tag(row, 'ID_KUPA')
+      const id = normalizeMofid(tag(row, 'ID_KUPA'))
       if (!id || !portfolioMofids.has(id)) continue
       // Keep only the main 9-group breakdown (other groupings exist in the file)
       const grouping = tag(row, 'KVUTZAT_NECHASIM')

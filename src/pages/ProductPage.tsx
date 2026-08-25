@@ -5,6 +5,7 @@ import type { Policy, ProductType } from '../models/types'
 import { formatCurrency, formatPercent } from '../utils/format'
 import FindingCard from '../components/FindingCard'
 import Card from '../components/ds/Card'
+import PeerComparisonTable from '../components/PeerComparisonTable'
 import { isEducationFundLiquid } from '../utils/liquidity'
 import {
   ArrowRight,
@@ -288,7 +289,13 @@ export default function ProductPage() {
             </div>
           )}
 
-          {tab === 'returns' && <ReturnsTab policies={policies} funds={analysis.supplementary.treasuryFunds} />}
+          {tab === 'returns' && (
+            <PeerComparisonTable
+              policies={policies}
+              treasuryFunds={analysis.supplementary.treasuryFunds}
+              peerGroups={analysis.supplementary.peerGroups}
+            />
+          )}
         </div>
 
         {/* Right rail */}
@@ -324,50 +331,3 @@ export default function ProductPage() {
   )
 }
 
-function ReturnsTab({ policies, funds }: { policies: Policy[]; funds: { mofid: string; return12m: number | null; sharpe: number | null }[] }) {
-  const rows = policies
-    .map((p) => {
-      const fund = p.mofid ? funds.find((f) => f.mofid === p.mofid) : undefined
-      return { company: p.managingCompany ?? p.policyNumber, reported: p.netReturn, treasury: fund?.return12m ?? null, sharpe: fund?.sharpe ?? null }
-    })
-    .filter((r) => r.reported !== null || r.treasury !== null)
-  const max = Math.max(10, ...rows.flatMap((r) => [r.reported ?? 0, r.treasury ?? 0])) * 1.1
-
-  return (
-    <Card>
-      <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 18 }}>תשואה מדווחת מול אוצר</div>
-      {rows.length === 0 ? (
-        <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)', margin: 0 }}>אין נתוני תשואה להצגה</p>
-      ) : (
-        rows.map((r, i) => (
-          <div key={i} style={{ marginBottom: 18 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: 8 }}>{r.company}</div>
-            <ReturnBar label="מדווחת" value={r.reported} max={max} color="var(--clint-600)" strong />
-            <div style={{ height: 6 }} />
-            <ReturnBar label="אוצר" value={r.treasury} max={max} color="var(--neutral-400)" />
-            {r.sharpe !== null && (
-              <div style={{ marginTop: 6, fontSize: 11, color: 'var(--color-text-tertiary)' }}>
-                שארפ: <b style={{ color: 'var(--color-text-secondary)', fontFamily: 'var(--font-mono)' }}>{r.sharpe.toFixed(2)}</b>
-              </div>
-            )}
-          </div>
-        ))
-      )}
-    </Card>
-  )
-}
-
-function ReturnBar({ label, value, max, color, strong }: { label: string; value: number | null; max: number; color: string; strong?: boolean }) {
-  const pct = value !== null ? Math.max(0, Math.min(100, (value / max) * 100)) : 0
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: '56px minmax(0,1fr) auto', gap: 8, alignItems: 'center' }}>
-      <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>{label}</span>
-      <div style={{ height: 12, borderRadius: 6, background: 'var(--neutral-100)', overflow: 'hidden' }}>
-        <div style={{ height: '100%', borderRadius: 6, background: color, width: `${pct}%` }} />
-      </div>
-      <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)', color: strong ? 'var(--color-text-primary)' : 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>
-        {value !== null ? formatPercent(value) : '—'}
-      </span>
-    </div>
-  )
-}

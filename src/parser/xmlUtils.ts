@@ -44,6 +44,13 @@ export function normalizeClientId(id: string | null): string {
 /** מספר אוצר derived from KIDOD-ACHID: chars 18-23 (zero-padded fund code) */
 export function mofidFromKidodAchid(kidod: string | null): string | null {
   if (!kidod || kidod.length < 23) return null
-  const code = kidod.slice(18, 23).replace(/^0+/, '')
+  return normalizeMofid(kidod.slice(18, 23))
+}
+
+// Canonical מספר אוצר (מ"ה): trimmed, leading zeros stripped. Both sides of every
+// treasury match must run through this so "07777" and "7777" resolve to the same key.
+export function normalizeMofid(raw: string | null): string | null {
+  if (raw == null) return null
+  const code = raw.trim().replace(/^0+/, '')
   return code || null
 }

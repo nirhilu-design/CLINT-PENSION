@@ -186,6 +186,21 @@ export interface AssetAllocationGroup {
   percent: number
 }
 
+// A peer-comparison group the advisor uploads (e.g. "מסלול כללי"): a set of
+// competing funds identified by מספר אוצר (מ"ה). The actual return/fee numbers for
+// every member are pulled from the official treasury files by mofid — the table
+// only defines who is in the peer group.
+export interface PeerGroupMember {
+  mofid: string
+  name: string | null
+}
+
+export interface PeerComparisonGroup {
+  id: string
+  category: string // e.g. "מסלול כללי", "מסלול מניות", "מחקה מדד"
+  members: PeerGroupMember[]
+}
+
 export interface TreasuryAllocation {
   mofid: string
   period: string | null
@@ -215,6 +230,7 @@ export interface SupplementaryInfo {
   benchmarks: FundBenchmark[]
   treasuryFunds: TreasuryFundData[]
   treasuryAllocations: TreasuryAllocation[]
+  peerGroups: PeerComparisonGroup[]
   advisorNotes: AdvisorNote[]
   // Scenario assumptions (persisted; a scenario engine that consumes them is future work)
   scenarioRetirementAge: number | null

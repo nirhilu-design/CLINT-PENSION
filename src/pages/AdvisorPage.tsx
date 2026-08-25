@@ -4,22 +4,26 @@ import { buildAnalysis } from '../services/analysisService'
 import type {
   AdvisorNote,
   FeeAgreement,
+  PeerComparisonGroup,
   TreasuryAllocation,
   TreasuryFundData,
 } from '../models/types'
 import { productTypeLabels } from '../models/labels'
 import { parseTreasuryXml } from '../parser/parseTreasuryXml'
+import { parsePeerTable } from '../parser/parsePeerTable'
+import { findPeerGroupFor } from '../services/peerComparisonService'
 import { parseEmployerFeeFile } from '../parser/parseEmployerFeeFile'
 import Card from '../components/ds/Card'
 import Spinner from '../components/Spinner'
 import ContextQuestions from '../components/ContextQuestions'
 import { ArrowRight } from 'lucide-react'
 
-type Tab = 'context' | 'fees' | 'treasury' | 'notes' | 'scenario'
+type Tab = 'context' | 'fees' | 'treasury' | 'peers' | 'notes' | 'scenario'
 const TABS: { id: Tab; label: string }[] = [
   { id: 'context', label: 'פרטי לקוח' },
   { id: 'fees', label: 'הסכמי דמי ניהול' },
   { id: 'treasury', label: 'נתוני אוצר' },
+  { id: 'peers', label: 'טבלאות השוואה' },
   { id: 'notes', label: 'הערות יועץ' },
   { id: 'scenario', label: 'הנחות תרחיש' },
 ]
@@ -46,6 +50,8 @@ export default function AdvisorPage() {
   const [uploadLog, setUploadLog] = useState<string[]>([])
   const [parsing, setParsing] = useState(false)
   const [employerFeeLog, setEmployerFeeLog] = useState<string[]>([])
+  const [peerGroups, setPeerGroups] = useState<PeerComparisonGroup[]>(supplementary.peerGroups)
+  const [peerLog, setPeerLog] = useState<string[]>([])
 
   const [fees, setFees] = useState<Record<string, { deposit: string; accum: string }>>(() =>
     Object.fromEntries(
@@ -67,10 +73,16 @@ export default function AdvisorPage() {
     return Number.isFinite(n) ? n : null
   }
 
-  function persist(fundsOverride?: TreasuryFundData[], allocsOverride?: TreasuryAllocation[], notesOverride?: AdvisorNote[]) {
+  function persist(
+    fundsOverride?: TreasuryFundData[],
+    allocsOverride?: TreasuryAllocation[],
+    notesOverride?: AdvisorNote[],
+    peersOverride?: PeerComparisonGroup[],
+  ) {
     const updated = { ...supplementary }
     updated.treasuryFunds = fundsOverride ?? treasuryFunds
     updated.treasuryAllocations = allocsOverride ?? treasuryAllocations
+    updated.peerGroups = peersOverride ?? peerGroups
     updated.advisorNotes = notesOverride ?? notesList
     updated.scenarioRetirementAge = num(scenario.retAge)
     updated.scenarioRealReturnPercent = num(scenario.realReturn)
@@ -88,7 +100,10 @@ export default function AdvisorPage() {
     if (!fileList || fileList.length === 0) return
     setParsing(true)
     await new Promise((r) => setTimeout(r, 30))
+    // Keep the client's own funds AND every peer-group fund, so competitor numbers
+    // are pulled from the same treasury file.
     const portfolioMofids = new Set(policies.map((p) => p.mofid).filter((m): m is string => !!m))
+    for (const g of peerGroups) for (const m of g.members) portfolioMofids.add(m.mofid)
     const log: string[] = []
     let nextFunds = [...treasuryFunds]
     let nextAllocs = [...treasuryAllocations]
@@ -113,6 +128,27 @@ export default function AdvisorPage() {
     setUploadLog(log)
     setParsing(false)
     persist(nextFunds, nextAllocs)
+  }
+
+  async function handlePeerFiles(fileList: FileList | null) {
+    if (!fileList || fileList.length === 0) return
+    const log: string[] = []
+    let next = [...peerGroups]
+    for (const file of fileList) {
+      const text = await file.text()
+      const { groups, totalMembers } = parsePeerTable(text)
+      if (groups.length === 0) {
+        log.push(`⚠ ${file.name}: לא זוהו קופות עם מספר אוצר בטבלה`)
+        continue
+      }
+      // Replace any existing group of the same category, then add the new ones.
+      const categories = new Set(groups.map((g) => g.category))
+      next = [...next.filter((g) => !categories.has(g.category)), ...groups]
+      log.push(`✓ ${file.name}: ${groups.length} קבוצות · ${totalMembers} קופות (${groups.map((g) => g.category).join(', ')})`)
+    }
+    setPeerGroups(next)
+    setPeerLog(log)
+    persist(undefined, undefined, undefined, next)
   }
 
   async function handleEmployerFeeFile(fileList: FileList | null) {
@@ -230,6 +266,70 @@ export default function AdvisorPage() {
             <p style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 10 }}>
               מספרי אוצר בתיק: {uniqueMofids.map((p) => p.mofid).join(', ')}
             </p>
+          )}
+        </Card>
+      )}
+
+      {tab === 'peers' && (
+        <Card>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 4 }}>טבלאות השוואה — קבוצות מתחרים לפי מסלול</div>
+          <p style={{ margin: '0 0 12px', fontSize: 12, color: 'var(--color-text-tertiary)', lineHeight: 1.6 }}>
+            העלאת טבלת CSV עם שם קופה ומספר אוצר (מ"ה) לכל מסלול (כללי, מניות, מחקה מדד וכו').
+            מספרי התשואה עצמם נשלפים מקובצי נתוני האוצר — לכן <b>יש להעלות את טבלאות ההשוואה לפני קובץ נתוני האוצר</b>, כדי שמספרי המתחרים ייכללו בשליפה.
+          </p>
+          <input type="file" accept=".csv,.tsv,.txt,text/csv" multiple onChange={(e) => handlePeerFiles(e.target.files)} style={{ fontSize: 13 }} />
+          {peerLog.map((line, i) => (
+            <p key={i} style={{ fontSize: 12, marginTop: 8, color: line.startsWith('⚠') ? 'var(--color-warning-dark)' : 'var(--color-text-tertiary)' }}>{line}</p>
+          ))}
+
+          {peerGroups.length > 0 && (
+            <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {peerGroups.map((g) => (
+                <div key={g.id} style={{ borderRadius: 'var(--radius-md)', background: 'var(--neutral-50)', padding: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--color-text-primary)' }}>{g.category}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 11.5, color: 'var(--color-text-tertiary)' }}>{g.members.length} קופות</span>
+                      <button
+                        onClick={() => {
+                          const next = peerGroups.filter((x) => x.id !== g.id)
+                          setPeerGroups(next)
+                          persist(undefined, undefined, undefined, next)
+                        }}
+                        style={{ fontSize: 11.5, color: 'var(--color-danger-dark)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+                      >
+                        הסרה
+                      </button>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 11.5, color: 'var(--color-text-tertiary)', marginTop: 4, fontFamily: 'var(--font-mono)' }}>
+                    {g.members.map((m) => m.mofid).join(' · ')}
+                  </div>
+                </div>
+              ))}
+
+              <div style={{ borderTop: '1px solid var(--color-border-base)', paddingTop: 10, fontSize: 12 }}>
+                <div style={{ fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: 6 }}>שיוך הקופות בתיק</div>
+                {uniqueMofids.length === 0 ? (
+                  <span style={{ color: 'var(--color-text-tertiary)' }}>אין קופות עם מ"ה בתיק</span>
+                ) : (
+                  uniqueMofids.map((p) => {
+                    const grp = findPeerGroupFor(p.mofid!, peerGroups)
+                    return (
+                      <div key={p.mofid} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '3px 0' }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text-tertiary)' }}>מ"ה {p.mofid}</span>
+                        <span style={{ color: 'var(--color-text-secondary)' }}>{p.productName ?? productTypeLabels[p.productType]}</span>
+                        {grp ? (
+                          <span style={{ marginInlineStart: 'auto', fontSize: 11, fontWeight: 700, padding: '2px 9px', borderRadius: 'var(--radius-full)', background: 'var(--color-success-bg)', color: 'var(--color-success-dark)' }}>{grp.category}</span>
+                        ) : (
+                          <span style={{ marginInlineStart: 'auto', fontSize: 11, fontWeight: 700, padding: '2px 9px', borderRadius: 'var(--radius-full)', background: 'var(--color-warning-bg)', color: 'var(--color-warning-dark)' }}>לא שויכה לקבוצה</span>
+                        )}
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </div>
           )}
         </Card>
       )}
