@@ -86,6 +86,11 @@ export interface Policy {
   savingsAllocationPercent: number | null // ACHUZ-HAKTZAA-LE-CHISACHON — % of premium to savings
   capitalBalance: number | null // הון portion (SUG-ITRA-LETKUFA=1), null when not reported
   currentValue: number | null
+  // הון למקרה פטירה — סכום ביטוח למוות (SCHUM-BITUAH-LEMAVET, ובלית ברירה סכימת כיסויי
+  // מוות). deathSumIncludesSavings = IND-SCHUM-BITUAH-KOLEL-CHISACHON: האם סכום הביטוח
+  // כבר כולל את הצבירה (true=כן ⇒ הגבוה מבין, false=לא ⇒ חיבור, null=לא דווח ⇒ הגבוה מבין).
+  deathSumInsured: number | null
+  deathSumIncludesSavings: boolean | null
   coveredSalary: number | null
   // קצבה חודשית חזויה — שני תרחישי המסלקה
   expectedPensionWithDeposits: number | null // SCHUM-KITZVAT-ZIKNA — בהמשך הפקדות שוטפות

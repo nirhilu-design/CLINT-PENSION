@@ -5,6 +5,7 @@ import type { Engine } from './engineTypes'
 import { makeFinding } from './engineTypes'
 import { formatCurrency } from '../utils/format'
 import { LARGE_ASSETS_THRESHOLD, LARGE_LIFE_COVER_THRESHOLD } from '../config/thresholds'
+import { computeDeathCapital } from '../services/deathCapitalService'
 
 export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
   const findings = []
@@ -19,18 +20,20 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
     .reduce((sum, c) => sum + (c.amount ?? 0), 0)
   const monthlySurvivors = widowMonthly + orphanMonthly
 
-  const deathLumpSum = active
-    .flatMap((p) => p.coverages)
-    .filter((c) => c.type === 'death')
-    .reduce((sum, c) => sum + (c.amount ?? 0), 0)
-
-  const capitalAssets = active
-    .filter((p) => ['gemel', 'gemelInvestment', 'education'].includes(p.productType))
-    .reduce((sum, p) => sum + (p.currentValue ?? 0), 0)
+  // הון למקרה פטירה: צבירת המוצרים ההוניים + ביטוח ריסק, ללא ספירה כפולה.
+  const deathCapital = computeDeathCapital(policies)
+  const deathRisk = deathCapital.risk // חלק הביטוח (ריסק) בלבד — לצורך זיהוי "כיסוי ביטוחי"
+  const capitalAssets = deathCapital.savings // חלק הצבירה ההונית
 
   const parts: string[] = []
-  if (deathLumpSum > 0) {
-    parts.push(`קיים ביטוח חד-פעמי למקרה פטירה בסך ${formatCurrency(deathLumpSum)}`)
+  if (deathCapital.total > 0) {
+    const breakdown: string[] = []
+    if (capitalAssets > 0) breakdown.push(`צבירה הונית ${formatCurrency(capitalAssets)}`)
+    if (deathRisk > 0) breakdown.push(`ביטוח ריסק ${formatCurrency(deathRisk)}`)
+    parts.push(
+      `הון זמין למקרה פטירה: ${formatCurrency(deathCapital.total)}` +
+        (breakdown.length > 1 ? ` (${breakdown.join(' + ')})` : ''),
+    )
   }
   if (widowMonthly > 0 || orphanMonthly > 0) {
     const survivorParts: string[] = []
@@ -38,7 +41,6 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
     if (orphanMonthly > 0) survivorParts.push(`${formatCurrency(orphanMonthly)} ליתום (במידה וקיימים)`)
     parts.push(`פיצוי חודשי מקרן הפנסיה: ${survivorParts.join(' וכן ')}`)
   }
-  if (capitalAssets > 0) parts.push(`נכסים הוניים (גמל והשתלמות): ${formatCurrency(capitalAssets)}`)
 
   const totalLiabilities =
     (supplementary.mortgageBalance ?? 0) + (supplementary.otherDebts ?? 0)
@@ -80,7 +82,7 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
   }
 
   // Family context from the supplementary questions
-  const hasDeathProtection = monthlySurvivors > 0 || deathLumpSum > 0
+  const hasDeathProtection = monthlySurvivors > 0 || deathRisk > 0
   const hasDependents =
     supplementary.hasChildrenUnder21 === true || supplementary.hasSpouse === true
 
@@ -124,7 +126,7 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
 
   // Life-insurance coverage vs the liabilities it would need to clear at death
   if (totalLiabilities > 0) {
-    const availableAtDeath = deathLumpSum + capitalAssets
+    const availableAtDeath = deathCapital.total
     if (availableAtDeath < totalLiabilities) {
       const reliesOnIncome = supplementary.familyReliesOnIncome === true
       findings.push(
@@ -161,7 +163,7 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
     (supplementary.otherAssetsRealEstateValue ?? 0) +
     (supplementary.otherAssetsPortfolioValue ?? 0) +
     (supplementary.otherAssetsLiquidValue ?? 0)
-  if (statedAssetsTotal >= LARGE_ASSETS_THRESHOLD && deathLumpSum >= LARGE_LIFE_COVER_THRESHOLD) {
+  if (statedAssetsTotal >= LARGE_ASSETS_THRESHOLD && deathRisk >= LARGE_LIFE_COVER_THRESHOLD) {
     findings.push(
       makeFinding({
         category: 'death',
@@ -169,7 +171,7 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
         severity: 'attention',
         title: 'ביטוח חיים גדול לצד נכסים מהותיים',
         description:
-          `דווחו נכסים בשווי כולל של כ-${formatCurrency(statedAssetsTotal)} לצד כיסוי ביטוח חיים של ${formatCurrency(deathLumpSum)}. ` +
+          `דווחו נכסים בשווי כולל של כ-${formatCurrency(statedAssetsTotal)} לצד כיסוי ביטוח חיים של ${formatCurrency(deathRisk)}. ` +
           'כאשר קיימים נכסים משמעותיים המשמשים רשת ביטחון, היקף הכיסוי ועלותו מול הצורך בפועל הם נקודה לבדיקה מול בעל רישיון.',
       }),
     )

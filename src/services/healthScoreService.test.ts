@@ -12,6 +12,8 @@ function policy(over: Partial<Policy> = {}): Policy {
     productType: 'pension',
     status: 'active',
     currentValue: 100000,
+    deathSumInsured: null,
+    deathSumIncludesSavings: null,
     coveredSalary: 20000,
     expectedPensionWithDeposits: 14000,
     expectedPensionWithoutDeposits: 12000,

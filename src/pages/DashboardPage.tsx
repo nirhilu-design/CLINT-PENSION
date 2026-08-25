@@ -6,6 +6,7 @@ import ReplacementGauge from '../components/ReplacementGauge'
 import ContextQuestions from '../components/ContextQuestions'
 import Card from '../components/ds/Card'
 import { computeExposure } from '../services/exposureService'
+import { computeDeathCapital } from '../services/deathCapitalService'
 import { sortFindings } from '../engines/findingPriority'
 import { assessCompleteness } from '../services/completenessService'
 import { effectiveSalary } from '../engines/engineTypes'
@@ -223,9 +224,10 @@ export default function DashboardPage() {
   const survivorsMonthly = activePolicies
     .flatMap((p) => p.coverages.filter((c) => c.type === 'survivors'))
     .reduce((s, c) => s + (c.amount ?? 0), 0)
-  const deathLump = activePolicies
-    .flatMap((p) => p.coverages.filter((c) => c.type === 'death'))
-    .reduce((s, c) => s + (c.amount ?? 0), 0)
+  // הון למקרה פטירה — צבירת המוצרים ההוניים (מנהלים/גמל/גמל להשקעה/השתלמות/חיים פרט)
+  // בתוספת סכום ביטוח הריסק למוות, ללא ספירה כפולה (ראו deathCapitalService).
+  const deathCapital = computeDeathCapital(policies)
+  const deathLump = deathCapital.total
   const lastDeposit = policies.map((p) => p.lastDepositMonth).filter(Boolean).sort().pop() as string | undefined
 
   const reportDates = policies.map((p) => p.reportDate).filter(Boolean) as string[]
@@ -530,12 +532,20 @@ export default function DashboardPage() {
               labels={['0', 'לחודש']}
             />
             <CoverageCard
-              title="ביטוח חיים (מוות)"
+              title="הון למקרה פטירה"
               status={deathLump > 0 ? 'good' : 'bad'}
               value={formatCurrency(deathLump)}
-              note={deathLump > 0 ? 'סכום חד-פעמי למקרה מוות' : 'לא אותר ביטוח למקרה מוות'}
+              note={
+                deathLump > 0
+                  ? deathCapital.savings > 0 && deathCapital.risk > 0
+                    ? `צבירה ${formatCurrency(deathCapital.savings)} + ביטוח ${formatCurrency(deathCapital.risk)}`
+                    : deathCapital.risk > 0
+                      ? 'סכום ביטוח חד-פעמי למקרה מוות'
+                      : 'צבירה הונית העוברת למוטבים'
+                  : 'לא אותר הון למקרה פטירה'
+              }
               fill={deathLump > 0 ? 100 : 3}
-              labels={['0', 'סכום ביטוח']}
+              labels={['0', 'הון זמין']}
             />
           </div>
           {lastDeposit && (

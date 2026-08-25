@@ -16,6 +16,8 @@ function policy(over: Partial<Policy>): Policy {
     savingsAllocationPercent: null,
     capitalBalance: null,
     currentValue: 0,
+    deathSumInsured: null,
+    deathSumIncludesSavings: null,
     coveredSalary: null,
     expectedPensionWithDeposits: null,
     expectedPensionWithoutDeposits: null,

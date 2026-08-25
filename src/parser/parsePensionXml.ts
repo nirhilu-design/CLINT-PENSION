@@ -130,6 +130,42 @@ function parseCapitalBalance(heshbon: Element): number | null {
   return found ? sum : null
 }
 
+// Death sum insured for the capital-at-death picture. Prefers the dedicated
+// SCHUM-BITUAH-LEMAVET (מבנה אחיד שדה 396, בבלוק SchumeiBituahYesodi) summed across
+// the basic-cover blocks; falls back to summing death-typed coverage amounts.
+// IND-SCHUM-BITUAH-KOLEL-CHISACHON (שדה 391) says whether that sum already embeds the
+// accumulated savings: '1' ⇒ true, '2' ⇒ false, else null (unknown).
+function parseDeathSum(
+  heshbon: Element,
+  coverages: Coverage[],
+): { deathSumInsured: number | null; deathSumIncludesSavings: boolean | null } {
+  let sum = 0
+  let found = false
+  let includesSavings: boolean | null = null
+  for (const block of heshbon.querySelectorAll('SchumeiBituahYesodi')) {
+    const amount = getNumber(block, 'SCHUM-BITUAH-LEMAVET')
+    if (amount !== null && amount > 0) {
+      sum += amount
+      found = true
+    }
+    if (includesSavings === null) {
+      const flag = getText(block, 'IND-SCHUM-BITUAH-KOLEL-CHISACHON')
+      if (flag === '1') includesSavings = true
+      else if (flag === '2') includesSavings = false
+    }
+  }
+  if (found) return { deathSumInsured: sum, deathSumIncludesSavings: includesSavings }
+
+  // Fallback: sum the parsed death-type coverages (SCHUM-BITUACH under death codes).
+  const fromCoverages = coverages
+    .filter((c) => c.type === 'death')
+    .reduce((s, c) => s + (c.amount ?? 0), 0)
+  return {
+    deathSumInsured: fromCoverages > 0 ? fromCoverages : null,
+    deathSumIncludesSavings: includesSavings,
+  }
+}
+
 function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
   const coverages: Coverage[] = []
 
@@ -333,6 +369,7 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
       const planName = getText(heshbon, 'SHEM-TOCHNIT')
       const coverages = parseCoverages(heshbon, policyNumber)
       const hasDeathCoverage = coverages.some((c) => c.type === 'death' || c.type === 'survivors')
+      const { deathSumInsured, deathSumIncludesSavings } = parseDeathSum(heshbon, coverages)
       const productType = mapProductType(sugMutzar, (currentValue ?? 0) > 0, hasDeathCoverage, planName)
 
       // Fees: SUG-HOTZAA 1 = from accumulation, 2 = from deposit
@@ -394,6 +431,8 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
         // deposits stopped but risk coverage is kept temporarily from the accumulation.
         temporaryRisk: statusRaw === '4' || statusRaw === '8',
         currentValue,
+        deathSumInsured,
+        deathSumIncludesSavings,
         coveredSalary: getNumber(heshbon, 'PirteiHaasaka > SACHAR-POLISA'),
         // קצבה חודשית חזויה: עם המשך הפקדות מול ללא הפקדות (שני שדות נפרדים בדיווח)
         expectedPensionWithDeposits: getNumber(yitra, 'SCHUM-KITZVAT-ZIKNA'),
