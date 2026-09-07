@@ -408,6 +408,17 @@ describe('feeBenchmarkEngine', () => {
     expect(flagged.some((f) => f.title.includes('דמי ניהול גבוהים'))).toBe(true)
     expect(within).toHaveLength(0)
   })
+
+  it('covers גמל להשקעה against its per-product BM (0.8%)', () => {
+    const flagged = feeBenchmarkEngine(
+      input([makePolicy({ policyNumber: 'INV', productType: 'gemelInvestment', fees: { fromDeposit: null, fromAccumulation: 0.9 } })]),
+    )
+    const within = feeBenchmarkEngine(
+      input([makePolicy({ policyNumber: 'INV', productType: 'gemelInvestment', fees: { fromDeposit: null, fromAccumulation: 0.75 } })]),
+    )
+    expect(flagged.some((f) => f.title.includes('דמי ניהול גבוהים'))).toBe(true)
+    expect(within).toHaveLength(0)
+  })
 })
 
 describe('equityMixEngine', () => {
@@ -434,6 +445,15 @@ describe('equityMixEngine', () => {
       supplementary: { ...emptySupplementary(), treasuryAllocations: [alloc('5', 68)] },
     })
     expect(out).toHaveLength(0)
+  })
+
+  it('includes גמל להשקעה in the blended equity exposure', () => {
+    const out = equityMixEngine({
+      client: aged('1985-01-01'), // ~40, target 70%
+      policies: [makePolicy({ policyNumber: 'INV', productType: 'gemelInvestment', mofid: '9', currentValue: 100000 })],
+      supplementary: { ...emptySupplementary(), treasuryAllocations: [alloc('9', 25)] },
+    })
+    expect(out.some((f) => f.title.includes('חשיפה מנייתית'))).toBe(true)
   })
 
   it('is silent with no allocation data and when age is unknown', () => {
