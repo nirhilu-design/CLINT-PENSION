@@ -119,6 +119,19 @@ export default function PolicyDrawer({
             <Tile label="תשואה נטו" value={formatPercent(policy.netReturn)} />
           </div>
 
+          {policy.productType === 'gemel' && policy.capitalBalance !== null && policy.currentValue !== null && (
+            <>
+              <SectionLabel>פילוח הון וקצבה</SectionLabel>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <Tile label="רכיב הוני" value={formatCurrency(policy.capitalBalance)} />
+                <Tile label="רכיב קצבתי" value={formatCurrency(Math.max(0, policy.currentValue - policy.capitalBalance))} />
+              </div>
+              <p style={{ fontSize: 11, color: 'var(--color-text-tertiary)', margin: '8px 0 0', lineHeight: 1.5 }}>
+                הרכיב ההוני מיועד למשיכה הונית (חד-פעמית) והרכיב הקצבתי לקצבה מגיל 60; תנאי המשיכה והמס — נקודה לבדיקה מול בעל רישיון.
+              </p>
+            </>
+          )}
+
           <SectionLabel>הפקדות ודמי ניהול</SectionLabel>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <Tile label="הפקדת מעסיק" value={employer ? formatPercent(employer.percent) : '—'} />
