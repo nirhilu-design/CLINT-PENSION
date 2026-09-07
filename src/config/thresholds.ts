@@ -32,7 +32,9 @@ export interface ThresholdValues {
   equityTargetSenior: number // reference equity share for the senior band (%)
   equityMixSlack: number // how far below target before a finding opens (pp)
   mekifaSalaryCap: number
-  managersNewFactorFeeThreshold: number
+  managersDepositFeeThreshold: number
+  managersLargeAccumulation: number
+  managersAccumulationFeeThreshold: number
   depositRecencyMonths: number
   depositContinuityWindowMonths: number
   salaryCrosscheckDiffRatio: number
@@ -67,7 +69,9 @@ export const DEFAULT_THRESHOLDS: ThresholdValues = {
   equityTargetSenior: 30, // reference equity share, 60+
   equityMixSlack: 5, // pp below the reference before a finding opens
   mekifaSalaryCap: 26632, // twice the national average wage (2025)
-  managersNewFactorFeeThreshold: 0.8, // 2004-2013 new-factor managers: fee at/below → leave alone
+  managersDepositFeeThreshold: 0.8, // active managers: accumulation fee above → ongoing deposits are expensive
+  managersLargeAccumulation: 500_000, // above this balance, even a small accumulation fee is material
+  managersAccumulationFeeThreshold: 0.2, // accumulation fee above this, on a large balance → note it
   depositRecencyMonths: 3, // months allowed since last deposit vs file date
   depositContinuityWindowMonths: 6, // salary-months window for continuity gaps
   salaryCrosscheckDiffRatio: 0.15, // stated vs insured salary
@@ -104,7 +108,9 @@ export let EQUITY_TARGET_MID = DEFAULT_THRESHOLDS.equityTargetMid
 export let EQUITY_TARGET_SENIOR = DEFAULT_THRESHOLDS.equityTargetSenior
 export let EQUITY_MIX_SLACK = DEFAULT_THRESHOLDS.equityMixSlack
 export let MEKIFA_SALARY_CAP = DEFAULT_THRESHOLDS.mekifaSalaryCap
-export let MANAGERS_NEW_FACTOR_FEE_THRESHOLD = DEFAULT_THRESHOLDS.managersNewFactorFeeThreshold
+export let MANAGERS_DEPOSIT_FEE_THRESHOLD = DEFAULT_THRESHOLDS.managersDepositFeeThreshold
+export let MANAGERS_LARGE_ACCUMULATION = DEFAULT_THRESHOLDS.managersLargeAccumulation
+export let MANAGERS_ACCUMULATION_FEE_THRESHOLD = DEFAULT_THRESHOLDS.managersAccumulationFeeThreshold
 export let DEPOSIT_RECENCY_MONTHS = DEFAULT_THRESHOLDS.depositRecencyMonths
 export let DEPOSIT_CONTINUITY_WINDOW_MONTHS = DEFAULT_THRESHOLDS.depositContinuityWindowMonths
 export let SALARY_CROSSCHECK_DIFF_RATIO = DEFAULT_THRESHOLDS.salaryCrosscheckDiffRatio
@@ -131,7 +137,9 @@ export function applyThresholds(t: ThresholdValues): void {
   EQUITY_TARGET_SENIOR = t.equityTargetSenior
   EQUITY_MIX_SLACK = t.equityMixSlack
   MEKIFA_SALARY_CAP = t.mekifaSalaryCap
-  MANAGERS_NEW_FACTOR_FEE_THRESHOLD = t.managersNewFactorFeeThreshold
+  MANAGERS_DEPOSIT_FEE_THRESHOLD = t.managersDepositFeeThreshold
+  MANAGERS_LARGE_ACCUMULATION = t.managersLargeAccumulation
+  MANAGERS_ACCUMULATION_FEE_THRESHOLD = t.managersAccumulationFeeThreshold
   DEPOSIT_RECENCY_MONTHS = t.depositRecencyMonths
   DEPOSIT_CONTINUITY_WINDOW_MONTHS = t.depositContinuityWindowMonths
   SALARY_CROSSCHECK_DIFF_RATIO = t.salaryCrosscheckDiffRatio

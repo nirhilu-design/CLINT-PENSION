@@ -196,6 +196,25 @@ describe('managers generation engine (stopIssueEngine)', () => {
     expect(sev(stopIssueEngine(input([low, pen])))).toBe('info')
   })
 
+  it('notes a large accumulation paying a non-trivial fee — any active generation (incl. 2013+)', () => {
+    const big2013 = managers('2013-plus', {
+      currentValue: 800000,
+      fees: { fromDeposit: null, fromAccumulation: 0.3 },
+    })
+    const out = stopIssueEngine(input([big2013]))
+    expect(out[0].description).toContain('מהותי בערכים כספיים')
+    expect(out[0].severity).toBe('attention')
+  })
+
+  it('stays quiet on a large accumulation when the fee is at/below the threshold', () => {
+    const cheap = managers('2013-plus', {
+      currentValue: 800000,
+      fees: { fromDeposit: null, fromAccumulation: 0.15 },
+    })
+    const out = stopIssueEngine(input([cheap]))
+    expect(out[0].description).not.toContain('מהותי בערכים כספיים')
+  })
+
   it('inactive policy → short paid-up note, no deposit-split analysis', () => {
     const paidUp = managers('before-2001-06', { status: 'inactive', hasGuaranteedFactor: true })
     const desc = stopIssueEngine(input([paidUp, pension]))[0].description

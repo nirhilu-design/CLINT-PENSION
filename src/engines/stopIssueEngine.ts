@@ -7,7 +7,13 @@
 import type { Engine } from './engineTypes'
 import { makeFinding, effectiveSalary } from './engineTypes'
 import { coverageTypeLabels } from '../models/labels'
-import { MEKIFA_SALARY_CAP, MANAGERS_NEW_FACTOR_FEE_THRESHOLD } from '../config/thresholds'
+import { formatCurrency } from '../utils/format'
+import {
+  MEKIFA_SALARY_CAP,
+  MANAGERS_DEPOSIT_FEE_THRESHOLD,
+  MANAGERS_LARGE_ACCUMULATION,
+  MANAGERS_ACCUMULATION_FEE_THRESHOLD,
+} from '../config/thresholds'
 
 const generationLabels: Record<string, string> = {
   'before-2001-06': 'לפני יוני 2001',
@@ -76,7 +82,7 @@ export const stopIssueEngine: Engine = ({ policies, supplementary }) => {
     // fund can absorb the full salary; if disability is covered separately and the
     // savings sit in pension funds, cancelling the policy is worth weighing.
     const fee = p.fees.fromAccumulation
-    const feeHigh = fee === null || fee > MANAGERS_NEW_FACTOR_FEE_THRESHOLD
+    const feeHigh = fee === null || fee > MANAGERS_DEPOSIT_FEE_THRESHOLD
     const hasSeparateDisability = policies.some(
       (o) =>
         o.policyNumber !== p.policyNumber &&
@@ -144,6 +150,20 @@ export const stopIssueEngine: Engine = ({ policies, supplementary }) => {
         if (aboveMekifaCap) clause += 'מאחר שהשכר מעל תקרת המקיפה, חומרת הנקודה פחותה. '
       }
       // fee at/below the threshold → left alone (no extra clause)
+    }
+
+    // Fee vs accumulation — applies to every active generation (2013+ included):
+    // on a large balance even a low accumulation fee is material in shekel terms.
+    if (
+      p.currentValue !== null &&
+      p.currentValue > MANAGERS_LARGE_ACCUMULATION &&
+      fee !== null &&
+      fee > MANAGERS_ACCUMULATION_FEE_THRESHOLD
+    ) {
+      clause +=
+        `הצבירה בפוליסה (${formatCurrency(p.currentValue)}) ודמי ניהול מצבירה ${fee.toFixed(2)}% — ` +
+        'על צבירה בסדר גודל זה שיעור זה מהותי בערכים כספיים. '
+      severity = 'attention'
     }
 
     return makeFinding({
