@@ -6,6 +6,7 @@
 import type { Engine } from './engineTypes'
 import { makeFinding } from './engineTypes'
 import { isBlockedByStopIssue } from './stopIssueEngine'
+import { formatCurrency } from '../utils/format'
 
 import { MEKIFA_SALARY_CAP } from '../config/thresholds'
 
@@ -28,8 +29,6 @@ export const managersInsightEngine: Engine = ({ policies, supplementary }) => {
     (p) => p.status === 'active' && p.coverages.some((c) => c.type === 'disability'),
   )
 
-  const clientNotes: string[] = []
-
   for (const policy of activeManagers) {
     const notes: string[] = []
 
@@ -41,7 +40,7 @@ export const managersInsightEngine: Engine = ({ policies, supplementary }) => {
       )
     } else if (pensionSalary < MEKIFA_SALARY_CAP) {
       const parts = [
-        'ההפקדות לביטוח המנהלים מתבצעות בעוד תקרת ההפקדה לקרן הפנסיה המקיפה אינה מנוצלת במלואה',
+        `שכר הבסיס בקרן הפנסיה המקיפה (${formatCurrency(pensionSalary)}) נמוך מתקרת השכר להפקדה (${formatCurrency(MEKIFA_SALARY_CAP)}); היחס בין הרבדים ראוי לבחינה`,
         'קיימת גם אפשרות של קרן פנסיה משלימה כרובד נוסף',
       ]
       if (hasStandaloneIP) {
@@ -74,30 +73,38 @@ export const managersInsightEngine: Engine = ({ policies, supplementary }) => {
         policyNumber: policy.policyNumber,
       }),
     )
-
-    clientNotes.push(
-      `בפוליסה ${policy.policyNumber}${policy.hasGuaranteedFactor ? ' (עם מקדם מובטח)' : ''}: ${notes[0]}`,
-    )
   }
 
-  // Client-level: the managers policy is the only disability source in the portfolio
+  // Client-level: only the general themes — the per-policy findings above carry
+  // the detail (deeper per policy, high-level here).
+  const clientThemes: string[] = []
+  if (activePension.length === 0) {
+    clientThemes.push(
+      'בתיק קיים ביטוח מנהלים ללא קרן פנסיה מקיפה פעילה — ההפקדות הפנסיוניות בביטוח המנהלים בלבד',
+    )
+  } else if (pensionSalary < MEKIFA_SALARY_CAP) {
+    clientThemes.push(
+      'בתיק ביטוח מנהלים לצד קרן פנסיה מקיפה, ושכר הבסיס בפנסיה נמוך מתקרת השכר להפקדה — היחס בין הרבדים ראוי לבחינה',
+    )
+  } else {
+    clientThemes.push('בתיק ביטוח מנהלים כרובד מעל תקרת הפנסיה המקיפה — מבנה מקובל')
+  }
+
+  // The managers policy is the only disability source in the portfolio
   const managersOnlyDisability =
     portfolioDisabilitySources.length > 0 &&
     portfolioDisabilitySources.every((p) => p.productType === 'managers')
   if (managersOnlyDisability) {
-    clientNotes.push(
-      'כיסוי אובדן כושר העבודה היחיד בתיק מצוי בפוליסת ביטוח המנהלים — נקודה חשובה להכרה',
-    )
+    clientThemes.push('כיסוי אובדן כושר העבודה היחיד בתיק מצוי בביטוח המנהלים')
   }
 
-  // Consolidated observation for the executive summary (one finding, not many)
   findings.push(
     makeFinding({
       category: 'insight',
       level: 'client',
       severity: 'info',
       title: 'הארות על מבנה ביטוח המנהלים בתיק',
-      description: clientNotes.join(' • ') + '.',
+      description: clientThemes.join(' • ') + '. נקודה לבדיקה מול בעל רישיון.',
     }),
   )
 

@@ -4,6 +4,7 @@ import { emptySupplementary } from '../services/analysisService'
 import { depositsEngine } from './depositsEngine'
 import { costEngine } from './costEngine'
 import { feeBenchmarkEngine } from './feeBenchmarkEngine'
+import { managersInsightEngine } from './managersInsightEngine'
 import { equityMixEngine } from './equityMixEngine'
 import { incomeProtectionEngine } from './incomeProtectionEngine'
 import { dataQualityEngine } from './dataQualityEngine'
@@ -244,6 +245,19 @@ describe('managers generation engine (stopIssueEngine)', () => {
     const desc = stopIssueEngine(input([pricey, pension, akv]))[0].description
     expect(desc).toContain('אין חובת הפקדה לאכ"ע')
     expect(desc).not.toContain('לשקול ביטול')
+  })
+})
+
+describe('managersInsightEngine', () => {
+  it('policy finding carries the detail; client finding stays general', () => {
+    const mgr = makePolicy({ policyNumber: 'MG', productType: 'managers', coveredSalary: 20000 })
+    const pen = makePolicy({ policyNumber: 'PEN', productType: 'pension', coveredSalary: 18000 })
+    const out = managersInsightEngine(input([mgr, pen]))
+    const policyF = out.find((f) => f.level === 'policy')
+    const clientF = out.find((f) => f.level === 'client')
+    expect(policyF?.description).toContain('היחס בין הרבדים')
+    expect(clientF?.description).toContain('לצד קרן פנסיה מקיפה')
+    expect(clientF?.description).not.toContain('MG') // general, no per-policy detail
   })
 })
 

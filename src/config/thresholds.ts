@@ -68,7 +68,7 @@ export const DEFAULT_THRESHOLDS: ThresholdValues = {
   equityTargetMid: 50, // reference equity share, 50–60
   equityTargetSenior: 30, // reference equity share, 60+
   equityMixSlack: 5, // pp below the reference before a finding opens
-  mekifaSalaryCap: 26632, // twice the national average wage (2025)
+  mekifaSalaryCap: 27538, // twice the national average wage (2 × 13,769, 2026)
   managersDepositFeeThreshold: 0.8, // active managers: accumulation fee above → ongoing deposits are expensive
   managersLargeAccumulation: 500_000, // above this balance, even a small accumulation fee is material
   managersAccumulationFeeThreshold: 0.2, // accumulation fee above this, on a large balance → note it
