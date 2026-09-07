@@ -213,17 +213,18 @@ describe('managers generation engine (stopIssueEngine)', () => {
     })
     const desc = stopIssueEngine(input([pricey, pension]))[0].description
     expect(desc).toContain('הפקדה שוטפת לפוליסה זו יקרה')
-    expect(desc).toContain('הפניית ההפקדות השוטפות')
+    expect(desc).toContain('אלטרנטיבה זולה יותר')
   })
 
-  it('expensive active 2004–2013 with separate disability + pension savings → cancellation note', () => {
+  it('expensive active 2004–2013 with separate disability + pension savings → neutral structure note', () => {
     const pricey = managers('2004-to-2013', {
       coveredSalary: 12000,
       fees: { fromDeposit: null, fromAccumulation: 2 },
     })
     const akv = makePolicy({ policyNumber: 'AKV', productType: 'incomeProtection' })
     const desc = stopIssueEngine(input([pricey, pension, akv]))[0].description
-    expect(desc).toContain('ניתן לשקול ביטול הפוליסה')
+    expect(desc).toContain('אין חובת הפקדה לאכ"ע')
+    expect(desc).not.toContain('לשקול ביטול')
   })
 })
 

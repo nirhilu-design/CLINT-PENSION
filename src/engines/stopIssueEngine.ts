@@ -19,10 +19,10 @@ const generationLabels: Record<string, string> = {
 function generationTrait(gen: string): string {
   switch (gen) {
     case 'before-2001-06':
-      return 'דור עם תנאים היסטוריים, לרוב מקדם קצבה מובטח ומסלול נכות מובנה. '
+      return 'דור עם מקדם קצבה מובטח מסוג "ישן" (לפי לוחות תמותה ותיקים, לרוב מיטיב), ולרוב מסלול נכות מובנה. '
     case '2001-06-to-2004':
     case '2004-to-2013':
-      return 'דור שבחלקו כולל מקדם קצבה מובטח. '
+      return 'דור שבחלקו כולל מקדם קצבה מובטח מסוג "חדש" (המקדם עודכן מיוני 2001). '
     case '2013-plus':
       return 'דור ללא מקדם קצבה מובטח — מקדם ההמרה נקבע לפי לוחות התמותה בעת הפרישה. '
     default:
@@ -89,13 +89,12 @@ export const stopIssueEngine: Engine = ({ policies, supplementary }) => {
         (fee !== null ? ' (גבוהים יחסית)' : '') +
         ' — הפקדה שוטפת לפוליסה זו יקרה. '
       if (hasActivePension)
-        eff += 'קיימת קרן פנסיה פעילה כאלטרנטיבה זולה יותר; כדאי לשקול הפניית ההפקדות השוטפות אליה. '
+        eff += 'קיימת קרן פנסיה פעילה כאלטרנטיבה זולה יותר להפקדות השוטפות. '
       if (!aboveMekifaCap)
         eff += 'השכר אינו מעל תקרת ההפקדה לפנסיה, כך שניתן להפקיד את מלוא ההפקדה לקרן הפנסיה. '
       if (hasSeparateDisability && hasActivePension)
         eff +=
-          'ככל שכיסוי אכ"ע מוסדר בנפרד והחיסכון מנוהל בקרנות פנסיה — ניתן לשקול ביטול הפוליסה, ' +
-          'שכן מעל תקרת ההפקדה לקרן הפנסיה אין חובת הפקדה לאכ"ע. '
+          'כיסוי אכ"ע מוסדר בנפרד והחיסכון מנוהל בקרנות פנסיה; מעל תקרת ההפקדה לקרן הפנסיה אין חובת הפקדה לאכ"ע. '
       return eff
     }
 
@@ -132,7 +131,7 @@ export const stopIssueEngine: Engine = ({ policies, supplementary }) => {
         clause += `תוספות ביטוחיות בפוליסה: ${riderTypes.map((t) => coverageTypeLabels[t]).join(', ')}. `
       }
     } else if (gen === '2001-06-to-2004') {
-      clause = 'בדור זה נהוג לבחון האם עדיף להפנות את ההפקדות למוצר אחר. '
+      clause = 'עלות ההפקדה במבנה זה מול חלופות זולות יותר בתיק. '
       severity = 'attention'
       clause += depositEfficiencyClause()
     } else if (gen === '2004-to-2013') {
