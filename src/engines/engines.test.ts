@@ -297,18 +297,38 @@ describe('incomeProtectionEngine', () => {
     expect(out.some((x) => x.title.includes('נמוך מהיעד'))).toBe(false)
   })
 
-  it('does not flag a salary gap when the אכ"ע covers the salary echoed across products', () => {
-    // Managers אכ"ע insures the full 14,000, and a pension fund echoes the same
-    // 14,000. The salary must collapse to 14,000 (not double to 28,000), so the
-    // covered-salary check must NOT fire.
-    const fullCover = { ...disabilityCover, percent: 75, coveredSalary: 14000 }
+  it('measures the total benefit against the collapsed salary, not a doubled echo', () => {
+    // Managers אכ"ע pays 11,000 on a 14,000 base, and a pension fund echoes the
+    // same 14,000 salary. The salary must collapse to 14,000 (not double to
+    // 28,000), so 11,000/14,000 ≈ 79% is adequate — no under-coverage finding.
+    const fullCover = { ...disabilityCover, percent: 75, coveredSalary: 14000, amount: 11000 }
     const out = incomeProtectionEngine(
       input([
         makePolicy({ policyNumber: 'MNG', productType: 'managers', coveredSalary: 14000, coverages: [fullCover] }),
         makePolicy({ policyNumber: 'PEN', productType: 'pension', coveredSalary: 14000 }),
       ]),
     )
-    expect(out.some((x) => x.title.includes('פער בין השכר המבוטח'))).toBe(false)
+    expect(out.some((x) => x.title.includes('תת-כיסוי'))).toBe(false)
+  })
+
+  it('flags aggregate under-coverage even when each product is fine on its own', () => {
+    // Salary 30k; pension pays 15k (75% of its 20k base — fine internally) and a
+    // supplement pays 5k. Total 20k = 67% of 30k → under-covered in aggregate.
+    const cover = (policyNumber: string, amount: number, percent: number, coveredSalary: number) => ({
+      type: 'disability' as const, name: null, amount, percent, coveredSalary, cost: null, status: 'active' as const, policyNumber,
+    })
+    const out = incomeProtectionEngine(
+      input(
+        [
+          makePolicy({ policyNumber: 'PEN', productType: 'pension', coverages: [cover('PEN', 15000, 75, 20000)] }),
+          makePolicy({ policyNumber: 'SUP', productType: 'incomeProtection', coverages: [cover('SUP', 5000, 50, 10000)] }),
+        ],
+        { currentGrossSalary: 30000 },
+      ),
+    )
+    const f = out.find((x) => x.title.includes('תת-כיסוי אכ"ע כולל'))
+    expect(f).toBeDefined()
+    expect(f?.description).toContain('67%')
   })
 })
 

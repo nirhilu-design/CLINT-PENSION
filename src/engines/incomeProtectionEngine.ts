@@ -5,7 +5,15 @@ import type { Engine } from './engineTypes'
 import { makeFinding, effectiveSalary } from './engineTypes'
 import { isBlockedByStopIssue } from './stopIssueEngine'
 
-import { IP_TARGET_COVERAGE_PERCENT as TARGET_PERCENT, IP_COVERAGE_PERCENT_SLACK, IP_COVERED_SALARY_RATIO } from '../config/thresholds'
+import { IP_TARGET_COVERAGE_PERCENT as TARGET_PERCENT, IP_COVERAGE_PERCENT_SLACK } from '../config/thresholds'
+
+// The actual monthly disability benefit: the reported amount, or — when it is
+// missing — reconstructed from the insured salary and the coverage percent.
+function benefitOf(c: { amount: number | null; coveredSalary: number | null; percent: number | null }): number | null {
+  if (c.amount !== null) return c.amount
+  if (c.coveredSalary !== null && c.percent !== null) return (c.coveredSalary * c.percent) / 100
+  return null
+}
 
 export const incomeProtectionEngine: Engine = ({ policies, supplementary }) => {
   const findings = []
@@ -59,30 +67,33 @@ export const incomeProtectionEngine: Engine = ({ policies, supplementary }) => {
     }
   }
 
-  // Client level: covered salary for disability vs the actual salary
-  // (client-stated salary wins over the XML-reported insured salary)
+  // Client level: the TOTAL monthly disability benefit across ALL products
+  // (pension included) against the actual salary. A saver can be correctly
+  // covered inside one product — e.g. 75% of a pension's insured base — yet be
+  // under-covered in aggregate, because the summed benefits fall short of the
+  // real salary. This is the headline "actual benefit vs reported salary".
   const salary = effectiveSalary(policies, supplementary)
-  if (salary && salary > 0) {
+  const benefits = disabilityCoverages
+    .map(({ coverage }) => benefitOf(coverage))
+    .filter((b): b is number => b !== null && b > 0)
+  if (salary && salary > 0 && benefits.length > 0) {
     const fromClient = supplementary.currentGrossSalary !== null
-    const maxCoveredSalary = Math.max(
-      ...disabilityCoverages.map(({ coverage }) => coverage.coveredSalary ?? 0),
+    const totalBenefit = benefits.reduce((sum, b) => sum + b, 0)
+    const ratio = Math.round((totalBenefit / salary) * 100)
+    const under = ratio < TARGET_PERCENT - IP_COVERAGE_PERCENT_SLACK
+    findings.push(
+      makeFinding({
+        category: 'insurance',
+        level: 'client',
+        severity: under ? (familyRelies ? 'gap' : 'attention') : 'info',
+        title: under ? 'תת-כיסוי אכ"ע כולל מול השכר' : 'כיסוי אכ"ע כולל מול השכר',
+        description:
+          `סך הפיצוי החודשי לאובדן כושר עבודה בתיק (₪${totalBenefit.toLocaleString()}) מהווה כ-${ratio}% מ${fromClient ? 'השכר שציינת' : 'השכר המדווח בקבצים'} (₪${salary.toLocaleString()})` +
+          (under ? `, מתחת ליעד המקובל של ${TARGET_PERCENT}%` : '') +
+          '. נקודה לבדיקה מול בעל רישיון.',
+        basedOn: 'סך קצבאות אכ"ע בתיק (כל המוצרים) מול השכר בפועל',
+      }),
     )
-    if (maxCoveredSalary > 0 && maxCoveredSalary < salary * IP_COVERED_SALARY_RATIO) {
-      findings.push(
-        makeFinding({
-          category: 'insurance',
-          level: 'client',
-          severity: 'gap',
-          title: 'נמצא פער בין השכר המבוטח לאכ"ע לשכר בפועל',
-          description:
-            `השכר המבוטח לאובדן כושר עבודה (₪${maxCoveredSalary.toLocaleString()}) נמוך מ${fromClient ? 'השכר שציינת' : 'השכר המדווח בקבצים'} ` +
-            `(₪${salary.toLocaleString()}). נקודה לבדיקה מול בעל רישיון.`,
-          basedOn: fromClient
-            ? 'השכר המבוטח לנכות בקבצי המסלקה מול השכר שהוזן בטופס'
-            : 'השכר המבוטח לנכות מול השכר המבוטח הגבוה בתיק, שניהם מקבצי המסלקה',
-        }),
-      )
-    }
   }
 
   return findings
