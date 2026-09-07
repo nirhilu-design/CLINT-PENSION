@@ -3,6 +3,8 @@ import type { Policy, SupplementaryInfo } from '../models/types'
 import { emptySupplementary } from '../services/analysisService'
 import { depositsEngine } from './depositsEngine'
 import { costEngine } from './costEngine'
+import { feeBenchmarkEngine } from './feeBenchmarkEngine'
+import { equityMixEngine } from './equityMixEngine'
 import { incomeProtectionEngine } from './incomeProtectionEngine'
 import { dataQualityEngine } from './dataQualityEngine'
 import { deathPictureEngine } from './deathPictureEngine'
@@ -369,6 +371,73 @@ describe('salary from pension products', () => {
       ]),
     )
     expect(out.some((f) => f.title.includes('נמוך מנתון ההשוואה'))).toBe(true)
+  })
+})
+
+describe('feeBenchmarkEngine', () => {
+  it('flags a fund whose accumulation fee exceeds the per-product BM', () => {
+    const out = feeBenchmarkEngine(
+      input([makePolicy({ policyNumber: 'EDU', productType: 'education', fees: { fromDeposit: null, fromAccumulation: 1.0 } })]),
+    )
+    expect(out.some((f) => f.title.includes('דמי ניהול גבוהים'))).toBe(true)
+  })
+
+  it('is silent when a fee agreement exists (costEngine judges those)', () => {
+    const out = feeBenchmarkEngine(
+      input([makePolicy({ policyNumber: 'EDU', productType: 'education', fees: { fromDeposit: null, fromAccumulation: 1.0 } })], {
+        feeAgreements: [{ policyNumber: 'EDU', agreedFeeFromDeposit: null, agreedFeeFromAccumulation: 0.5 }],
+      }),
+    )
+    expect(out).toHaveLength(0)
+  })
+
+  it('is silent when the fee is within the BM', () => {
+    const out = feeBenchmarkEngine(
+      input([makePolicy({ productType: 'pension', fees: { fromDeposit: 1.2, fromAccumulation: 0.14 } })]),
+    )
+    expect(out).toHaveLength(0)
+  })
+})
+
+describe('equityMixEngine', () => {
+  const aged = (birthDate: string) => ({ ...client, birthDate })
+  const alloc = (mofid: string, equityPercent: number) => ({
+    mofid,
+    period: '202409',
+    groups: [{ name: 'מניות', percent: equityPercent }],
+  })
+
+  it('flags equity below the age-band reference (under 50 → 70%)', () => {
+    const out = equityMixEngine({
+      client: aged('1985-01-01'), // ~40
+      policies: [makePolicy({ policyNumber: 'G', productType: 'gemel', mofid: '5', currentValue: 100000 })],
+      supplementary: { ...emptySupplementary(), treasuryAllocations: [alloc('5', 30)] },
+    })
+    expect(out.some((f) => f.title.includes('חשיפה מנייתית'))).toBe(true)
+  })
+
+  it('is silent when equity is within the reference (minus slack)', () => {
+    const out = equityMixEngine({
+      client: aged('1985-01-01'),
+      policies: [makePolicy({ policyNumber: 'G', productType: 'gemel', mofid: '5', currentValue: 100000 })],
+      supplementary: { ...emptySupplementary(), treasuryAllocations: [alloc('5', 68)] },
+    })
+    expect(out).toHaveLength(0)
+  })
+
+  it('is silent with no allocation data and when age is unknown', () => {
+    const noData = equityMixEngine({
+      client: aged('1985-01-01'),
+      policies: [makePolicy({ productType: 'gemel', mofid: '5' })],
+      supplementary: emptySupplementary(),
+    })
+    const noAge = equityMixEngine({
+      client,
+      policies: [makePolicy({ productType: 'gemel', mofid: '5' })],
+      supplementary: { ...emptySupplementary(), treasuryAllocations: [alloc('5', 10)] },
+    })
+    expect(noData).toHaveLength(0)
+    expect(noAge).toHaveLength(0)
   })
 })
 

@@ -2,6 +2,8 @@ import type { Engine, EngineInput } from './engineTypes'
 import type { Finding } from '../models/types'
 import { stopIssueEngine } from './stopIssueEngine'
 import { costEngine } from './costEngine'
+import { feeBenchmarkEngine } from './feeBenchmarkEngine'
+import { equityMixEngine } from './equityMixEngine'
 import { retirementEngine } from './retirementEngine'
 import { incomeProtectionEngine } from './incomeProtectionEngine'
 import { deathPictureEngine } from './deathPictureEngine'
@@ -17,6 +19,8 @@ export { buildExecutiveSummary } from './executiveSummaryEngine'
 const engines: { id: string; engine: Engine }[] = [
   { id: 'managersGeneration', engine: stopIssueEngine },
   { id: 'cost', engine: costEngine },
+  { id: 'feeBenchmark', engine: feeBenchmarkEngine },
+  { id: 'equityMix', engine: equityMixEngine },
   { id: 'retirement', engine: retirementEngine },
   { id: 'incomeProtection', engine: incomeProtectionEngine },
   { id: 'deathPicture', engine: deathPictureEngine },

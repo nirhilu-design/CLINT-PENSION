@@ -8,6 +8,9 @@ import type { Policy, ProductType, TreasuryAllocation } from '../models/types'
 // The "gemel family" of savings vehicles (excludes pension/insurance products).
 export const GEMEL_FAMILY: ProductType[] = ['gemel', 'gemelInvestment']
 
+// The savings family, including education funds — the scope of the equity-mix check.
+export const SAVINGS_FAMILY: ProductType[] = ['gemel', 'gemelInvestment', 'education']
+
 export interface CompanyExposure {
   company: string
   value: number
@@ -52,7 +55,7 @@ function companyBreakdown(policies: Policy[], total: number): CompanyExposure[] 
 
 // Equity share weighted by each policy's value, using the "9-group" allocation
 // (group named מניות). Only policies whose mofid has allocation data count.
-function equityBreakdown(policies: Policy[], allocations: TreasuryAllocation[]): EquityExposure {
+export function equityBreakdown(policies: Policy[], allocations: TreasuryAllocation[]): EquityExposure {
   const byMofid = new Map(allocations.map((a) => [a.mofid, a]))
   let coveredValue = 0
   let equityValue = 0

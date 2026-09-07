@@ -24,6 +24,13 @@ export interface ThresholdValues {
   returnBelowBenchmarkTolerance: number
   educationFundLiquidityYears: number
   educationFundMonthlySalaryCap: number
+  // Equity-mix by age (savings family: gemel, gemel-investment, education)
+  equityYoungMaxAge: number // below this age → "young" equity target
+  equityMidMaxAge: number // below this age → "mid" target; at/above → "senior"
+  equityTargetYoung: number // reference equity share for the young band (%)
+  equityTargetMid: number // reference equity share for the mid band (%)
+  equityTargetSenior: number // reference equity share for the senior band (%)
+  equityMixSlack: number // how far below target before a finding opens (pp)
   mekifaSalaryCap: number
   managersNewFactorFeeThreshold: number
   depositRecencyMonths: number
@@ -37,9 +44,9 @@ export const DEFAULT_THRESHOLDS: ThresholdValues = {
   // Fees: market "worth checking" thresholds per product (percent)
   marketFees: {
     pension: { fromDeposit: 3.0, fromAccumulation: 0.25 },
-    gemel: { fromDeposit: null, fromAccumulation: 0.7 },
-    gemelInvestment: { fromDeposit: null, fromAccumulation: 0.7 },
-    education: { fromDeposit: null, fromAccumulation: 0.7 },
+    gemel: { fromDeposit: null, fromAccumulation: 0.8 },
+    gemelInvestment: { fromDeposit: null, fromAccumulation: 0.8 },
+    education: { fromDeposit: null, fromAccumulation: 0.8 },
     managers: { fromDeposit: 4.0, fromAccumulation: 1.2 },
   },
   feeAboveFundAvgTolerance: 0.1, // tolerance above agreement / fund average (pp)
@@ -53,6 +60,12 @@ export const DEFAULT_THRESHOLDS: ThresholdValues = {
   returnBelowBenchmarkTolerance: 0.5, // pp below benchmark before finding
   educationFundLiquidityYears: 6,
   educationFundMonthlySalaryCap: 15712, // תקרת שכר מוטבת (2024-2025)
+  equityYoungMaxAge: 50,
+  equityMidMaxAge: 60,
+  equityTargetYoung: 70, // reference equity share, under 50
+  equityTargetMid: 50, // reference equity share, 50–60
+  equityTargetSenior: 30, // reference equity share, 60+
+  equityMixSlack: 5, // pp below the reference before a finding opens
   mekifaSalaryCap: 26632, // twice the national average wage (2025)
   managersNewFactorFeeThreshold: 0.8, // 2004-2013 new-factor managers: fee at/below → leave alone
   depositRecencyMonths: 3, // months allowed since last deposit vs file date
@@ -84,6 +97,12 @@ export let PENSION_DISABILITY_LOW_PERCENT = DEFAULT_THRESHOLDS.pensionDisability
 export let RETURN_BELOW_BENCHMARK_TOLERANCE = DEFAULT_THRESHOLDS.returnBelowBenchmarkTolerance
 export let EDUCATION_FUND_LIQUIDITY_YEARS = DEFAULT_THRESHOLDS.educationFundLiquidityYears
 export let EDUCATION_FUND_MONTHLY_SALARY_CAP = DEFAULT_THRESHOLDS.educationFundMonthlySalaryCap
+export let EQUITY_YOUNG_MAX_AGE = DEFAULT_THRESHOLDS.equityYoungMaxAge
+export let EQUITY_MID_MAX_AGE = DEFAULT_THRESHOLDS.equityMidMaxAge
+export let EQUITY_TARGET_YOUNG = DEFAULT_THRESHOLDS.equityTargetYoung
+export let EQUITY_TARGET_MID = DEFAULT_THRESHOLDS.equityTargetMid
+export let EQUITY_TARGET_SENIOR = DEFAULT_THRESHOLDS.equityTargetSenior
+export let EQUITY_MIX_SLACK = DEFAULT_THRESHOLDS.equityMixSlack
 export let MEKIFA_SALARY_CAP = DEFAULT_THRESHOLDS.mekifaSalaryCap
 export let MANAGERS_NEW_FACTOR_FEE_THRESHOLD = DEFAULT_THRESHOLDS.managersNewFactorFeeThreshold
 export let DEPOSIT_RECENCY_MONTHS = DEFAULT_THRESHOLDS.depositRecencyMonths
@@ -105,6 +124,12 @@ export function applyThresholds(t: ThresholdValues): void {
   RETURN_BELOW_BENCHMARK_TOLERANCE = t.returnBelowBenchmarkTolerance
   EDUCATION_FUND_LIQUIDITY_YEARS = t.educationFundLiquidityYears
   EDUCATION_FUND_MONTHLY_SALARY_CAP = t.educationFundMonthlySalaryCap
+  EQUITY_YOUNG_MAX_AGE = t.equityYoungMaxAge
+  EQUITY_MID_MAX_AGE = t.equityMidMaxAge
+  EQUITY_TARGET_YOUNG = t.equityTargetYoung
+  EQUITY_TARGET_MID = t.equityTargetMid
+  EQUITY_TARGET_SENIOR = t.equityTargetSenior
+  EQUITY_MIX_SLACK = t.equityMixSlack
   MEKIFA_SALARY_CAP = t.mekifaSalaryCap
   MANAGERS_NEW_FACTOR_FEE_THRESHOLD = t.managersNewFactorFeeThreshold
   DEPOSIT_RECENCY_MONTHS = t.depositRecencyMonths
