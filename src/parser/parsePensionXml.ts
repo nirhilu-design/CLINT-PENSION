@@ -374,6 +374,19 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
 
       const statusRaw = getText(heshbon, 'STATUS-POLISA-O-CHESHBON')
 
+      // A guaranteed factor is an ANNUITY feature. A fully-capital (הונית) policy
+      // has no annuity component, so a reported MEKADEM-MOVTACH-LEPRISHA there is
+      // illustrative, not a guaranteed benefit. Suppress it when the whole balance
+      // is capital (SUG-ITRA-LETKUFA=1). When the breakdown isn't reported
+      // (capitalBalance null) we can't tell, so we keep trusting the field.
+      const capitalBalance = parseCapitalBalance(heshbon)
+      const fullyCapital =
+        capitalBalance !== null && currentValue !== null && capitalBalance >= currentValue - 1
+      const hasGuaranteedFactor =
+        (getNumber(yitra, 'MEKADEM-MOVTACH-LEPRISHA') ?? 0) > 0 &&
+        (openDate === null || openDate < '2013-01-01') &&
+        !fullyCapital
+
       policies.push({
         policyNumber,
         productType,
@@ -389,7 +402,7 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
           heshbon,
           'SchumeiBituahYesodi ACHUZ-HAKTZAA-LE-CHISACHON',
         ),
-        capitalBalance: parseCapitalBalance(heshbon),
+        capitalBalance,
         // STATUS-POLISA-O-CHESHBON 4 = ריסק זמני, 8 = ריסק זמני אוטומטי:
         // deposits stopped but risk coverage is kept temporarily from the accumulation.
         temporaryRisk: statusRaw === '4' || statusRaw === '8',
@@ -414,13 +427,7 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
         beneficiaries: parseBeneficiaries(heshbon),
         managersGeneration:
           productType === 'managers' ? classifyManagersGeneration(openDate) : null,
-        // Guaranteed annuity coefficients were abolished for policies opened from
-        // Jan 2013. Insurers still populate MEKADEM-MOVTACH-LEPRISHA with an
-        // illustrative coefficient on newer policies, so a positive value alone
-        // isn't proof — a policy opened in 2013+ cannot carry a guaranteed factor.
-        hasGuaranteedFactor:
-          (getNumber(yitra, 'MEKADEM-MOVTACH-LEPRISHA') ?? 0) > 0 &&
-          (openDate === null || openDate < '2013-01-01'),
+        hasGuaranteedFactor,
         reportDate: parseDate(getText(heshbon, 'TAARICH-NECHONUT')),
         lastDepositMonth,
         lastDepositTotal,

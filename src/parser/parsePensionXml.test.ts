@@ -159,6 +159,24 @@ describe('parsePensionXml', () => {
     expect(pre[0].hasGuaranteedFactor).toBe(true)
   })
 
+  it('does not claim a guaranteed factor on a fully-capital (הונית) policy', () => {
+    // Pre-2013 open date (would otherwise keep the factor) but the whole balance
+    // is capital (SUG-ITRA-LETKUFA=1) — a guaranteed factor is an annuity feature,
+    // so the reported coefficient is illustrative here.
+    const capital = fixture()
+      .replace(
+        '<TAARICH-HITZTARFUT-MUTZAR>20191222</TAARICH-HITZTARFUT-MUTZAR>',
+        '<TAARICH-HITZTARFUT-MUTZAR>20101222</TAARICH-HITZTARFUT-MUTZAR>',
+      )
+      .replace(
+        '<PerutMasluleiHashkaa>',
+        '<PerutYitraLeTkufa><SUG-ITRA-LETKUFA>1</SUG-ITRA-LETKUFA><SACH-ITRA-LESHICHVA-BESHACH>150000</SACH-ITRA-LESHICHVA-BESHACH></PerutYitraLeTkufa><PerutMasluleiHashkaa>',
+      )
+    const { policies: cap } = parsePensionXml(capital, 'test.xml')
+    expect(cap[0].capitalBalance).toBe(150000)
+    expect(cap[0].hasGuaranteedFactor).toBe(false)
+  })
+
   it('aggregates monthly deposits across contribution types', () => {
     expect(p.monthlyDeposits).toEqual([{ month: '2024-08', total: 1500 }])
     expect(p.lastDepositMonth).toBe('2024-09')
