@@ -25,9 +25,7 @@ export const savingsEngine: Engine = ({ policies, supplementary }) => {
           level: 'policy',
           severity: 'info',
           title: 'קרן ההשתלמות נזילה',
-          description:
-            `בקרן ${p.policyNumber} חלפו 6 שנים מההצטרפות — הצבירה (${formatCurrency(p.currentValue)}) נזילה וזמינה למשיכה פטורה ממס. ` +
-            'המשך חיסכון שומר על הפטור גם להפקדות החדשות.',
+          description: `קרן ${p.policyNumber} נזילה (6 שנים מההצטרפות) — ${formatCurrency(p.currentValue)} זמינים למשיכה, פטורים ממס עד תקרת ההפקדה המוטבת.`,
           productType: p.productType,
           policyNumber: p.policyNumber,
         }),
@@ -39,7 +37,7 @@ export const savingsEngine: Engine = ({ policies, supplementary }) => {
           level: 'policy',
           severity: 'info',
           title: 'קרן ההשתלמות טרם נזילה',
-          description: `קרן ${p.policyNumber} תהפוך נזילה בתאריך ${formatDate(educationFundLiquidDate(p))}.`,
+          description: `קרן ${p.policyNumber} תהפוך נזילה ב-${formatDate(educationFundLiquidDate(p))}.`,
           productType: p.productType,
           policyNumber: p.policyNumber,
         }),
@@ -55,9 +53,7 @@ export const savingsEngine: Engine = ({ policies, supplementary }) => {
           level: 'policy',
           severity: 'info',
           title: 'קרן השתלמות לעצמאים — הטבת מס שונה',
-          description:
-            `בקרן ${p.policyNumber}: כעצמאי/ת, הטבת המס בהשתלמות ניתנת כניכוי מההכנסה החייבת עד תקרת הפקדה שנתית, ` +
-            'ולא לפי תקרת שכר חודשית. ניצול התקרה השנתית הוא נקודה לבדיקה מול בעל רישיון.',
+          description: `קרן ${p.policyNumber} לעצמאי/ת — הטבת המס כניכוי מההכנסה עד תקרת הפקדה שנתית (לא לפי תקרת שכר חודשית); ניצול התקרה — נקודה לבדיקה מול בעל רישיון.`,
           productType: p.productType,
           policyNumber: p.policyNumber,
         }),
@@ -82,11 +78,11 @@ export const savingsEngine: Engine = ({ policies, supplementary }) => {
           severity: 'info',
           title: overCap ? 'הפקדה על שכר מלא (מעל תקרת המס)' : 'הפקדה בתוך תקרת המס',
           description:
-            `בקרן ${p.policyNumber} ההפקדות מבוצעות על שכר של ${formatCurrency(p.coveredSalary)} — ` +
+            `קרן ${p.policyNumber} — הפקדה על שכר ${formatCurrency(p.coveredSalary)} ` +
             (overCap
-              ? `מעל תקרת השכר המוטבת (${formatCurrency(EDUCATION_FUND_MONTHLY_SALARY_CAP)}); על החלק שמעל התקרה אין הטבת מס. `
-              : `בתוך תקרת השכר המוטבת (${formatCurrency(EDUCATION_FUND_MONTHLY_SALARY_CAP)}). `) +
-            (percents ? `שיעורי ההפרשה: ${percents}.` : ''),
+              ? `מעל התקרה המוטבת (${formatCurrency(EDUCATION_FUND_MONTHLY_SALARY_CAP)}); על החלק שמעליה אין הטבת מס`
+              : `בתוך התקרה המוטבת (${formatCurrency(EDUCATION_FUND_MONTHLY_SALARY_CAP)})`) +
+            (percents ? ` (${percents})` : '') + '.',
           productType: p.productType,
           policyNumber: p.policyNumber,
         }),
@@ -102,9 +98,7 @@ export const savingsEngine: Engine = ({ policies, supplementary }) => {
         level: 'policy',
         severity: 'info',
         title: 'גמל להשקעה — נזיל בכל עת',
-        description:
-          `הצבירה בחשבון ${p.policyNumber} (${formatCurrency(p.currentValue)}) נזילה בכל עת (בכפוף למס רווחי הון במשיכה). ` +
-          'משיכה כקצבה מגיל 60 פטורה ממס.',
+        description: `גמל להשקעה ${p.policyNumber} — ${formatCurrency(p.currentValue)} נזילים בכל עת (בכפוף למס רווחי הון); משיכה כקצבה מגיל 60 פטורה ממס.`,
         productType: p.productType,
         policyNumber: p.policyNumber,
       }),
