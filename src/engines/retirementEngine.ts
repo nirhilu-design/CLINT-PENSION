@@ -84,22 +84,6 @@ export const retirementEngine: Engine = ({ policies, supplementary }) => {
     )
   }
 
-  // Pension products missing expected pension → limitation, not a guess
-  for (const p of pensionable.filter((p) => !hasPensionData(p))) {
-    findings.push(
-      makeFinding({
-        category: 'limitation',
-        level: 'policy',
-        severity: 'info',
-        title: 'לא ניתן לחשב קצבה צפויה',
-        description: `בפוליסה ${p.policyNumber} לא דווח נתון קצבה צפויה, ולכן לא נכלל בניתוח הפרישה.`,
-        missingInfo: 'נתון קצבה צפויה (KITZVAT-HODSHIT-TZFUYA) בדיווח היצרן',
-        productType: p.productType,
-        policyNumber: p.policyNumber,
-      }),
-    )
-  }
-
   // Employee without employer contributions anywhere — worth checking entitlement
   if (
     (supplementary.employmentStatus === 'employee' || supplementary.employmentStatus === 'both') &&

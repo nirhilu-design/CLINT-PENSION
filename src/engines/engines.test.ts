@@ -66,39 +66,28 @@ function input(policies: Policy[], supp: Partial<SupplementaryInfo> = {}) {
 }
 
 describe('depositsEngine', () => {
-  it('is silent for continuous, recent deposits', () => {
-    const months = Array.from({ length: 12 }, (_, i) => ({
-      month: `2024-${String(i + 1).padStart(2, '0')}`,
-      total: 1500,
-    }))
-    const out = depositsEngine(input([makePolicy({ monthlyDeposits: months })]))
-    expect(out.filter((f) => f.severity !== 'info')).toHaveLength(0)
+  it('is silent when deposits exist (last deposit month present, even if stale)', () => {
+    const out = depositsEngine(input([makePolicy({ lastDepositMonth: '2020-04', monthlyDeposits: [] })]))
+    expect(out).toHaveLength(0)
   })
 
-  it('flags stale last deposit relative to the file date (not today)', () => {
-    const out = depositsEngine(input([makePolicy({ lastDepositMonth: '2024-04' })]))
-    expect(out.some((f) => f.title.includes('אינה עדכנית'))).toBe(true)
-  })
-
-  it('flags missing months inside the reported window', () => {
+  it('is silent when monthly deposits exist', () => {
     const out = depositsEngine(
-      input([
-        makePolicy({
-          monthlyDeposits: [
-            { month: '2023-10', total: 1500 },
-            { month: '2024-04', total: 1500 },
-          ],
-        }),
-      ]),
+      input([makePolicy({ lastDepositMonth: null, monthlyDeposits: [{ month: '2024-04', total: 1500 }] })]),
     )
-    expect(out.some((f) => f.title.includes('ללא הפקדה'))).toBe(true)
+    expect(out).toHaveLength(0)
+  })
+
+  it('flags an active policy with no deposits at all', () => {
+    const out = depositsEngine(input([makePolicy({ lastDepositMonth: null, monthlyDeposits: [] })]))
+    expect(out.some((f) => f.title.includes('ללא הפקדות'))).toBe(true)
   })
 
   it('skips inactive and risk-only products', () => {
     const out = depositsEngine(
       input([
-        makePolicy({ status: 'inactive', lastDepositMonth: '2020-01' }),
-        makePolicy({ policyNumber: 'P9', productType: 'life', lastDepositMonth: '2020-01' }),
+        makePolicy({ status: 'inactive', lastDepositMonth: null, monthlyDeposits: [] }),
+        makePolicy({ policyNumber: 'P9', productType: 'life', lastDepositMonth: null, monthlyDeposits: [] }),
       ]),
     )
     expect(out).toHaveLength(0)
@@ -454,6 +443,15 @@ describe('equityMixEngine', () => {
       supplementary: { ...emptySupplementary(), treasuryAllocations: [alloc('9', 25)] },
     })
     expect(out.some((f) => f.title.includes('חשיפה מנייתית'))).toBe(true)
+  })
+
+  it('runs a separate pension check on the pension funds’ own equity', () => {
+    const out = equityMixEngine({
+      client: aged('1985-01-01'), // ~40, target 70%
+      policies: [makePolicy({ policyNumber: 'PEN', productType: 'pension', mofid: '3', currentValue: 300000 })],
+      supplementary: { ...emptySupplementary(), treasuryAllocations: [alloc('3', 40)] },
+    })
+    expect(out.some((f) => f.title.includes('קרן הפנסיה'))).toBe(true)
   })
 
   it('is silent with no allocation data and when age is unknown', () => {
