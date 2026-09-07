@@ -397,6 +397,17 @@ describe('feeBenchmarkEngine', () => {
     )
     expect(out).toHaveLength(0)
   })
+
+  it('covers קופת גמל against its per-product BM (0.8%)', () => {
+    const flagged = feeBenchmarkEngine(
+      input([makePolicy({ policyNumber: 'GML', productType: 'gemel', fees: { fromDeposit: null, fromAccumulation: 0.95 } })]),
+    )
+    const within = feeBenchmarkEngine(
+      input([makePolicy({ policyNumber: 'GML', productType: 'gemel', fees: { fromDeposit: null, fromAccumulation: 0.7 } })]),
+    )
+    expect(flagged.some((f) => f.title.includes('דמי ניהול גבוהים'))).toBe(true)
+    expect(within).toHaveLength(0)
+  })
 })
 
 describe('equityMixEngine', () => {
