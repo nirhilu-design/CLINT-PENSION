@@ -11,7 +11,7 @@ type NavItem = {
   isActive: (step: Step) => boolean
 }
 
-const NAV: NavItem[] = [
+export const NAV: NavItem[] = [
   {
     label: 'דשבורד',
     icon: LayoutDashboard,

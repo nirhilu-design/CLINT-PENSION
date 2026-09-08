@@ -8,12 +8,15 @@ import AdvisorPage from './pages/AdvisorPage'
 import LogicEditorPage from './pages/LogicEditorPage'
 import PolicyDrawer from './components/PolicyDrawer'
 import Sidebar from './components/Sidebar'
+import MobileShell from './components/MobileShell'
+import { useIsMobile } from './hooks/useIsMobile'
 
 // Screens that live inside the sidebar app shell.
 const SHELL_STEPS: Step[] = ['dashboard', 'product', 'summary', 'advisor', 'logic']
 
 export default function App() {
   const { state, dispatch } = useApp()
+  const isMobile = useIsMobile()
 
   const selectedPolicy = state.analysis?.policies.find(
     (p) => p.policyNumber === state.selectedPolicyNumber,
@@ -41,22 +44,26 @@ export default function App() {
   return (
     <>
       {inShell ? (
-        <div
-          dir="rtl"
-          style={{
-            height: '100vh',
-            display: 'flex',
-            flexDirection: 'row-reverse',
-            background: 'var(--color-bg-page)',
-            fontFamily: 'var(--font-ui)',
-            overflow: 'hidden',
-          }}
-        >
-          <Sidebar />
-          <main data-app-main className="clint-scroll" style={{ flex: 1, overflowY: 'auto', height: '100vh', position: 'relative' }}>
-            {page}
-          </main>
-        </div>
+        isMobile ? (
+          <MobileShell>{page}</MobileShell>
+        ) : (
+          <div
+            dir="rtl"
+            style={{
+              height: '100vh',
+              display: 'flex',
+              flexDirection: 'row-reverse',
+              background: 'var(--color-bg-page)',
+              fontFamily: 'var(--font-ui)',
+              overflow: 'hidden',
+            }}
+          >
+            <Sidebar />
+            <main data-app-main className="clint-scroll" style={{ flex: 1, overflowY: 'auto', height: '100vh', position: 'relative' }}>
+              {page}
+            </main>
+          </div>
+        )
       ) : (
         page
       )}
