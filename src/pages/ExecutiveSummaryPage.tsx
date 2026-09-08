@@ -1,10 +1,11 @@
+import { useState } from 'react'
 import { useApp } from '../hooks/useAppState'
 import FindingCard from '../components/FindingCard'
 import Card from '../components/ds/Card'
 import { formatCurrency } from '../utils/format'
 import { sortFindings } from '../engines/findingPriority'
 import type { Finding } from '../models/types'
-import { Download, ArrowRight } from 'lucide-react'
+import { Download, ArrowRight, ChevronDown } from 'lucide-react'
 
 const SEVERITY_GROUPS: { key: Finding['severity']; label: string; bg: string; color: string }[] = [
   { key: 'gap', label: 'פערים', bg: 'var(--color-danger-bg)', color: 'var(--color-danger-dark)' },
@@ -27,6 +28,7 @@ function Kpi({ label, value }: { label: string; value: string }) {
 
 export default function ExecutiveSummaryPage() {
   const { state, dispatch } = useApp()
+  const [showInfo, setShowInfo] = useState(false)
   const analysis = state.analysis!
   const { executiveSummary, client, policies, findings } = analysis
 
@@ -92,23 +94,46 @@ export default function ExecutiveSummaryPage() {
         </p>
       </Card>
 
-      {/* Findings grouped by severity */}
+      {/* Findings ranked by severity: gaps and attention shown, the rest
+          (information & context) collapsed behind a toggle. */}
       {SEVERITY_GROUPS.map((g) => {
         const groupFindings = sortFindings(findings.filter((f) => f.severity === g.key))
         if (groupFindings.length === 0) return null
+        const collapsible = g.key === 'info'
+        const open = !collapsible || showInfo
+        const chip = (
+          <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 12px', borderRadius: 'var(--radius-full)', background: g.bg, color: g.color }}>
+            {g.label}
+          </span>
+        )
         return (
           <section key={g.key} style={{ marginBottom: 24 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 12px', borderRadius: 'var(--radius-full)', background: g.bg, color: g.color }}>
-                {g.label}
-              </span>
-              <span style={{ fontSize: 13, color: 'var(--color-text-tertiary)' }}>{groupFindings.length}</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {groupFindings.map((f) => (
-                <FindingCard key={f.id} finding={f} />
-              ))}
-            </div>
+            {collapsible ? (
+              <button
+                onClick={() => setShowInfo((v) => !v)}
+                aria-expanded={open}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                {chip}
+                <span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>{groupFindings.length}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600, color: 'var(--color-primary)' }}>
+                  {open ? 'הסתר' : `הצג ${groupFindings.length} הארות`}
+                  <ChevronDown size={15} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 150ms var(--ease-out)' }} />
+                </span>
+              </button>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                {chip}
+                <span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>{groupFindings.length}</span>
+              </div>
+            )}
+            {open && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {groupFindings.map((f) => (
+                  <FindingCard key={f.id} finding={f} />
+                ))}
+              </div>
+            )}
           </section>
         )
       })}

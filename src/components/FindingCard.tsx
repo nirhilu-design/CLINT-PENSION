@@ -15,13 +15,26 @@ function kindOf(f: Finding): DisplayKind {
   return 'info'
 }
 
-const kindStyles: Record<DisplayKind, { border: string; chip: string; label: string }> = {
-  block: { border: 'border-s-slate-700', chip: 'bg-slate-700 text-white', label: 'ניתוח מוגבל' },
-  gap: { border: 'border-s-rose-400', chip: 'bg-rose-50 text-rose-700', label: 'נמצא פער' },
-  attention: { border: 'border-s-amber-400', chip: 'bg-amber-50 text-amber-700', label: 'נקודה לבדיקה' },
-  missing: { border: 'border-s-violet-300', chip: 'bg-violet-50 text-violet-600', label: 'מידע חסר' },
-  insight: { border: 'border-s-teal-300', chip: 'bg-teal-50 text-teal-700', label: 'הארה' },
-  info: { border: 'border-s-slate-200', chip: 'bg-slate-100 text-slate-500', label: 'מידע' },
+// Every colour is a project design token (index.css), so findings match the rest
+// of the app; chip text uses the darker token variants for WCAG-AA contrast.
+const kindStyles: Record<DisplayKind, { border: string; chipBg: string; chipText: string; label: string }> = {
+  block: { border: 'var(--neutral-600)', chipBg: 'var(--neutral-100)', chipText: 'var(--neutral-800)', label: 'ניתוח מוגבל' },
+  gap: { border: 'var(--color-danger)', chipBg: 'var(--color-danger-bg)', chipText: 'var(--color-danger-dark)', label: 'נמצא פער' },
+  attention: { border: 'var(--color-warning)', chipBg: 'var(--color-warning-bg)', chipText: 'var(--color-warning-dark)', label: 'נקודה לבדיקה' },
+  missing: { border: 'var(--clint-400)', chipBg: 'var(--clint-50)', chipText: 'var(--clint-700)', label: 'מידע חסר' },
+  insight: { border: 'var(--color-teal)', chipBg: 'var(--color-success-bg)', chipText: 'var(--color-success-dark)', label: 'הארה' },
+  info: { border: 'var(--neutral-300)', chipBg: 'var(--neutral-100)', chipText: 'var(--neutral-600)', label: 'מידע' },
+}
+
+const linkStyle: React.CSSProperties = {
+  fontSize: 12,
+  fontWeight: 600,
+  color: 'var(--color-primary)',
+  background: 'none',
+  border: 'none',
+  padding: 0,
+  cursor: 'pointer',
+  fontFamily: 'inherit',
 }
 
 export default function FindingCard({
@@ -32,47 +45,49 @@ export default function FindingCard({
   interactive?: boolean
 }) {
   const { dispatch } = useApp()
-  const kind = kindStyles[kindOf(finding)]
+  const k = kindStyles[kindOf(finding)]
 
   return (
     <div
-      className={`rounded-xl border border-slate-200/70 border-s-4 bg-white p-3.5 shadow-sm ${kind.border}`}
+      style={{
+        borderRadius: 'var(--radius-md)',
+        border: '1px solid var(--color-border-base)',
+        borderInlineStartWidth: 4,
+        borderInlineStartColor: k.border,
+        background: 'var(--color-bg-card)',
+        padding: 14,
+        boxShadow: 'var(--shadow-card)',
+      }}
     >
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${kind.chip}`}>
-          {kind.label}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 10px', borderRadius: 'var(--radius-full)', background: k.chipBg, color: k.chipText }}>
+          {k.label}
         </span>
-        <span className="text-[11px] text-slate-400">{findingCategoryLabels[finding.category]}</span>
-        <span className="font-semibold text-sm text-slate-800">{finding.title}</span>
+        <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>{findingCategoryLabels[finding.category]}</span>
+        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-primary)' }}>{finding.title}</span>
       </div>
-      <p className="mt-1.5 text-sm text-slate-500 leading-relaxed">{finding.description}</p>
+      <p style={{ margin: '6px 0 0', fontSize: 14, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>{finding.description}</p>
 
       {finding.basedOn && (
-        <p className="mt-1.5 text-xs text-slate-400">
-          <span className="font-medium text-slate-500">מבוסס על:</span> {finding.basedOn}
+        <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--neutral-500)' }}>
+          <span style={{ fontWeight: 600, color: 'var(--color-text-secondary)' }}>מבוסס על:</span> {finding.basedOn}
         </p>
       )}
       {finding.missingInfo && (
-        <p className="mt-1 text-xs text-violet-500">
-          <span className="font-medium">להשלמת הבדיקה:</span> {finding.missingInfo}
+        <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--clint-700)' }}>
+          <span style={{ fontWeight: 600 }}>להשלמת הבדיקה:</span> {finding.missingInfo}
         </p>
       )}
 
       {interactive && (finding.policyNumber || finding.productType) && (
-        <div className="mt-2 flex gap-3">
+        <div style={{ marginTop: 8, display: 'flex', gap: 12 }}>
           {finding.productType && (
-            <button
-              onClick={() => dispatch({ type: 'OPEN_PRODUCT', productType: finding.productType! })}
-              className="text-xs text-brand-700 font-medium hover:underline"
-            >
+            <button onClick={() => dispatch({ type: 'OPEN_PRODUCT', productType: finding.productType! })} style={linkStyle}>
               למסך {productTypeLabels[finding.productType]} ←
             </button>
           )}
           {finding.policyNumber && (
-            <button
-              onClick={() => dispatch({ type: 'OPEN_POLICY', policyNumber: finding.policyNumber! })}
-              className="text-xs text-brand-700 font-medium hover:underline"
-            >
+            <button onClick={() => dispatch({ type: 'OPEN_POLICY', policyNumber: finding.policyNumber! })} style={linkStyle}>
               לפרטי הפוליסה ←
             </button>
           )}
