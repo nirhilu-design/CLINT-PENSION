@@ -35,7 +35,7 @@ export default function ReturnsTable({
 
   return (
     <div className="rounded-2xl bg-white border border-slate-200/70 shadow-sm overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm" style={{ minWidth: 480 }}>
         <thead>
           <tr className="bg-slate-50 text-slate-500">
             <th className="text-right font-medium p-3">קופה</th>
