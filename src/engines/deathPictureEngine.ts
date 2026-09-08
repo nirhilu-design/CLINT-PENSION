@@ -2,9 +2,16 @@
 // Information output only.
 
 import type { Engine } from './engineTypes'
-import { makeFinding } from './engineTypes'
+import { makeFinding, effectiveSalary } from './engineTypes'
 import { formatCurrency } from '../utils/format'
-import { LARGE_ASSETS_THRESHOLD, LARGE_LIFE_COVER_THRESHOLD } from '../config/thresholds'
+import {
+  LARGE_ASSETS_THRESHOLD,
+  LARGE_LIFE_COVER_THRESHOLD,
+  SURVIVOR_TARGET_SPOUSE,
+  SURVIVOR_TARGET_WITH_CHILDREN,
+  SURVIVOR_TARGET_CHILDREN,
+  SURVIVOR_REPLACEMENT_SLACK,
+} from '../config/thresholds'
 
 export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
   const findings = []
@@ -118,6 +125,41 @@ export const deathPictureEngine: Engine = ({ policies, supplementary }) => {
         description:
           'צוין שאין ילדים מתחת לגיל 21 ואין בן/בת זוג, אך קיימים כיסויי מוות/שאירים בתשלום. ' +
           'נקודה לבדיקה מול בעל רישיון.',
+      }),
+    )
+  }
+
+  // Survivor income replacement: the monthly survivor pension vs the salary,
+  // benchmarked by family makeup. In a comprehensive fund the survivor pension
+  // is ~60% of the determining salary for a spouse, up to ~100% with orphans
+  // (40% orphans-only). A survivor pension well below that benchmark of the real
+  // salary — e.g. because the insured base is lower than the full salary — is a
+  // possible income-replacement gap.
+  const salary = effectiveSalary(policies, supplementary)
+  const spouse = supplementary.hasSpouse === true
+  const children = supplementary.hasChildrenUnder21 === true
+  if (salary && salary > 0 && monthlySurvivors > 0 && (spouse || children)) {
+    const target =
+      spouse && children
+        ? SURVIVOR_TARGET_WITH_CHILDREN
+        : spouse
+          ? SURVIVOR_TARGET_SPOUSE
+          : SURVIVOR_TARGET_CHILDREN
+    const actualPercent = Math.round((monthlySurvivors / salary) * 100)
+    const under = actualPercent < target - SURVIVOR_REPLACEMENT_SLACK
+    const reliesOnIncome = supplementary.familyReliesOnIncome === true
+    findings.push(
+      makeFinding({
+        category: 'death',
+        level: 'client',
+        severity: under ? (reliesOnIncome ? 'gap' : 'attention') : 'info',
+        title: under ? 'קצבת שאירים נמוכה מהמקובל ביחס לשכר' : 'קצבת שאירים ביחס לשכר',
+        description:
+          `קצבת השאירים החודשית (${formatCurrency(monthlySurvivors)}) מהווה כ-${actualPercent}% מהשכר (${formatCurrency(salary)}). ` +
+          `לפי הרכב המשפחה, בקרן מקיפה מקובל שיעור של כ-${target}% מהשכר הקובע` +
+          (under ? ', ייתכן פער בהחלפת ההכנסה' : '') +
+          '. נקודה לבדיקה מול בעל רישיון.',
+        basedOn: 'סך קצבת השאירים החודשית מול השכר בפועל, לפי הרכב המשפחה',
       }),
     )
   }

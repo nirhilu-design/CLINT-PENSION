@@ -40,6 +40,11 @@ export interface ThresholdValues {
   salaryCrosscheckDiffRatio: number
   largeAssetsThreshold: number
   largeLifeCoverThreshold: number
+  // Survivor pension income-replacement targets (% of salary), by family makeup
+  survivorTargetSpouse: number // spouse only
+  survivorTargetWithChildren: number // spouse + children under 21
+  survivorTargetChildren: number // children only
+  survivorReplacementSlack: number // pp below target before a finding
 }
 
 export const DEFAULT_THRESHOLDS: ThresholdValues = {
@@ -77,6 +82,12 @@ export const DEFAULT_THRESHOLDS: ThresholdValues = {
   salaryCrosscheckDiffRatio: 0.15, // stated vs insured salary
   largeAssetsThreshold: 1_000_000,
   largeLifeCoverThreshold: 500_000,
+  // Comprehensive pension survivor pension: spouse 60%, +orphans up to ~100% of
+  // the determining salary; orphans-only 40% (per the fund bylaws).
+  survivorTargetSpouse: 60,
+  survivorTargetWithChildren: 100,
+  survivorTargetChildren: 40,
+  survivorReplacementSlack: 5,
 }
 
 // Deep clone so overrides never mutate the defaults.
@@ -116,6 +127,10 @@ export let DEPOSIT_CONTINUITY_WINDOW_MONTHS = DEFAULT_THRESHOLDS.depositContinui
 export let SALARY_CROSSCHECK_DIFF_RATIO = DEFAULT_THRESHOLDS.salaryCrosscheckDiffRatio
 export let LARGE_ASSETS_THRESHOLD = DEFAULT_THRESHOLDS.largeAssetsThreshold
 export let LARGE_LIFE_COVER_THRESHOLD = DEFAULT_THRESHOLDS.largeLifeCoverThreshold
+export let SURVIVOR_TARGET_SPOUSE = DEFAULT_THRESHOLDS.survivorTargetSpouse
+export let SURVIVOR_TARGET_WITH_CHILDREN = DEFAULT_THRESHOLDS.survivorTargetWithChildren
+export let SURVIVOR_TARGET_CHILDREN = DEFAULT_THRESHOLDS.survivorTargetChildren
+export let SURVIVOR_REPLACEMENT_SLACK = DEFAULT_THRESHOLDS.survivorReplacementSlack
 
 /** Override the active thresholds (called by buildAnalysis before running engines). */
 export function applyThresholds(t: ThresholdValues): void {
@@ -145,4 +160,8 @@ export function applyThresholds(t: ThresholdValues): void {
   SALARY_CROSSCHECK_DIFF_RATIO = t.salaryCrosscheckDiffRatio
   LARGE_ASSETS_THRESHOLD = t.largeAssetsThreshold
   LARGE_LIFE_COVER_THRESHOLD = t.largeLifeCoverThreshold
+  SURVIVOR_TARGET_SPOUSE = t.survivorTargetSpouse
+  SURVIVOR_TARGET_WITH_CHILDREN = t.survivorTargetWithChildren
+  SURVIVOR_TARGET_CHILDREN = t.survivorTargetChildren
+  SURVIVOR_REPLACEMENT_SLACK = t.survivorReplacementSlack
 }

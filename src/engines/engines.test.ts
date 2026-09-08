@@ -146,6 +146,34 @@ describe('deathPictureEngine liabilities', () => {
   })
 })
 
+describe('deathPictureEngine survivor income replacement', () => {
+  const survivorPension = (amount: number) =>
+    makePolicy({
+      policyNumber: 'PEN',
+      productType: 'pension',
+      coverages: [
+        { type: 'survivors', name: 'קצבת שאירים לאלמן/ה', amount, percent: null, coveredSalary: null, cost: null, status: 'active', policyNumber: 'PEN' },
+      ],
+    })
+
+  it('flags a survivor pension below the by-family-makeup target (spouse ~60%)', () => {
+    const out = deathPictureEngine(
+      input([survivorPension(8000)], { currentGrossSalary: 20000, hasSpouse: true, hasChildrenUnder21: false }),
+    )
+    const f = out.find((x) => x.title.includes('קצבת שאירים נמוכה'))
+    expect(f).toBeDefined()
+    expect(f?.description).toContain('40%')
+  })
+
+  it('confirms an adequate survivor pension at ~60% of salary', () => {
+    const out = deathPictureEngine(
+      input([survivorPension(12000)], { currentGrossSalary: 20000, hasSpouse: true, hasChildrenUnder21: false }),
+    )
+    expect(out.some((x) => x.title === 'קצבת שאירים ביחס לשכר')).toBe(true)
+    expect(out.some((x) => x.title.includes('נמוכה'))).toBe(false)
+  })
+})
+
 describe('managers generation engine (stopIssueEngine)', () => {
   const managers = (gen: Policy['managersGeneration'], extra: Partial<Policy> = {}) =>
     makePolicy({ policyNumber: 'MG', productType: 'managers', managersGeneration: gen, ...extra })
