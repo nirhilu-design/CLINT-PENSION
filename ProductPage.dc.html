@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><script src="./support.js"></script></head>
+<body>
+<x-dc>
+  <helmet>
+    <style>
+      html, body { margin: 0; }
+    </style>
+  </helmet>
+<div style="width:390px;min-height:1360px;position:relative;background:#f4f7fb;font-family:'Heebo','Segoe UI',Arial,sans-serif;direction:rtl;overflow:hidden">
+
+  <!-- ===== Sticky top bar ===== -->
+  <header style="position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;padding:10px 14px;background:linear-gradient(180deg,#001a45,#000f2b);border-bottom:1px solid rgba(255,255,255,0.08)">
+    <span style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#35c2b1,#2f6fad);display:grid;place-items:center;flex-shrink:0">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+    </span>
+    <span style="color:#fff;font-weight:800;font-size:15px">clint</span>
+    <div style="margin-inline-start:auto;display:flex;align-items:center;gap:10px">
+      <span style="color:rgba(255,255,255,0.85);font-size:13px;font-weight:600">דוד לוי</span>
+      <span style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#16ab99,#0b7a6d);display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700">דל</span>
+    </div>
+  </header>
+
+  <!-- ===== Content ===== -->
+  <div style="padding:20px 16px 28px">
+
+    <!-- Breadcrumb -->
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:16px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      <span style="font-size:13px;color:#94a3b8">חזרה לדשבורד</span>
+    </div>
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:22px">
+      <div style="display:flex;align-items:center;gap:14px">
+        <span style="width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#235a92,#123054);display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>
+        </span>
+        <div>
+          <h1 style="margin:0;font-size:23px;font-weight:800;color:#17233a;letter-spacing:-0.01em">קרן פנסיה</h1>
+          <p style="margin:4px 0 0;font-size:13px;color:#94a3b8">2 פוליסות · דוד לוי</p>
+        </div>
+      </div>
+      <span style="font-size:12px;font-weight:700;padding:6px 14px;border-radius:9999px;background:#e6f7f4;color:#0b6b60;white-space:nowrap">2 פעילות</span>
+    </div>
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:4px;border-bottom:1px solid #e2e8f0;margin-bottom:20px">
+      <div style="padding:10px 14px;font-size:14px;font-weight:700;color:#1a4270;border-bottom:2px solid #235a92;margin-bottom:-1px">סקירה</div>
+      <div style="padding:10px 14px;font-size:14px;font-weight:500;color:#475569;border-bottom:2px solid transparent;margin-bottom:-1px">פוליסות · 2</div>
+      <div style="padding:10px 14px;font-size:14px;font-weight:500;color:#475569;border-bottom:2px solid transparent;margin-bottom:-1px">תשואות</div>
+    </div>
+
+    <!-- Overview: policies card -->
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06),0 1px 2px rgba(15,23,42,0.04);padding:24px;margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-size:15px;font-weight:700;color:#17233a">פוליסות בקרן זו</div>
+        <span style="font-size:12px;color:#94a3b8">2 פוליסות · לחצו לפירוט</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <!-- compact policy row -->
+        <div style="border-radius:8px;background:#f8fafc;padding:12px 14px;display:grid;grid-template-columns:40px minmax(0,1fr) auto auto 16px;gap:12px;align-items:center">
+          <span style="width:40px;height:40px;border-radius:8px;background:#eef3f9;display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#235a92" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg></span>
+          <div style="min-width:0;overflow:hidden"><div style="font-size:14px;font-weight:700;color:#17233a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">מגדל מקפת</div><div style="font-size:12px;color:#94a3b8;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">פוליסה 3049912 · הפקדה אחרונה 07/2026</div></div>
+          <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:9999px;background:#e6f7f4;color:#0b6b60;white-space:nowrap">פעיל</span>
+          <div style="font-size:15px;font-weight:700;font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a;white-space:nowrap">₪423,800</div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </div>
+        <div style="border-radius:8px;background:#f8fafc;padding:12px 14px;display:grid;grid-template-columns:40px minmax(0,1fr) auto auto 16px;gap:12px;align-items:center">
+          <span style="width:40px;height:40px;border-radius:8px;background:#eef3f9;display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#235a92" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg></span>
+          <div style="min-width:0;overflow:hidden"><div style="font-size:14px;font-weight:700;color:#17233a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">מנורה מבטחים</div><div style="font-size:12px;color:#94a3b8;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">פוליסה 8821004 · הפקדה אחרונה 07/2026</div></div>
+          <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:9999px;background:#e6f7f4;color:#0b6b60;white-space:nowrap">פעיל</span>
+          <div style="font-size:15px;font-weight:700;font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a;white-space:nowrap">₪218,500</div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Channel split card -->
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06),0 1px 2px rgba(15,23,42,0.04);padding:24px;margin-bottom:20px">
+      <div style="font-size:15px;font-weight:700;color:#17233a;margin-bottom:14px">מסלול השקעה — פילוח אפיקים</div>
+      <div style="display:flex;height:22px;width:100%;overflow:hidden;border-radius:8px">
+        <div style="height:100%;width:45%;background:#00215d"></div>
+        <div style="height:100%;width:35%;background:#ff2756"></div>
+        <div style="height:100%;width:12%;background:#16ab99"></div>
+        <div style="height:100%;width:8%;background:#e2d1bf"></div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:12px 16px;margin-top:12px">
+        <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#475569"><span style="width:9px;height:9px;border-radius:50%;background:#00215d"></span>מניות <b style="font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a">45%</b></span>
+        <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#475569"><span style="width:9px;height:9px;border-radius:50%;background:#ff2756"></span>אג&quot;ח <b style="font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a">35%</b></span>
+        <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#475569"><span style="width:9px;height:9px;border-radius:50%;background:#16ab99"></span>מזומן <b style="font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a">12%</b></span>
+        <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#475569"><span style="width:9px;height:9px;border-radius:50%;background:#e2d1bf"></span>אחר <b style="font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a">8%</b></span>
+      </div>
+    </div>
+
+    <!-- Findings card -->
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06),0 1px 2px rgba(15,23,42,0.04);padding:24px;margin-bottom:20px">
+      <div style="font-size:15px;font-weight:700;color:#17233a;margin-bottom:12px">ממצאים במוצר זה</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="border-radius:8px;border:1px solid #e2e8f0;border-inline-start:4px solid #d97706;background:#fff;padding:14px;box-shadow:0 1px 3px rgba(15,23,42,0.06),0 1px 2px rgba(15,23,42,0.04)">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:11px;font-weight:600;padding:2px 10px;border-radius:9999px;background:#fef3c7;color:#92400e">נקודה לבדיקה</span><span style="font-size:11px;color:#475569">דמי ניהול</span><span style="font-size:14px;font-weight:600;color:#17233a">דמי ניהול מהפקדה גבוהים מסף הבדיקה</span></div>
+          <p style="margin:6px 0 0;font-size:14px;color:#475569;line-height:1.6">במגדל מקפת דמי הניהול מהפקדה הם 1.8%, מעל סף הבדיקה (0.8%). ניתן לבדוק מול הסכם המעסיק באזור היועץ.</p>
+        </div>
+        <div style="border-radius:8px;border:1px solid #e2e8f0;border-inline-start:4px solid #d97706;background:#fff;padding:14px;box-shadow:0 1px 3px rgba(15,23,42,0.06),0 1px 2px rgba(15,23,42,0.04)">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:11px;font-weight:600;padding:2px 10px;border-radius:9999px;background:#fef3c7;color:#92400e">נקודה לבדיקה</span><span style="font-size:11px;color:#475569">חשיפה מנייתית</span><span style="font-size:14px;font-weight:600;color:#17233a">חשיפה מנייתית מתחת ליעד לפי גיל</span></div>
+          <p style="margin:6px 0 0;font-size:14px;color:#475569;line-height:1.6">החשיפה המנייתית בקרן היא 45%, לעומת יעד ≈65% שהוגדר לגיל 45. נקודה להארה — לא המלצה.</p>
+        </div>
+        <div style="align-self:flex-start;display:flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:#1a4270;margin-top:2px">הצג 1 הארות מידע והקשר<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+      </div>
+    </div>
+
+    <!-- Spec card: product data -->
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06),0 1px 2px rgba(15,23,42,0.04);padding:24px;margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:12px">נתוני מוצר</div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid #e2e8f0"><span style="font-size:12px;color:#475569">צבירה</span><span style="font-size:13px;font-weight:700;font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a">₪642,300</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid #e2e8f0"><span style="font-size:12px;color:#475569">קצבה בהמשך הפקדות</span><span style="font-size:13px;font-weight:700;font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a">₪9,400</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid #e2e8f0"><span style="font-size:12px;color:#475569">קצבה ללא הפקדות</span><span style="font-size:13px;font-weight:700;font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a">₪6,200</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid #e2e8f0"><span style="font-size:12px;color:#475569">דמי ניהול מצבירה</span><span style="font-size:13px;font-weight:700;font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a">0.22%</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding:9px 0"><span style="font-size:12px;color:#475569">מספר פוליסות</span><span style="font-size:13px;font-weight:700;font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a">2</span></div>
+    </div>
+
+    <!-- Spec card: coverages -->
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06),0 1px 2px rgba(15,23,42,0.04);padding:24px">
+      <div style="font-size:12px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:12px">כיסויים ביטוחיים</div>
+      <div style="padding:9px 0;border-bottom:1px solid #e2e8f0"><div style="display:flex;justify-content:space-between"><span style="font-size:12px;color:#475569">קצבת שאירים</span><span style="font-size:13px;font-weight:700;font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a">₪11,100</span></div><div style="font-size:11px;color:#94a3b8;margin-top:2px">עלות חודשית: ₪96</div></div>
+      <div style="padding:9px 0"><div style="display:flex;justify-content:space-between"><span style="font-size:12px;color:#475569">אובדן כושר עבודה</span><span style="font-size:13px;font-weight:700;font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a">₪11,100</span></div><div style="font-size:11px;color:#94a3b8;margin-top:2px">עלות חודשית: ₪142</div></div>
+    </div>
+  </div>
+
+  <!-- ===== Fixed bottom tab bar ===== -->
+  <nav style="position:absolute;inset-inline:0;bottom:0;z-index:20;height:62px;display:flex;background:linear-gradient(180deg,#001a45,#000f2b);border-top:1px solid rgba(255,255,255,0.08)">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#fff;padding:6px 2px">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#ff2756" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+      <span style="font-size:10.5px;font-weight:700">דשבורד</span>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:rgba(255,255,255,0.55);padding:6px 2px">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+      <span style="font-size:10.5px;font-weight:500">סיכום מנהלים</span>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:rgba(255,255,255,0.55);padding:6px 2px">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      <span style="font-size:10.5px;font-weight:500">אזור יועץ</span>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:rgba(255,255,255,0.55);padding:6px 2px">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg>
+      <span style="font-size:10.5px;font-weight:500">לוגיקות</span>
+    </div>
+  </nav>
+</div>
+
+</x-dc>
+</body>
+</html>
