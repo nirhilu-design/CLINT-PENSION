@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import type { Finding, Policy, TreasuryAllocation } from '../models/types'
 import { coverageTypeLabels, productTypeLabels } from '../models/labels'
 import { formatCurrency, formatDate, formatPercent } from '../utils/format'
+import { useIsMobile } from '../hooks/useIsMobile'
 import FindingCard from './FindingCard'
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -40,6 +41,7 @@ export default function PolicyDrawer({
   onClose: () => void
 }) {
   const [entered, setEntered] = useState(false)
+  const isMobile = useIsMobile()
   const policyFindings = findings.filter((f) => f.policyNumber === policy.policyNumber)
   const st = status(policy)
   const employer = policy.contributions.find((c) => c.role === 'employer')
@@ -70,21 +72,45 @@ export default function PolicyDrawer({
         }}
       />
       <aside
-        style={{
-          position: 'absolute',
-          top: 0,
-          bottom: 0,
-          right: 0,
-          width: 480,
-          maxWidth: '94vw',
-          background: 'var(--color-bg-card)',
-          boxShadow: '-8px 0 32px rgba(13,34,64,0.22)',
-          transform: entered ? 'translateX(0)' : 'translateX(110%)',
-          transition: 'transform 220ms var(--ease-out)',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
+        style={
+          isMobile
+            ? {
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: 0,
+                width: '100%',
+                maxHeight: '92dvh',
+                background: 'var(--color-bg-card)',
+                boxShadow: '0 -8px 32px rgba(13,34,64,0.22)',
+                borderTopLeftRadius: 'var(--radius-lg)',
+                borderTopRightRadius: 'var(--radius-lg)',
+                transform: entered ? 'translateY(0)' : 'translateY(100%)',
+                transition: 'transform 260ms var(--ease-out)',
+                display: 'flex',
+                flexDirection: 'column',
+              }
+            : {
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                right: 0,
+                width: 480,
+                maxWidth: '94vw',
+                background: 'var(--color-bg-card)',
+                boxShadow: '-8px 0 32px rgba(13,34,64,0.22)',
+                transform: entered ? 'translateX(0)' : 'translateX(110%)',
+                transition: 'transform 220ms var(--ease-out)',
+                display: 'flex',
+                flexDirection: 'column',
+              }
+        }
       >
+        {isMobile && (
+          <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 8 }}>
+            <span style={{ width: 40, height: 4, borderRadius: 2, background: 'var(--neutral-300)' }} />
+          </div>
+        )}
         {/* Header */}
         <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--color-border-base)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
