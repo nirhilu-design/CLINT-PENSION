@@ -148,6 +148,19 @@ body {
   white-space: normal;
 }
 
+/* Comfortable touch targets on coarse (touch) pointers only — desktop mouse
+   is unaffected. Buttons get a 44px min tap height; checkboxes/radios grow. */
+@media (pointer: coarse) {
+  button:not(:disabled) {
+    min-height: 44px;
+  }
+  input[type='checkbox'],
+  input[type='radio'] {
+    min-width: 20px;
+    min-height: 20px;
+  }
+}
+
 /* Respect users who prefer less motion */
 @media (prefers-reduced-motion: reduce) {
   *,
