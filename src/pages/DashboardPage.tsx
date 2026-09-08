@@ -5,6 +5,7 @@ import { formatCurrency, formatDate } from '../utils/format'
 import ReplacementGauge from '../components/ReplacementGauge'
 import SalaryByProduct from '../components/SalaryByProduct'
 import ContextBar from '../components/ContextBar'
+import { useIsMobile } from '../hooks/useIsMobile'
 import Card from '../components/ds/Card'
 import { computeExposure } from '../services/exposureService'
 import { sortFindings } from '../engines/findingPriority'
@@ -166,6 +167,8 @@ export default function DashboardPage() {
   const analysis = state.analysis!
   const { policies, findings, client } = analysis
   const supp = analysis.supplementary
+  const isMobile = useIsMobile()
+  const px = isMobile ? 16 : 32
 
   const totalAssets = policies.reduce((s, p) => s + (p.currentValue ?? 0), 0)
   const totalPensionWithDeposits = policies.reduce(
@@ -301,7 +304,7 @@ export default function DashboardPage() {
             zIndex: 20,
             background: '#001233',
             borderBottom: '1px solid rgba(255,255,255,0.08)',
-            padding: '10px 32px',
+            padding: `10px ${px}px`,
             display: 'flex',
             alignItems: 'center',
             gap: 28,
@@ -328,7 +331,7 @@ export default function DashboardPage() {
           borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}
       >
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '34px 32px 38px' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: `34px ${px}px 38px` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
             <div>
               <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }}>
@@ -368,7 +371,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 32px 48px' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: `24px ${px}px 48px` }}>
         {/* Context questions — a bar (replaces the old full-page step) */}
         <ContextBar />
         {/* Client details — collapsible */}

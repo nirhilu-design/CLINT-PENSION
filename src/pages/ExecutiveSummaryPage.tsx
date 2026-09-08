@@ -4,6 +4,7 @@ import FindingCard from '../components/FindingCard'
 import Card from '../components/ds/Card'
 import { formatCurrency } from '../utils/format'
 import { sortFindings } from '../engines/findingPriority'
+import { useIsMobile } from '../hooks/useIsMobile'
 import type { Finding } from '../models/types'
 import { Download, ArrowRight, ChevronDown } from 'lucide-react'
 
@@ -29,6 +30,8 @@ function Kpi({ label, value }: { label: string; value: string }) {
 export default function ExecutiveSummaryPage() {
   const { state, dispatch } = useApp()
   const [showInfo, setShowInfo] = useState(false)
+  const isMobile = useIsMobile()
+  const px = isMobile ? 16 : 32
   const analysis = state.analysis!
   const { executiveSummary, client, policies, findings } = analysis
 
@@ -41,7 +44,7 @@ export default function ExecutiveSummaryPage() {
   const productCount = new Set(policies.map((p) => p.productType)).size
 
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto', padding: '28px 32px 48px' }}>
+    <div style={{ maxWidth: 1000, margin: '0 auto', padding: `28px ${px}px 48px` }}>
       <button
         onClick={() => dispatch({ type: 'GO_DASHBOARD' })}
         style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 18, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}

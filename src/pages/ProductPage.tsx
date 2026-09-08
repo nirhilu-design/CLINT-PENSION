@@ -6,6 +6,7 @@ import { formatCurrency, formatPercent } from '../utils/format'
 import FindingCard from '../components/FindingCard'
 import Card from '../components/ds/Card'
 import { isEducationFundLiquid } from '../utils/liquidity'
+import { useIsMobile } from '../hooks/useIsMobile'
 import {
   ArrowRight,
   ChevronLeft,
@@ -102,6 +103,8 @@ export default function ProductPage() {
   const [tab, setTab] = useState<'overview' | 'policies' | 'returns'>('overview')
   const [narrow, setNarrow] = useState(false)
   const [showInfoFindings, setShowInfoFindings] = useState(false)
+  const isMobile = useIsMobile()
+  const px = isMobile ? 16 : 32
   useEffect(() => {
     const onResize = () => setNarrow(window.innerWidth < 1100)
     onResize()
@@ -170,7 +173,7 @@ export default function ProductPage() {
   }
 
   return (
-    <div style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 32px 48px' }}>
+    <div style={{ maxWidth: 1280, margin: '0 auto', padding: `28px ${px}px 48px` }}>
       {/* Breadcrumb */}
       <button
         onClick={() => dispatch({ type: 'GO_DASHBOARD' })}
