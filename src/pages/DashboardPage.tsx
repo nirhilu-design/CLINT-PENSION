@@ -3,6 +3,7 @@ import { productTypeLabels } from '../models/labels'
 import type { ProductType } from '../models/types'
 import { formatCurrency, formatDate } from '../utils/format'
 import ReplacementGauge from '../components/ReplacementGauge'
+import SalaryByProduct from '../components/SalaryByProduct'
 import ContextBar from '../components/ContextBar'
 import Card from '../components/ds/Card'
 import { computeExposure } from '../services/exposureService'
@@ -425,6 +426,8 @@ export default function DashboardPage() {
             target={PENSION_TO_SALARY_MIN_RATIO}
           />
         )}
+
+        <SalaryByProduct policies={policies} statedSalary={supp.currentGrossSalary} />
 
         {/* Smart coverage cards */}
         <section style={{ marginBottom: 24 }}>
