@@ -2,12 +2,14 @@ import { useRef, useState } from 'react'
 import { useApp } from '../hooks/useAppState'
 import { parseFiles, buildAnalysis, emptySupplementary, XmlParseError } from '../services/analysisService'
 import Spinner from '../components/Spinner'
+import ClearinghouseRequest from '../components/ClearinghouseRequest'
 
 export default function UploadPage() {
   const { state, dispatch } = useApp()
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [mode, setMode] = useState<'mislaka' | 'upload'>('mislaka')
 
   async function handleFiles(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return
@@ -35,8 +37,26 @@ export default function UploadPage() {
     <div className="min-h-screen flex items-center justify-center p-6">
       <div className="w-full max-w-xl text-center">
         <h1 className="text-3xl font-bold text-slate-800 mb-2">מערכת ניתוח פנסיוני</h1>
-        <p className="text-slate-500 mb-6">העלאת קבצי XML מהמסלקה הפנסיונית לניתוח מרוכז של התיק</p>
+        <p className="text-slate-500 mb-6">ניתוח מרוכז של התיק הפנסיוני — בקשה מהמסלקה או העלאת קבצים</p>
 
+        {/* Path toggle: request from the clearinghouse (demo) vs. manual upload */}
+        <div className="inline-flex rounded-xl bg-slate-100 p-1 mb-5">
+          {([['mislaka', 'בקשה מהמסלקה'], ['upload', 'העלאת קבצים']] as const).map(([m, label]) => (
+            <button
+              key={m}
+              onClick={() => setMode(m)}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${
+                mode === m ? 'bg-white shadow-sm text-brand-800' : 'text-slate-500'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {mode === 'mislaka' && <ClearinghouseRequest />}
+
+        {mode === 'upload' && (
         <div
           onDragOver={(e) => {
             e.preventDefault()
@@ -71,6 +91,7 @@ export default function UploadPage() {
             onChange={(e) => handleFiles(e.target.files)}
           />
         </div>
+        )}
 
         {busy && (
           <div className="mt-4 flex justify-center">
