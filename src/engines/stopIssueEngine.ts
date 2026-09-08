@@ -82,7 +82,9 @@ export const stopIssueEngine: Engine = ({ policies, supplementary }) => {
     // fund can absorb the full salary; if disability is covered separately and the
     // savings sit in pension funds, cancelling the policy is worth weighing.
     const fee = p.fees.fromAccumulation
-    const feeHigh = fee === null || fee > MANAGERS_DEPOSIT_FEE_THRESHOLD
+    // A missing fee is NOT assumed high — we don't claim deposits are expensive
+    // without the data; the clause fires only on a reported, above-threshold fee.
+    const feeHigh = fee !== null && fee > MANAGERS_DEPOSIT_FEE_THRESHOLD
     const hasSeparateDisability = policies.some(
       (o) =>
         o.policyNumber !== p.policyNumber &&
@@ -90,10 +92,7 @@ export const stopIssueEngine: Engine = ({ policies, supplementary }) => {
     )
     const depositEfficiencyClause = () => {
       if (!feeHigh) return ''
-      let eff =
-        `דמי ניהול מצבירה ${fee !== null ? fee.toFixed(2) + '%' : 'לא דווחו'}` +
-        (fee !== null ? ' (גבוהים יחסית)' : '') +
-        ' — הפקדה שוטפת לפוליסה זו יקרה. '
+      let eff = `דמי ניהול מצבירה ${fee!.toFixed(2)}% (גבוהים יחסית) — הפקדה שוטפת לפוליסה זו יקרה. `
       if (hasActivePension)
         eff += 'קיימת קרן פנסיה פעילה כאלטרנטיבה זולה יותר להפקדות השוטפות. '
       if (!aboveMekifaCap)
@@ -137,7 +136,7 @@ export const stopIssueEngine: Engine = ({ policies, supplementary }) => {
         clause += `תוספות ביטוחיות בפוליסה: ${riderTypes.map((t) => coverageTypeLabels[t]).join(', ')}. `
       }
     } else if (gen === '2001-06-to-2004') {
-      clause = 'עלות ההפקדה במבנה זה מול חלופות זולות יותר בתיק. '
+      clause = 'עלות ההפקדה השוטפת במבנה זה מול חלופות בתיק היא נקודה לבדיקה. '
       severity = 'attention'
       clause += depositEfficiencyClause()
     } else if (gen === '2004-to-2013') {
