@@ -9,6 +9,7 @@ import { isEducationFundLiquid } from '../utils/liquidity'
 import {
   ArrowRight,
   ChevronLeft,
+  ChevronDown,
   Landmark,
   Briefcase,
   Wallet,
@@ -94,10 +95,13 @@ export default function ProductPage() {
   const productFindings = analysis.findings.filter(
     (f) => f.productType === productType || policies.some((p) => p.policyNumber === f.policyNumber),
   )
+  const severeFindings = productFindings.filter((f) => f.severity !== 'info')
+  const infoFindings = productFindings.filter((f) => f.severity === 'info')
   const activeCount = policies.filter((p) => p.status === 'active').length
 
   const [tab, setTab] = useState<'overview' | 'policies' | 'returns'>('overview')
   const [narrow, setNarrow] = useState(false)
+  const [showInfoFindings, setShowInfoFindings] = useState(false)
   useEffect(() => {
     const onResize = () => setNarrow(window.innerWidth < 1100)
     onResize()
@@ -271,9 +275,23 @@ export default function ProductPage() {
                   <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)', margin: 0 }}>אין ממצאים למוצר זה</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {productFindings.map((f) => (
+                    {severeFindings.map((f) => (
                       <FindingCard key={f.id} finding={f} />
                     ))}
+                    {infoFindings.length > 0 && (
+                      <>
+                        <button
+                          onClick={() => setShowInfoFindings((v) => !v)}
+                          aria-expanded={showInfoFindings}
+                          style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600, color: 'var(--color-primary)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}
+                        >
+                          {showInfoFindings ? 'הסתר מידע והקשר' : `הצג ${infoFindings.length} הארות מידע והקשר`}
+                          <ChevronDown size={15} style={{ transform: showInfoFindings ? 'rotate(180deg)' : 'none', transition: 'transform 150ms var(--ease-out)' }} />
+                        </button>
+                        {showInfoFindings &&
+                          infoFindings.map((f) => <FindingCard key={f.id} finding={f} />)}
+                      </>
+                    )}
                   </div>
                 )}
               </Card>
