@@ -3,6 +3,7 @@ import { productTypeLabels } from '../models/labels'
 import type { ProductType } from '../models/types'
 import { formatCurrency, formatDate } from '../utils/format'
 import ReplacementGauge from '../components/ReplacementGauge'
+import ContextBar from '../components/ContextBar'
 import Card from '../components/ds/Card'
 import { computeExposure } from '../services/exposureService'
 import { sortFindings } from '../engines/findingPriority'
@@ -367,6 +368,8 @@ export default function DashboardPage() {
       </div>
 
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 32px 48px' }}>
+        {/* Context questions — a bar (replaces the old full-page step) */}
+        <ContextBar />
         {/* Client details — collapsible */}
         <Card style={{ marginBottom: 24 }} padding={0}>
           <button

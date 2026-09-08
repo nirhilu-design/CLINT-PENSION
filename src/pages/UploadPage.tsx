@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react'
 import { useApp } from '../hooks/useAppState'
-import { parseFiles, XmlParseError } from '../services/analysisService'
-import StepsIndicator from '../components/StepsIndicator'
+import { parseFiles, buildAnalysis, emptySupplementary, XmlParseError } from '../services/analysisService'
 import Spinner from '../components/Spinner'
 
 export default function UploadPage() {
@@ -19,6 +18,10 @@ export default function UploadPage() {
       )
       const parsed = parseFiles(files)
       dispatch({ type: 'FILES_PARSED', parsedFiles: parsed })
+      // Context questions are optional — go straight to the dashboard with a
+      // default analysis; the user refines context via the bar on the dashboard.
+      const analysis = buildAnalysis(parsed, emptySupplementary(), state.logicConfig)
+      dispatch({ type: 'ANALYSIS_READY', analysis })
     } catch (e) {
       const message =
         e instanceof XmlParseError ? e.message : 'אירעה שגיאה בלתי צפויה בקריאת הקבצים'
@@ -33,7 +36,6 @@ export default function UploadPage() {
       <div className="w-full max-w-xl text-center">
         <h1 className="text-3xl font-bold text-slate-800 mb-2">מערכת ניתוח פנסיוני</h1>
         <p className="text-slate-500 mb-6">העלאת קבצי XML מהמסלקה הפנסיונית לניתוח מרוכז של התיק</p>
-        <StepsIndicator current={1} />
 
         <div
           onDragOver={(e) => {
