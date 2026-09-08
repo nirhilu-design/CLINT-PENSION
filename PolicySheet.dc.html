@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><script src="./support.js"></script></head>
+<body>
+<x-dc>
+  <helmet>
+    <style>
+      html, body { margin: 0; }
+    </style>
+  </helmet>
+<div style="width:390px;height:844px;position:relative;background:#f4f7fb;font-family:'Heebo','Segoe UI',Arial,sans-serif;direction:rtl;overflow:hidden">
+
+  <!-- Dimmed dashboard behind (hint of the page under the sheet) -->
+  <div style="position:absolute;inset:0;background:linear-gradient(125deg,#001233,#00215d 52%,#06306e)"></div>
+  <div style="position:absolute;inset:0;background:rgba(8,21,39,0.55)"></div>
+
+  <!-- Bottom sheet -->
+  <aside style="position:absolute;left:0;right:0;bottom:0;height:92%;background:#fff;box-shadow:0 -8px 32px rgba(13,34,64,0.22);border-top-left-radius:16px;border-top-right-radius:16px;display:flex;flex-direction:column;overflow:hidden">
+
+    <!-- Grabber -->
+    <div style="display:flex;justify-content:center;padding-top:8px"><span style="width:40px;height:4px;border-radius:2px;background:#cbd5e1"></span></div>
+
+    <!-- Header -->
+    <div style="padding:16px 24px 20px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="display:flex;align-items:center;gap:7px">
+          <span style="width:9px;height:9px;border-radius:50%;background:#0e9484"></span>
+          <span style="font-size:16px;font-weight:800;color:#17233a">מגדל מקפת</span>
+        </div>
+        <div style="font-size:12px;color:#94a3b8;margin-top:4px">פוליסה 3049912 · פעיל · קרן פנסיה</div>
+      </div>
+      <span style="width:30px;height:30px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </span>
+    </div>
+
+    <!-- Body -->
+    <div style="flex:1;overflow:hidden;padding:4px 24px 28px">
+
+      <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.03em;margin:22px 0 10px">פרטים פיננסיים</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="border-radius:8px;background:#f8fafc;padding:10px 12px"><div style="font-size:11px;color:#94a3b8">שווי נוכחי</div><div style="font-size:14px;font-weight:700;font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a;margin-top:2px">₪423,800</div></div>
+        <div style="border-radius:8px;background:#f8fafc;padding:10px 12px"><div style="font-size:11px;color:#94a3b8">שכר מבוטח</div><div style="font-size:14px;font-weight:700;font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a;margin-top:2px">₪18,500</div></div>
+        <div style="border-radius:8px;background:#f8fafc;padding:10px 12px"><div style="font-size:11px;color:#94a3b8">הפקדה אחרונה</div><div style="font-size:14px;font-weight:700;font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a;margin-top:2px">07/2026</div></div>
+        <div style="border-radius:8px;background:#f8fafc;padding:10px 12px"><div style="font-size:11px;color:#94a3b8">תאריך הצטרפות</div><div style="font-size:14px;font-weight:700;font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a;margin-top:2px">03.2014</div></div>
+        <div style="border-radius:8px;background:#f8fafc;padding:10px 12px"><div style="font-size:11px;color:#94a3b8">מספר אוצר</div><div style="font-size:14px;font-weight:700;font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a;margin-top:2px">512</div></div>
+        <div style="border-radius:8px;background:#f8fafc;padding:10px 12px"><div style="font-size:11px;color:#94a3b8">תשואה נטו</div><div style="font-size:14px;font-weight:700;font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a;margin-top:2px">7.2%</div></div>
+      </div>
+
+      <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.03em;margin:22px 0 10px">הפקדות ודמי ניהול</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="border-radius:8px;background:#f8fafc;padding:10px 12px"><div style="font-size:11px;color:#94a3b8">הפקדת מעסיק</div><div style="font-size:14px;font-weight:700;font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a;margin-top:2px">6.5%</div></div>
+        <div style="border-radius:8px;background:#f8fafc;padding:10px 12px"><div style="font-size:11px;color:#94a3b8">הפקדת עובד</div><div style="font-size:14px;font-weight:700;font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a;margin-top:2px">6.0%</div></div>
+        <div style="border-radius:8px;background:#f8fafc;padding:10px 12px"><div style="font-size:11px;color:#94a3b8">דמי ניהול מהפקדה</div><div style="font-size:14px;font-weight:700;font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a;margin-top:2px">1.8%</div></div>
+        <div style="border-radius:8px;background:#f8fafc;padding:10px 12px"><div style="font-size:11px;color:#94a3b8">דמי ניהול מצבירה</div><div style="font-size:14px;font-weight:700;font-family:'JetBrains Mono',ui-monospace,monospace;color:#17233a;margin-top:2px">0.22%</div></div>
+      </div>
+
+      <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.03em;margin:22px 0 10px">ממצאים</div>
+      <div style="border-radius:8px;border:1px solid #e2e8f0;border-inline-start:4px solid #d97706;background:#fff;padding:14px;box-shadow:0 1px 3px rgba(15,23,42,0.06),0 1px 2px rgba(15,23,42,0.04)">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:11px;font-weight:600;padding:2px 10px;border-radius:9999px;background:#fef3c7;color:#92400e">נקודה לבדיקה</span>
+          <span style="font-size:11px;color:#475569">דמי ניהול</span>
+          <span style="font-size:14px;font-weight:600;color:#17233a">דמי ניהול מהפקדה גבוהים מסף הבדיקה</span>
+        </div>
+        <p style="margin:6px 0 0;font-size:14px;color:#475569;line-height:1.6">דמי הניהול מהפקדה בפוליסה הם 1.8%, מעל סף הבדיקה שהוגדר (0.8%). ניתן לבדוק מול הסכם המעסיק באזור היועץ.</p>
+      </div>
+    </div>
+  </aside>
+</div>
+
+</x-dc>
+</body>
+</html>
