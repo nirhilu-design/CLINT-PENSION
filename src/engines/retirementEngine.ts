@@ -129,10 +129,14 @@ export const retirementEngine: Engine = ({ policies, supplementary }) => {
     }
   }
 
-  // Frozen (inactive) pension funds: no insurance coverage, often higher fees
+  // Frozen (inactive) accounts with a balance: no active risk coverage and no
+  // ongoing deposits — a consolidation point. State the account's actual fee
+  // rather than a blanket "fees are often higher" claim.
   for (const p of policies.filter(
     (p) => (p.productType === 'pension' || p.productType === 'gemel') && p.status === 'inactive' && (p.currentValue ?? 0) > 0,
   )) {
+    const feeNote =
+      p.fees.fromAccumulation !== null ? ` (דמי ניהול מצבירה ${p.fees.fromAccumulation.toFixed(2)}%)` : ''
     findings.push(
       makeFinding({
         category: 'retirement',
@@ -140,8 +144,8 @@ export const retirementEngine: Engine = ({ policies, supplementary }) => {
         severity: 'attention',
         title: 'חשבון לא פעיל (מוקפא) עם צבירה',
         description:
-          `בחשבון ${p.policyNumber} (${p.managingCompany ?? ''}) קיימת צבירה של ${formatCurrency(p.currentValue)} ללא הפקדות שוטפות. ` +
-          'בחשבון מוקפא אין כיסוי ביטוחי ולעיתים דמי הניהול גבוהים יותר. איחוד חשבונות הוא נקודה לבדיקה מול בעל רישיון.',
+          `בחשבון ${p.policyNumber} (${p.managingCompany ?? ''}) קיימת צבירה של ${formatCurrency(p.currentValue)} ללא הפקדות שוטפות${feeNote}. ` +
+          'בחשבון לא פעיל לא מתבצעות הפקדות ואין כיסוי ביטוחי פעיל; איחוד חשבונות הוא נקודה לבדיקה מול בעל רישיון.',
         productType: p.productType,
         policyNumber: p.policyNumber,
       }),
