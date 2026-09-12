@@ -8,7 +8,7 @@ import { computeExposure } from '../services/exposureService'
 import { sortFindings } from '../engines/findingPriority'
 import { assessCompleteness } from '../services/completenessService'
 import { effectiveSalary } from '../engines/engineTypes'
-import { PENSION_TO_SALARY_MIN_RATIO } from '../config/thresholds'
+import { PENSION_TO_SALARY_MIN_RATIO, IP_TARGET_COVERAGE_PERCENT } from '../config/thresholds'
 import { useEffect, useState } from 'react'
 import {
   Landmark,
@@ -210,6 +210,17 @@ export default function DashboardPage() {
   const deathLump = activePolicies
     .flatMap((p) => p.coverages.filter((c) => c.type === 'death'))
     .reduce((s, c) => s + (c.amount ?? 0), 0)
+
+  // Death-protection "need" baseline — mirrors deathPictureEngine: what is
+  // available at death (life cover + capital assets) measured against the
+  // client's known liabilities. Only asserted when liabilities are known.
+  const capitalAssets = policies
+    .filter((p) => p.status !== 'inactive' && ['gemel', 'gemelInvestment', 'education'].includes(p.productType))
+    .reduce((s, p) => s + (p.currentValue ?? 0), 0)
+  const totalLiabilities = (supp.mortgageBalance ?? 0) + (supp.otherDebts ?? 0)
+  const availableAtDeath = deathLump + capitalAssets
+  const hasDependents = supp.hasChildrenUnder21 === true || supp.hasSpouse === true
+
   const lastDeposit = policies.map((p) => p.lastDepositMonth).filter(Boolean).sort().pop() as string | undefined
 
   const reportDates = policies.map((p) => p.reportDate).filter(Boolean) as string[]
@@ -433,7 +444,7 @@ export default function DashboardPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 14 }}>
             {(() => {
               const ip = ipPercents.length > 0 ? Math.max(...ipPercents) : null
-              const ipStatus: Status = ip === null ? 'bad' : ip >= 73 ? 'good' : 'warn'
+              const ipStatus: Status = ip === null ? 'bad' : ip >= IP_TARGET_COVERAGE_PERCENT ? 'good' : 'warn'
               return (
                 <CoverageCard
                   title="אובדן כושר עבודה"
@@ -441,27 +452,60 @@ export default function DashboardPage() {
                   value={ip !== null ? `${ip.toFixed(0)}%` : '₪0'}
                   note={ip !== null ? 'שיעור הכיסוי הגבוה בתיק' : 'לא אותר כיסוי אכ"ע'}
                   fill={ip !== null ? Math.min(100, ip) : 3}
-                  targetPct={75}
-                  labels={['0%', 'יעד 75%']}
+                  targetPct={IP_TARGET_COVERAGE_PERCENT}
+                  labels={['0%', `יעד ${IP_TARGET_COVERAGE_PERCENT}%`]}
                 />
               )
             })()}
             <CoverageCard
               title="קצבת שאירים"
-              status={survivorsMonthly > 0 ? 'good' : 'bad'}
+              status={survivorsMonthly > 0 ? 'good' : hasDependents ? 'bad' : 'warn'}
               value={formatCurrency(survivorsMonthly)}
-              note={survivorsMonthly > 0 ? 'קצבה חודשית מקרן הפנסיה' : 'לא אותר כיסוי שאירים'}
+              note={
+                survivorsMonthly > 0
+                  ? 'קצבה חודשית מקרן הפנסיה'
+                  : hasDependents
+                    ? 'לא אותר כיסוי שאירים — צוינו תלויים'
+                    : 'לא אותר כיסוי שאירים'
+              }
               fill={survivorsMonthly > 0 ? 100 : 3}
               labels={['0', 'לחודש']}
             />
-            <CoverageCard
-              title="ביטוח חיים (מוות)"
-              status={deathLump > 0 ? 'good' : 'bad'}
-              value={formatCurrency(deathLump)}
-              note={deathLump > 0 ? 'סכום חד-פעמי למקרה מוות' : 'לא אותר ביטוח למקרה מוות'}
-              fill={deathLump > 0 ? 100 : 3}
-              labels={['0', 'סכום ביטוח']}
-            />
+            {(() => {
+              // Measured against liabilities only when they are known, mirroring
+              // deathPictureEngine (availableAtDeath vs totalLiabilities). Without
+              // liabilities data no need is asserted — a plain existence view.
+              if (totalLiabilities > 0) {
+                const covered = availableAtDeath >= totalLiabilities
+                return (
+                  <CoverageCard
+                    title="ביטוח חיים (מוות)"
+                    status={covered ? 'good' : 'bad'}
+                    value={formatCurrency(deathLump)}
+                    note={`זמין במוות ${formatCurrency(availableAtDeath)} (ביטוח + נכסים הוניים) מול התחייבויות ${formatCurrency(totalLiabilities)}`}
+                    fill={Math.min(100, (availableAtDeath / totalLiabilities) * 100)}
+                    targetPct={100}
+                    labels={['0', 'כיסוי ההתחייבויות']}
+                  />
+                )
+              }
+              return (
+                <CoverageCard
+                  title="ביטוח חיים (מוות)"
+                  status={deathLump > 0 ? 'good' : hasDependents ? 'bad' : 'warn'}
+                  value={formatCurrency(deathLump)}
+                  note={
+                    deathLump > 0
+                      ? 'סכום חד-פעמי למקרה מוות'
+                      : hasDependents
+                        ? 'לא אותר ביטוח מוות — צוינו תלויים'
+                        : 'לא אותר ביטוח למקרה מוות'
+                  }
+                  fill={deathLump > 0 ? 100 : 3}
+                  labels={['0', 'סכום ביטוח']}
+                />
+              )
+            })()}
           </div>
           {lastDeposit && (
             <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', margin: '10px 2px 0' }}>
