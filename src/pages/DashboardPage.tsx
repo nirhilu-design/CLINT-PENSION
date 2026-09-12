@@ -235,7 +235,10 @@ export default function DashboardPage() {
     }
   }
   const weightedFee = feeBase > 0 ? feeWeighted / feeBase : null
-  const MARKET_FEE = 1.0 // ≈ market average accumulation fee (%)
+  // Factual annual ₪ cost of accumulation fees at the current balance
+  // (Σ currentValue × fee%/100). A plain fact — not a market comparison and not
+  // a savings claim — in line with the product's "illuminate, don't advise" rule.
+  const annualFeeCost = feeBase > 0 ? feeWeighted / 100 : null
 
   const heroKpis: { label: string; value: string; sub?: string; dot?: string; meter?: HeroMeter }[] = [
     {
@@ -244,11 +247,9 @@ export default function DashboardPage() {
       sub: gemelSharePct > 0 ? `${Math.round(gemelSharePct)}% בקופות גמל` : undefined,
     },
     {
-      label: 'דמי ניהול משוקללים',
-      value: weightedFee !== null ? `${weightedFee.toFixed(2)}%` : '—',
-      dot: weightedFee === null ? undefined : weightedFee <= MARKET_FEE ? GOOD : WARN,
-      meter: weightedFee === null ? undefined : { fill: (weightedFee / 2) * 100, target: (MARKET_FEE / 2) * 100, color: weightedFee <= MARKET_FEE ? GOOD : WARN },
-      sub: `מול ממוצע השוק ≈${MARKET_FEE.toFixed(1)}%`,
+      label: 'דמי ניהול (שנתי)',
+      value: annualFeeCost !== null ? formatCurrency(annualFeeCost) : '—',
+      sub: weightedFee !== null ? `${weightedFee.toFixed(2)}% מהצבירה · על היתרה הנוכחית` : undefined,
     },
     {
       label: 'חשיפה מנייתית',
