@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { useApp, type Step } from './hooks/useAppState'
 import UploadPage from './pages/UploadPage'
-import SupplementaryFormPage from './pages/SupplementaryFormPage'
 import DashboardPage from './pages/DashboardPage'
 import ProductPage from './pages/ProductPage'
 import ExecutiveSummaryPage from './pages/ExecutiveSummaryPage'
@@ -31,7 +30,6 @@ export default function App() {
   const page = (
     <>
       {state.step === 'upload' && <UploadPage />}
-      {state.step === 'form' && <SupplementaryFormPage />}
       {state.step === 'dashboard' && state.analysis && <DashboardPage />}
       {state.step === 'product' && state.analysis && state.selectedProduct && <ProductPage />}
       {state.step === 'summary' && state.analysis && <ExecutiveSummaryPage />}

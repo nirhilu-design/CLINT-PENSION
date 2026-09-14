@@ -3,7 +3,7 @@ import type { Analysis, ProductType, SupplementaryInfo } from '../models/types'
 import type { ParsedFile } from '../parser/parsePensionXml'
 import { defaultLogicConfig, type LogicConfig } from '../config/logicConfig'
 
-export type Step = 'upload' | 'form' | 'dashboard' | 'product' | 'summary' | 'advisor' | 'logic'
+export type Step = 'upload' | 'dashboard' | 'product' | 'summary' | 'advisor' | 'logic'
 
 export interface AppState {
   step: Step
@@ -43,7 +43,7 @@ const initialState: AppState = {
 function reducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case 'FILES_PARSED':
-      return { ...state, parsedFiles: action.parsedFiles, step: 'form', error: null }
+      return { ...state, parsedFiles: action.parsedFiles, error: null }
     case 'PARSE_ERROR':
       return { ...state, error: action.error }
     case 'ANALYSIS_READY':

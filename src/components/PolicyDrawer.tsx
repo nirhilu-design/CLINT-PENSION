@@ -113,7 +113,8 @@ export default function PolicyDrawer({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <Tile label="שווי נוכחי" value={formatCurrency(policy.currentValue)} />
             <Tile label="שכר מבוטח" value={formatCurrency(policy.coveredSalary)} />
-            <Tile label="הפקדה אחרונה" value={policy.lastDepositMonth ?? '—'} />
+            <Tile label="חודש הפקדה אחרונה" value={policy.lastDepositMonth ?? '—'} />
+            <Tile label="סכום הפקדה אחרונה" value={formatCurrency(policy.lastDepositTotal)} />
             <Tile label="תאריך הצטרפות" value={formatDate(policy.openDate)} />
             <Tile label="מספר אוצר" value={policy.mofid ?? '—'} />
             <Tile label="תשואה נטו" value={formatPercent(policy.netReturn)} />
