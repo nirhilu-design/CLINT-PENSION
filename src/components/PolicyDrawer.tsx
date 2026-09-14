@@ -40,7 +40,7 @@ export default function PolicyDrawer({
   onClose: () => void
 }) {
   const [entered, setEntered] = useState(false)
-  const policyFindings = findings.filter((f) => f.policyNumber === policy.policyNumber)
+  const policyFindings = findings.filter((f) => f.policyId === policy.id)
   const st = status(policy)
   const employer = policy.contributions.find((c) => c.role === 'employer')
   const employee = policy.contributions.find((c) => c.role === 'employee')

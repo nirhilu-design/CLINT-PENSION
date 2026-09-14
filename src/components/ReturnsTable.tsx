@@ -55,7 +55,7 @@ export default function ReturnsTable({
                 ? policy.netReturn - fund.return12m
                 : null
             return (
-              <tr key={policy.policyNumber} className="border-t border-slate-100">
+              <tr key={policy.id} className="border-t border-slate-100">
                 <td className="p-3">
                   <div className="font-medium text-slate-700">
                     {policy.productName ?? policy.policyNumber}

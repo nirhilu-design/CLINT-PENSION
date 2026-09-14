@@ -95,6 +95,7 @@ export const retirementEngine: Engine = ({ policies, supplementary }) => {
         description: `בפוליסה ${p.policyNumber} לא דווח נתון קצבה צפויה, ולכן לא נכלל בניתוח הפרישה.`,
         missingInfo: 'נתון קצבה צפויה (KITZVAT-HODSHIT-TZFUYA) בדיווח היצרן',
         productType: p.productType,
+        policyId: p.id,
         policyNumber: p.policyNumber,
       }),
     )
@@ -159,6 +160,7 @@ export const retirementEngine: Engine = ({ policies, supplementary }) => {
           `בחשבון ${p.policyNumber} (${p.managingCompany ?? ''}) קיימת צבירה של ${formatCurrency(p.currentValue)} ללא הפקדות שוטפות. ` +
           'בחשבון מוקפא אין כיסוי ביטוחי ולעיתים דמי הניהול גבוהים יותר. איחוד חשבונות הוא נקודה לבדיקה מול בעל רישיון.',
         productType: p.productType,
+        policyId: p.id,
         policyNumber: p.policyNumber,
       }),
     )

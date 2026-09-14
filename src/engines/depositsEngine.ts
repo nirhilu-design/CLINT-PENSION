@@ -37,6 +37,7 @@ export const depositsEngine: Engine = ({ policies }) => {
             `פוליסה ${p.policyNumber} מדווחת בסטטוס ריסק זמני — ההפקדות הופסקו והכיסוי הביטוחי נשמר ` +
             'זמנית על חשבון הצבירה, לתקופה מוגבלת בלבד. נקודה לבדיקה מול בעל רישיון.',
           productType: p.productType,
+          policyId: p.id,
           policyNumber: p.policyNumber,
         }),
       )
@@ -64,6 +65,7 @@ export const depositsEngine: Engine = ({ policies }) => {
               `כ-${gapMonths} חודשים לפני תאריך הנתונים (${asOf}). ` +
               'ייתכן עיכוב בהעברת הפקדות — נקודה לבדיקה מול בעל רישיון.',
             productType: p.productType,
+            policyId: p.id,
             policyNumber: p.policyNumber,
           }),
         )
@@ -93,6 +95,7 @@ export const depositsEngine: Engine = ({ policies }) => {
               `בפוליסה ${p.policyNumber} חסרות הפקדות עבור ${missing} מתוך ${expected} חודשי השכר האחרונים שדווחו. ` +
               'אי-רציפות בהפקדות עשויה לפגוע בכיסויים הביטוחיים ובצבירה — נקודה לבדיקה מול בעל רישיון.',
             productType: p.productType,
+            policyId: p.id,
             policyNumber: p.policyNumber,
           }),
         )
@@ -112,6 +115,7 @@ export const depositsEngine: Engine = ({ policies }) => {
             `בפוליסה ${p.policyNumber} הופקדו ${formatCurrency(windowTotal)} ` +
             `ב-${expected - missing} חודשי הפקדה (מתוך ${expected} חודשי שכר אחרונים שדווחו).`,
           productType: p.productType,
+          policyId: p.id,
           policyNumber: p.policyNumber,
         }),
       )

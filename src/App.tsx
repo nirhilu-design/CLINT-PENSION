@@ -16,7 +16,7 @@ export default function App() {
   const { state, dispatch } = useApp()
 
   const selectedPolicy = state.analysis?.policies.find(
-    (p) => p.policyNumber === state.selectedPolicyNumber,
+    (p) => p.id === state.selectedPolicyId,
   )
 
   // SPA screen changes keep the previous scroll position — reset it

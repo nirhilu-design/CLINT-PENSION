@@ -74,6 +74,10 @@ export type ManagersGeneration =
   | '2013-plus'
 
 export interface Policy {
+  // Stable, globally-unique instance id. policyNumber is NOT unique — in pension
+  // funds MISPAR-POLISA-O-HESHBON is usually the client's national ID, so two
+  // pension funds share the same policyNumber. Always key/identify a policy by id.
+  id: string
   policyNumber: string
   productType: ProductType
   productName: string | null
@@ -134,7 +138,8 @@ export interface Finding {
   title: string
   description: string
   productType?: ProductType
-  policyNumber?: string
+  policyId?: string // stable link to the specific Policy.id (unique)
+  policyNumber?: string // for display only — not unique across pension funds
   basedOn?: string // the concrete data the finding rests on
   missingInfo?: string // what is missing to complete this check
 }

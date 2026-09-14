@@ -47,6 +47,7 @@ export const costEngine: Engine = ({ policies, supplementary }) => {
           description: `בפוליסה ${policy.policyNumber}: ${gaps.join('; ')}. נקודה לבדיקה מול בעל רישיון.`,
           basedOn: 'דמי ניהול מדווחים במסלקה מול קובץ דמי ניהול המעסיק',
           productType: policy.productType,
+          policyId: policy.id,
           policyNumber: policy.policyNumber,
         }),
       )

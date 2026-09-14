@@ -92,7 +92,7 @@ export default function ProductPage() {
   const policies = analysis.policies.filter((p) => p.productType === productType)
   const coverages = policies.flatMap((p) => p.coverages.map((c) => ({ ...c, policyNumber: p.policyNumber })))
   const productFindings = analysis.findings.filter(
-    (f) => f.productType === productType || policies.some((p) => p.policyNumber === f.policyNumber),
+    (f) => f.productType === productType || policies.some((p) => p.id === f.policyId),
   )
   const activeCount = policies.filter((p) => p.status === 'active').length
 
@@ -126,7 +126,7 @@ export default function ProductPage() {
     const st = policyStatus(p)
     return (
       <button
-        onClick={() => dispatch({ type: 'OPEN_POLICY', policyNumber: p.policyNumber })}
+        onClick={() => dispatch({ type: 'OPEN_POLICY', policyId: p.id })}
         style={{
           cursor: 'pointer',
           textAlign: 'right',
@@ -241,7 +241,7 @@ export default function ProductPage() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {policies.map((p) => (
-                    <PolicyRow key={p.policyNumber} p={p} compact />
+                    <PolicyRow key={p.id} p={p} compact />
                   ))}
                 </div>
               </Card>
@@ -283,7 +283,7 @@ export default function ProductPage() {
           {tab === 'policies' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {policies.map((p) => (
-                <PolicyRow key={p.policyNumber} p={p} />
+                <PolicyRow key={p.id} p={p} />
               ))}
             </div>
           )}

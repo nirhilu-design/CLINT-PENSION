@@ -77,8 +77,8 @@ export default function SliceDrawer({
         <div className="p-5 space-y-2">
           {slicePolicies.map((p) => (
             <button
-              key={p.policyNumber}
-              onClick={() => dispatch({ type: 'OPEN_POLICY', policyNumber: p.policyNumber })}
+              key={p.id}
+              onClick={() => dispatch({ type: 'OPEN_POLICY', policyId: p.id })}
               className="w-full rounded-xl border border-slate-200/70 p-3 text-right hover:border-brand-600/50 hover:shadow-sm transition"
             >
               <div className="flex justify-between items-center">
