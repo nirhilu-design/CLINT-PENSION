@@ -62,7 +62,7 @@ export default function Sidebar() {
             width: 30,
             height: 30,
             borderRadius: 'var(--radius-md)',
-            background: 'linear-gradient(135deg,var(--teal-400),var(--clint-500))',
+            background: 'linear-gradient(135deg,var(--cyan-500),var(--clint-600))',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -117,11 +117,11 @@ export default function Sidebar() {
                     bottom: 9,
                     width: 3,
                     borderRadius: 3,
-                    background: 'var(--accent-coral)',
+                    background: 'var(--cyan-500)',
                   }}
                 />
               )}
-              <Icon size={17} style={{ flexShrink: 0, color: active ? 'var(--accent-coral)' : 'rgba(255,255,255,0.5)' }} />
+              <Icon size={17} style={{ flexShrink: 0, color: active ? 'var(--cyan-400)' : 'rgba(255,255,255,0.5)' }} />
               {item.label}
             </button>
           )
