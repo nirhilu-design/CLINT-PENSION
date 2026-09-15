@@ -7,6 +7,7 @@ import KpiRow, { type Kpi } from '../components/KpiRow'
 import RetirementProjection from '../components/RetirementProjection'
 import AssetDonut, { type AssetSlice } from '../components/AssetDonut'
 import CompanyLogo from '../components/CompanyLogo'
+import FindingHighlights from '../components/FindingHighlights'
 import Card from '../components/ds/Card'
 import { computeExposure } from '../services/exposureService'
 import { useIsMobile } from '../hooks/useMediaQuery'
@@ -453,6 +454,9 @@ export default function DashboardPage() {
             )}
           </div>
         )}
+
+        {/* Key findings to act on */}
+        <FindingHighlights findings={actionable} />
 
         {/* Smart coverage cards */}
         <section style={{ marginBottom: 24 }}>

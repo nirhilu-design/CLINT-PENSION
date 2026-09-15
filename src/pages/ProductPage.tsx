@@ -96,7 +96,7 @@ export default function ProductPage() {
   )
   const activeCount = policies.filter((p) => p.status === 'active').length
 
-  const [tab, setTab] = useState<'overview' | 'policies' | 'returns'>('overview')
+  const [tab, setTab] = useState<'overview' | 'fees' | 'tracks' | 'deposits' | 'coverages' | 'policies' | 'returns'>('overview')
   const [narrow, setNarrow] = useState(false)
   useEffect(() => {
     const onResize = () => setNarrow(window.innerWidth < 1100)
@@ -118,6 +118,10 @@ export default function ProductPage() {
 
   const tabs: { id: typeof tab; label: string }[] = [
     { id: 'overview', label: 'סקירה' },
+    { id: 'fees', label: 'דמי ניהול' },
+    ...(channels.length > 0 ? [{ id: 'tracks' as const, label: 'מסלול השקעה' }] : []),
+    { id: 'deposits', label: 'הפקדות' },
+    ...(coverages.length > 0 ? [{ id: 'coverages' as const, label: 'כיסויים' }] : []),
     { id: 'policies', label: `פוליסות · ${policies.length}` },
     { id: 'returns', label: 'תשואות' },
   ]
@@ -280,6 +284,104 @@ export default function ProductPage() {
             </div>
           )}
 
+          {tab === 'fees' && (
+            <Card>
+              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 14 }}>דמי ניהול לפי פוליסה</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto auto', gap: '10px 18px', alignItems: 'center' }}>
+                <span style={{ fontSize: 11.5, color: 'var(--color-text-tertiary)' }}>גוף מנהל</span>
+                <span style={{ fontSize: 11.5, color: 'var(--color-text-tertiary)', textAlign: 'left' }}>מהפקדה</span>
+                <span style={{ fontSize: 11.5, color: 'var(--color-text-tertiary)', textAlign: 'left' }}>מצבירה</span>
+                {policies.map((p) => (
+                  <FeeRow key={p.id} p={p} />
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {tab === 'tracks' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {channels.length > 0 && (
+                <Card>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 14 }}>פילוח אפיקים בקרן זו</div>
+                  <div style={{ display: 'flex', height: 22, width: '100%', overflow: 'hidden', borderRadius: 'var(--radius-md)' }}>
+                    {channels.map((ch) => (
+                      <div key={ch.name} style={{ height: '100%', width: `${ch.pct}%`, background: ch.color }} />
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginTop: 12 }}>
+                    {channels.map((ch) => (
+                      <span key={ch.name} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--color-text-secondary)' }}>
+                        <span style={{ width: 9, height: 9, borderRadius: '50%', background: ch.color, display: 'inline-block' }} />
+                        {ch.name} <b style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text-primary)' }}>{ch.pct.toFixed(0)}%</b>
+                      </span>
+                    ))}
+                  </div>
+                </Card>
+              )}
+              <Card>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 12 }}>מסלולים לפי פוליסה</div>
+                {policies.flatMap((p) => p.investmentTracks.map((t, i) => ({ p, t, i }))).length === 0 ? (
+                  <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)', margin: 0 }}>לא דווחו מסלולים</p>
+                ) : (
+                  policies.flatMap((p) =>
+                    p.investmentTracks.map((t, i) => (
+                      <div key={`${p.id}-${i}`} style={{ padding: '10px 0', borderBottom: '1px solid var(--color-border-base)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>{t.name ?? 'מסלול ללא שם'}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-text-primary)' }}>{formatCurrency(t.value)}</span>
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 14px', marginTop: 3, fontSize: 11, color: 'var(--color-text-tertiary)' }}>
+                          <span>{p.managingCompany ?? p.policyNumber}</span>
+                          {t.returnNet !== null && <span>תשואה נטו: {formatPercent(t.returnNet)}</span>}
+                          {t.feeFromAccumulation !== null && <span>ד"נ מצבירה: {formatPercent(t.feeFromAccumulation)}</span>}
+                        </div>
+                      </div>
+                    )),
+                  )
+                )}
+              </Card>
+            </div>
+          )}
+
+          {tab === 'deposits' && (
+            <Card>
+              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 14 }}>הפקדות לפי פוליסה</div>
+              {policies.map((p) => (
+                <div key={p.id} style={{ padding: '11px 0', borderBottom: '1px solid var(--color-border-base)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>{p.managingCompany ?? p.productName ?? `פוליסה ${p.policyNumber}`}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-text-primary)' }}>{formatCurrency(p.lastDepositTotal)}</span>
+                  </div>
+                  <div style={{ fontSize: 11.5, color: 'var(--color-text-tertiary)', marginTop: 2 }}>
+                    הפקדה אחרונה: {p.lastDepositMonth ?? '—'}
+                    {p.monthlyDeposits.length > 0 && ` · ${p.monthlyDeposits.length} חודשי הפקדה דווחו`}
+                  </div>
+                </div>
+              ))}
+            </Card>
+          )}
+
+          {tab === 'coverages' && (
+            <Card>
+              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 12 }}>כיסויים ביטוחיים בקרן זו</div>
+              {coverages.map((c, i) => (
+                <div key={i} style={{ padding: '11px 0', borderBottom: '1px solid var(--color-border-base)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                      {c.name ? `${coverageTypeLabels[c.type]} · ${c.name}` : coverageTypeLabels[c.type]}
+                    </span>
+                    <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-text-primary)' }}>{formatCurrency(c.amount)}</span>
+                  </div>
+                  <div style={{ fontSize: 11.5, color: 'var(--color-text-tertiary)', marginTop: 2 }}>
+                    פוליסה {c.policyNumber}
+                    {c.percent !== null ? ` · שיעור ${formatPercent(c.percent, 0)}` : ''}
+                    {c.cost !== null ? ` · עלות חודשית ${formatCurrency(c.cost)}` : ''}
+                  </div>
+                </div>
+              ))}
+            </Card>
+          )}
+
           {tab === 'policies' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {policies.map((p) => (
@@ -354,6 +456,18 @@ function ReturnsTab({ policies, funds }: { policies: Policy[]; funds: { mofid: s
         ))
       )}
     </Card>
+  )
+}
+
+function FeeRow({ p }: { p: Policy }) {
+  return (
+    <>
+      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {p.managingCompany ?? p.productName ?? `פוליסה ${p.policyNumber}`}
+      </span>
+      <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-text-primary)', textAlign: 'left' }}>{formatPercent(p.fees.fromDeposit)}</span>
+      <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-text-primary)', textAlign: 'left' }}>{formatPercent(p.fees.fromAccumulation)}</span>
+    </>
   )
 }
 
