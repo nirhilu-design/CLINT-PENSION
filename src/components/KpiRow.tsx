@@ -57,12 +57,12 @@ function KpiCard({ kpi }: { kpi: Kpi }) {
         transition: 'transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <span style={{ width: 38, height: 38, borderRadius: '50%', background: kpi.tint ?? 'var(--clint-50)', display: 'grid', placeItems: 'center', color: kpi.accent ?? 'var(--clint-600)', flexShrink: 0 }}>
           <Icon size={19} aria-hidden />
         </span>
+        <div style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 600, color: 'var(--color-text-tertiary)', letterSpacing: '0.01em', lineHeight: 1.3 }}>{kpi.label}</div>
       </div>
-      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-tertiary)', letterSpacing: '0.01em' }}>{kpi.label}</div>
       <div style={{ fontSize: 24, fontWeight: 800, fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em', color: 'var(--color-text-primary)' }}>
         {display}
       </div>

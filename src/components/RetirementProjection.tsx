@@ -268,6 +268,7 @@ function Station({
       }}
     >
       <Metric label="צבירה צפויה" value={formatCurrency(acc)} highlight={highlight} />
+      <div style={{ alignSelf: 'stretch', height: 1, background: 'var(--color-border-base)', margin: '2px 0 10px' }} />
       <Metric label="קצבה חודשית צפויה" value={formatCurrency(pen)} highlight={highlight} />
       <span style={{ display: 'inline-block', fontSize: 11.5, fontWeight: 700, padding: '4px 11px', borderRadius: 'var(--radius-full)', background: tone.bg, color: tone.color, marginTop: 8 }}>
         {badge}
