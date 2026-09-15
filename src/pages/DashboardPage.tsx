@@ -455,7 +455,9 @@ export default function DashboardPage() {
                 const head = policyHeadline(p)
                 const st = policyStatusOf(p)
                 const m = STATUS_META[st.tone]
-                const name = p.managingCompany ?? p.productName ?? productTypeLabels[p.productType]
+                const typeColor = DONUT_COLORS[p.productType]
+                const typeLabel = productTypeLabels[p.productType]
+                const company = p.managingCompany ?? p.productName ?? 'גוף לא דווח'
                 return (
                   <button
                     key={p.id}
@@ -467,6 +469,7 @@ export default function DashboardPage() {
                       textAlign: 'right',
                       background: 'var(--color-bg-card)',
                       border: '1px solid var(--color-border-base)',
+                      borderTop: `3px solid ${typeColor}`,
                       borderRadius: 'var(--radius-lg)',
                       boxShadow: 'var(--shadow-card)',
                       padding: 16,
@@ -475,21 +478,38 @@ export default function DashboardPage() {
                       transition: 'transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out)',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 11, justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
-                        <CompanyLogo company={p.managingCompany} size={40} />
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontWeight: 700, color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {name}
-                          </div>
-                          <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {productTypeLabels[p.productType]}
-                          </div>
-                        </div>
-                      </div>
+                    {/* Product type is the headline — many funds share a managing company */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'space-between' }}>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          fontSize: 13,
+                          fontWeight: 800,
+                          color: typeColor,
+                          background: `${typeColor}16`,
+                          padding: '4px 10px',
+                          borderRadius: 'var(--radius-full)',
+                          maxWidth: '100%',
+                          minWidth: 0,
+                        }}
+                      >
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: typeColor, flexShrink: 0 }} />
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{typeLabel}</span>
+                      </span>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 'var(--radius-full)', background: m.bg, color: m.color, whiteSpace: 'nowrap', flexShrink: 0 }}>
                         {st.sign} {st.label}
                       </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0, marginTop: 12 }}>
+                      <CompanyLogo company={p.managingCompany} size={36} />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 10.5, color: 'var(--color-text-tertiary)' }}>גוף מנהל</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {company}
+                        </div>
+                      </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 14 }}>
                       <div>
