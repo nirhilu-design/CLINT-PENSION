@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { ProductType } from '../models/types'
 import Card from './ds/Card'
 import { useIsMobile } from '../hooks/useMediaQuery'
@@ -28,10 +29,12 @@ export default function AssetDonut({
   onSelect?: (type: ProductType) => void
 }) {
   const mobile = useIsMobile()
+  const [hover, setHover] = useState<string | null>(null)
   const total = slices.reduce((s, x) => s + x.value, 0)
   const size = mobile ? 150 : 180
   const stroke = mobile ? 22 : 26
-  const r = (size - stroke) / 2
+  const hoverGrow = 6 // px of extra stroke width on hover
+  const r = (size - stroke - hoverGrow) / 2 // reserve room so a hovered slice isn't clipped
   const circ = 2 * Math.PI * r
   const gap = total > 0 ? 1.5 : 0 // small degree gap between segments (in %)
 
@@ -64,21 +67,31 @@ export default function AssetDonut({
           <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="התפלגות נכסים לפי סוג מוצר">
             <g transform={`rotate(-90 ${size / 2} ${size / 2})`}>
               <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--neutral-100)" strokeWidth={stroke} />
-              {arcs.map((a) => (
-                <circle
-                  key={a.type}
-                  cx={size / 2}
-                  cy={size / 2}
-                  r={r}
-                  fill="none"
-                  stroke={a.color}
-                  strokeWidth={stroke}
-                  strokeDasharray={`${a.dash} ${a.rest}`}
-                  strokeDashoffset={-((a.rotation / 360) * circ)}
-                  style={{ cursor: clickable(a.type) ? 'pointer' : 'default', transition: 'opacity 160ms var(--ease-out)' }}
-                  onClick={() => clickable(a.type) && onSelect!(a.type as ProductType)}
-                />
-              ))}
+              {arcs.map((a) => {
+                const isHover = hover === a.type
+                return (
+                  <circle
+                    key={a.type}
+                    cx={size / 2}
+                    cy={size / 2}
+                    r={r}
+                    fill="none"
+                    stroke={a.color}
+                    strokeWidth={isHover ? stroke + hoverGrow : stroke}
+                    strokeLinecap="butt"
+                    strokeDasharray={`${a.dash} ${a.rest}`}
+                    strokeDashoffset={-((a.rotation / 360) * circ)}
+                    onMouseEnter={() => setHover(a.type)}
+                    onMouseLeave={() => setHover((h) => (h === a.type ? null : h))}
+                    style={{
+                      cursor: clickable(a.type) ? 'pointer' : 'default',
+                      opacity: hover && !isHover ? 0.72 : 1,
+                      transition: 'stroke-width 140ms var(--ease-out), opacity 140ms var(--ease-out)',
+                    }}
+                    onClick={() => clickable(a.type) && onSelect!(a.type as ProductType)}
+                  />
+                )
+              })}
             </g>
           </svg>
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
@@ -92,6 +105,11 @@ export default function AssetDonut({
         <div style={{ flex: 1, minWidth: 150, display: 'flex', flexDirection: 'column', gap: 2 }}>
           {arcs.map((a) => {
             const isClickable = clickable(a.type)
+            const isHover = hover === a.type
+            const hoverProps = {
+              onMouseEnter: () => setHover(a.type),
+              onMouseLeave: () => setHover((h) => (h === a.type ? null : h)),
+            }
             const row = (
               <>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
@@ -110,17 +128,18 @@ export default function AssetDonut({
               borderRadius: 'var(--radius-md)',
               width: '100%',
               border: 'none',
-              background: 'none',
               textAlign: 'right',
+              background: isHover ? 'var(--neutral-50)' : 'none',
               fontFamily: 'inherit',
               cursor: isClickable ? 'pointer' : 'default',
+              transition: 'background 140ms var(--ease-out)',
             }
             return isClickable ? (
-              <button key={a.type} style={style} onClick={() => onSelect!(a.type as ProductType)}>
+              <button key={a.type} style={style} {...hoverProps} onClick={() => onSelect!(a.type as ProductType)}>
                 {row}
               </button>
             ) : (
-              <div key={a.type} style={style}>
+              <div key={a.type} style={style} {...hoverProps}>
                 {row}
               </div>
             )

@@ -11,6 +11,7 @@ import FindingHighlights from '../components/FindingHighlights'
 import Card from '../components/ds/Card'
 import { computeExposure } from '../services/exposureService'
 import { useIsMobile } from '../hooks/useMediaQuery'
+import { useDragScroll } from '../hooks/useDragScroll'
 import { sortFindings } from '../engines/findingPriority'
 import { assessCompleteness } from '../services/completenessService'
 import { effectiveSalary } from '../engines/engineTypes'
@@ -66,6 +67,7 @@ export default function DashboardPage() {
   const { policies, findings, client } = analysis
   const supp = analysis.supplementary
   const mobile = useIsMobile()
+  const productsDrag = useDragScroll()
 
   const totalAssets = policies.reduce((s, p) => s + (p.currentValue ?? 0), 0)
   const totalPensionWithDeposits = policies.reduce(
@@ -443,8 +445,9 @@ export default function DashboardPage() {
             <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>{policies.length} מוצרים · לחיצה פותחת את הפירוט</span>
           </div>
           <div
+            {...productsDrag}
             className="clint-scroll-x"
-            style={{ display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x proximity', WebkitOverflowScrolling: 'touch' }}
+            style={{ ...productsDrag.style, display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x proximity', WebkitOverflowScrolling: 'touch' }}
           >
             {[...policies]
               .sort((a, b) => policyHeadline(b).value - policyHeadline(a).value)
