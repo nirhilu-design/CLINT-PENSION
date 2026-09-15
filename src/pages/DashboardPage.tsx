@@ -211,6 +211,12 @@ export default function DashboardPage() {
       numeric: totalPensionWithDeposits,
       format: formatCurrency,
       sub: pensionTarget ? `יעד ≈${formatCurrency(pensionTarget)}` : 'בהמשך הפקדות',
+      status:
+        pensionTarget && totalPensionWithDeposits < pensionTarget
+          ? { label: `פער ${Math.round(((pensionTarget - totalPensionWithDeposits) / pensionTarget) * 100)}%`, tone: 'warn' }
+          : pensionTarget
+            ? { label: 'תקין', tone: 'good' }
+            : undefined,
     },
     {
       key: 'ip',
@@ -339,8 +345,7 @@ export default function DashboardPage() {
       <div
         style={{
           position: 'relative',
-          background:
-            'radial-gradient(680px circle at 90% 0%, rgba(47,107,255,0.28), transparent 60%),radial-gradient(520px circle at 2% 100%, rgba(50,182,217,0.16), transparent 58%),linear-gradient(120deg,#0f2647,var(--clint-800) 55%,#0c3a7a)',
+          background: 'var(--hero-bg)',
           color: '#fff',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}
@@ -453,12 +458,15 @@ export default function DashboardPage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: mobile ? '1fr' : 'minmax(0,1.4fr) minmax(0,1fr)',
+              gridTemplateColumns: mobile ? '1fr' : 'minmax(0,1fr) minmax(0,1.45fr)',
               gap: mobile ? 16 : 20,
               marginBottom: 24,
               alignItems: 'start',
             }}
           >
+            {donutSlices.length > 0 && (
+              <AssetDonut slices={donutSlices} onSelect={(type) => dispatch({ type: 'OPEN_PRODUCT', productType: type })} />
+            )}
             {hasProjection && (
               <RetirementProjection
                 currentAge={age !== null && !isNaN(age) ? age : null}
@@ -468,9 +476,6 @@ export default function DashboardPage() {
                 projectedAccumulation={projectedCapital}
                 projectedPension={totalPensionWithDeposits}
               />
-            )}
-            {donutSlices.length > 0 && (
-              <AssetDonut slices={donutSlices} onSelect={(type) => dispatch({ type: 'OPEN_PRODUCT', productType: type })} />
             )}
           </div>
         )}

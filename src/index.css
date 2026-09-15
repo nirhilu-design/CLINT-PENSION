@@ -56,6 +56,8 @@
   /* semantic surfaces & text */
   --color-bg-page: #f6f8fc;
   --color-bg-card: #ffffff;
+  /* calm deep-navy header band (mockup V2) */
+  --hero-bg: linear-gradient(110deg, #16244a 0%, #1d2f5c 58%, #23386c 100%);
   --color-bg-overlay: rgba(8, 21, 39, 0.55);
   --color-border-base: #e6ebf3;
   --color-text-primary: #122033;

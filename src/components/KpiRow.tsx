@@ -57,22 +57,25 @@ function KpiCard({ kpi }: { kpi: Kpi }) {
         transition: 'transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8 }}>
         <span style={{ width: 38, height: 38, borderRadius: '50%', background: kpi.tint ?? 'var(--clint-50)', display: 'grid', placeItems: 'center', color: kpi.accent ?? 'var(--clint-600)', flexShrink: 0 }}>
           <Icon size={19} aria-hidden />
         </span>
-        {kpi.status && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 'var(--radius-full)', background: TONE[kpi.status.tone].bg, color: TONE[kpi.status.tone].color, whiteSpace: 'nowrap' }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: TONE[kpi.status.tone].dot }} />
-            {kpi.status.label}
-          </span>
-        )}
       </div>
       <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-tertiary)', letterSpacing: '0.01em' }}>{kpi.label}</div>
       <div style={{ fontSize: 24, fontWeight: 800, fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em', color: 'var(--color-text-primary)' }}>
         {display}
       </div>
-      {kpi.sub && <div style={{ fontSize: 11.5, color: 'var(--color-text-tertiary)' }}>{kpi.sub}</div>}
+      {/* Footer: target/sub on the right, status chip on the left (mockup layout) */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 2, minHeight: 20 }}>
+        {kpi.sub ? <span style={{ fontSize: 11.5, color: 'var(--color-text-tertiary)' }}>{kpi.sub}</span> : <span />}
+        {kpi.status && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 'var(--radius-full)', background: TONE[kpi.status.tone].bg, color: TONE[kpi.status.tone].color, whiteSpace: 'nowrap', flexShrink: 0 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: TONE[kpi.status.tone].dot }} />
+            {kpi.status.label}
+          </span>
+        )}
+      </div>
     </button>
   )
 }
