@@ -96,7 +96,7 @@ export default function App() {
               <div style={{ position: 'fixed', inset: 0, zIndex: 50 }}>
                 <div onClick={() => setMenuOpen(false)} style={{ position: 'absolute', inset: 0, background: 'var(--color-bg-overlay)' }} />
                 <div style={{ position: 'absolute', top: 0, bottom: 0, insetInlineStart: 0 }}>
-                  <Sidebar />
+                  <Sidebar onNavigate={() => setMenuOpen(false)} />
                 </div>
               </div>
             )}

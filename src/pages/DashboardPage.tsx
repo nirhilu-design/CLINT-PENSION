@@ -354,7 +354,7 @@ export default function DashboardPage() {
 
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: mobile ? '16px 16px 40px' : '24px 32px 48px' }}>
         {/* Primary KPIs — four white cards (V2 Overview) */}
-        <div style={{ marginBottom: 24 }}>
+        <div id="insurance" style={{ marginBottom: 24, scrollMarginTop: 80 }}>
           <KpiRow kpis={primaryKpis} />
         </div>
         {/* Context questions — a bar (replaces the old full-page step) */}
@@ -418,17 +418,21 @@ export default function DashboardPage() {
             }}
           >
             {donutSlices.length > 0 && (
-              <AssetDonut slices={donutSlices} onSelect={(type) => dispatch({ type: 'OPEN_PRODUCT', productType: type })} />
+              <div id="allocation" style={{ scrollMarginTop: 80 }}>
+                <AssetDonut slices={donutSlices} onSelect={(type) => dispatch({ type: 'OPEN_PRODUCT', productType: type })} />
+              </div>
             )}
             {hasProjection && (
-              <RetirementProjection
-                currentAge={age !== null && !isNaN(age) ? age : null}
-                retirementAge={retirementAge ?? 67}
-                currentAccumulation={totalAssets}
-                currentPension={totalPensionWithoutDeposits}
-                projectedAccumulation={projectedCapital}
-                projectedPension={totalPensionWithDeposits}
-              />
+              <div id="retirement" style={{ scrollMarginTop: 80 }}>
+                <RetirementProjection
+                  currentAge={age !== null && !isNaN(age) ? age : null}
+                  retirementAge={retirementAge ?? 67}
+                  currentAccumulation={totalAssets}
+                  currentPension={totalPensionWithoutDeposits}
+                  projectedAccumulation={projectedCapital}
+                  projectedPension={totalPensionWithDeposits}
+                />
+              </div>
             )}
           </div>
         )}
@@ -439,7 +443,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Products */}
-        <section>
+        <section id="products" style={{ scrollMarginTop: 80 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, margin: '0 0 14px', flexWrap: 'wrap' }}>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>המוצרים בתיק</h2>
             <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>{policies.length} מוצרים · לחיצה פותחת את הפירוט</span>
