@@ -12,7 +12,7 @@ import {
   HeartPulse,
   Info,
   AlertTriangle,
-  ChevronDown,
+  ChevronLeft,
   ArrowLeft,
   type LucideIcon,
 } from 'lucide-react'
@@ -51,7 +51,7 @@ export default function FindingHighlights({ findings, limit = 5 }: { findings: F
     <section style={{ marginBottom: 24 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, margin: '0 0 14px', flexWrap: 'wrap' }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>נקודות מרכזיות לטיפול</h2>
-        <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>{findings.length} נקודות · לחיצה על "למה סומן?" לפירוט</span>
+        <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>{findings.length} נקודות · לחיצה על כרטיס פותחת "למה סומן?"</span>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'repeat(auto-fill,minmax(300px,1fr))', gap: 14 }}>
         {top.map((f) => (
@@ -72,50 +72,33 @@ function HighlightCard({ finding }: { finding: Finding }) {
   return (
     <div
       style={{
-        background: 'var(--color-bg-card)',
-        border: '1px solid var(--color-border-base)',
-        borderInlineStart: `4px solid ${tone.border}`,
+        background: tone.bg,
         borderRadius: 'var(--radius-lg)',
         boxShadow: 'var(--shadow-card)',
         overflow: 'hidden',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 16px' }}>
-        <span style={{ width: 34, height: 34, borderRadius: '50%', background: tone.bg, color: tone.fg, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-          <Icon size={17} aria-hidden />
+      {/* Collapsed row — tinted card matching the mockup; whole card expands "למה סומן?" */}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'right' }}
+      >
+        <span style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--color-bg-card)', color: tone.fg, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+          <Icon size={18} aria-hidden />
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-primary)' }}>{finding.title}</div>
-          <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', marginTop: 3, lineHeight: 1.5 }}>{reason}</div>
+          <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', marginTop: 2, lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            {reason}
+          </div>
         </div>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '0 16px 12px' }}>
-        <button
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12.5, fontWeight: 600, color: tone.fg, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
-        >
-          למה סומן?
-          <ChevronDown size={15} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 180ms var(--ease-out)' }} />
-        </button>
-        {(finding.productType || finding.policyId) && (
-          <button
-            onClick={() =>
-              finding.policyId
-                ? dispatch({ type: 'OPEN_POLICY', policyId: finding.policyId })
-                : dispatch({ type: 'OPEN_PRODUCT', productType: finding.productType! })
-            }
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12.5, fontWeight: 600, color: 'var(--clint-600)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
-          >
-            {finding.policyId ? 'לפרטי הפוליסה' : `למסך ${finding.productType ? productTypeLabels[finding.productType] : ''}`}
-            <ArrowLeft size={14} />
-          </button>
-        )}
-      </div>
+        <ChevronLeft size={18} color={tone.fg} style={{ flexShrink: 0, transform: open ? 'rotate(-90deg)' : 'none', transition: 'transform 180ms var(--ease-out)' }} />
+      </button>
 
       {open && (
-        <div style={{ padding: '12px 16px', borderTop: '1px solid var(--color-border-base)', background: 'var(--neutral-50)' }}>
+        <div style={{ padding: '12px 16px 14px', background: 'var(--color-bg-card)', borderTop: `1px solid ${tone.bg}` }}>
+          <div style={{ fontSize: 11.5, fontWeight: 700, color: tone.fg, marginBottom: 6 }}>למה סומן?</div>
           <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>{finding.description}</p>
           {finding.basedOn && (
             <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--color-text-tertiary)' }}>
@@ -126,6 +109,19 @@ function HighlightCard({ finding }: { finding: Finding }) {
             <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--clint-700)' }}>
               <b>להשלמת הבדיקה:</b> {finding.missingInfo}
             </p>
+          )}
+          {(finding.productType || finding.policyId) && (
+            <button
+              onClick={() =>
+                finding.policyId
+                  ? dispatch({ type: 'OPEN_POLICY', policyId: finding.policyId })
+                  : dispatch({ type: 'OPEN_PRODUCT', productType: finding.productType! })
+              }
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 10, fontSize: 12.5, fontWeight: 600, color: 'var(--clint-600)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+            >
+              {finding.policyId ? 'לפרטי הפוליסה' : `למסך ${finding.productType ? productTypeLabels[finding.productType] : ''}`}
+              <ArrowLeft size={14} />
+            </button>
           )}
         </div>
       )}
