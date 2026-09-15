@@ -140,6 +140,36 @@ body {
   background: transparent;
 }
 
+/* ── Opening-screen micro-interactions ── */
+@keyframes clint-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes clint-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.clint-rise {
+  animation: clint-rise 360ms var(--ease-out) both;
+}
+.clint-press {
+  transition: transform 160ms var(--ease-out), border-color 180ms var(--ease-out), background 180ms var(--ease-out);
+}
+.clint-press:active {
+  transform: scale(0.985);
+}
+.clint-skeleton {
+  background: linear-gradient(90deg, var(--neutral-100) 25%, var(--neutral-200) 40%, var(--neutral-100) 60%);
+  background-size: 300% 100%;
+  animation: clint-shimmer 1.4s ease-in-out infinite;
+  border-radius: var(--radius-md);
+}
+@media (prefers-reduced-motion: reduce) {
+  .clint-rise { animation: none; }
+  .clint-press:active { transform: none; }
+  .clint-skeleton { animation: none; }
+}
+
 /* Visible keyboard focus everywhere, consistent with the brand */
 :focus-visible {
   outline: 2px solid var(--color-brand-600);
