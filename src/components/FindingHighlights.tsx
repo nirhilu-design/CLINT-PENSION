@@ -3,6 +3,7 @@ import type { Finding, FindingCategory } from '../models/types'
 import { productTypeLabels } from '../models/labels'
 import { useApp } from '../hooks/useAppState'
 import { useIsMobile } from '../hooks/useMediaQuery'
+import { useDragScroll } from '../hooks/useDragScroll'
 import {
   ShieldAlert,
   Percent,
@@ -43,8 +44,9 @@ const CATEGORY_ICON: Record<FindingCategory, LucideIcon> = {
  * status color, a one-line reason, and an expandable "למה סומן?" panel that
  * shows the concrete basis (Explainability). Presentation only.
  */
-export default function FindingHighlights({ findings, limit = 5 }: { findings: Finding[]; limit?: number }) {
+export default function FindingHighlights({ findings, limit = 6 }: { findings: Finding[]; limit?: number }) {
   const mobile = useIsMobile()
+  const drag = useDragScroll()
   const top = findings.slice(0, limit)
   if (top.length === 0) return null
   return (
@@ -54,8 +56,9 @@ export default function FindingHighlights({ findings, limit = 5 }: { findings: F
         <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>{findings.length} נקודות · לחיצה על כרטיס פותחת "למה סומן?"</span>
       </div>
       <div
+        {...drag}
         className="clint-scroll-x"
-        style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 8, alignItems: 'flex-start', scrollSnapType: 'x proximity', WebkitOverflowScrolling: 'touch' }}
+        style={{ ...drag.style, display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 8, alignItems: 'flex-start', scrollSnapType: 'x proximity', WebkitOverflowScrolling: 'touch' }}
       >
         {top.map((f) => (
           <div key={f.id} style={{ flex: `0 0 ${mobile ? '85%' : '320px'}`, maxWidth: '90vw', scrollSnapAlign: 'start' }}>
