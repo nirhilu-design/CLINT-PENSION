@@ -29,6 +29,7 @@ export const savingsEngine: Engine = ({ policies, supplementary }) => {
             `בקרן ${p.policyNumber} חלפו 6 שנים מההצטרפות — הצבירה (${formatCurrency(p.currentValue)}) נזילה וזמינה למשיכה פטורה ממס. ` +
             'המשך חיסכון שומר על הפטור גם להפקדות החדשות.',
           productType: p.productType,
+          policyId: p.id,
           policyNumber: p.policyNumber,
         }),
       )
@@ -41,6 +42,7 @@ export const savingsEngine: Engine = ({ policies, supplementary }) => {
           title: 'קרן ההשתלמות טרם נזילה',
           description: `קרן ${p.policyNumber} תהפוך נזילה בתאריך ${formatDate(educationFundLiquidDate(p))}.`,
           productType: p.productType,
+          policyId: p.id,
           policyNumber: p.policyNumber,
         }),
       )
@@ -59,6 +61,7 @@ export const savingsEngine: Engine = ({ policies, supplementary }) => {
             `בקרן ${p.policyNumber}: כעצמאי/ת, הטבת המס בהשתלמות ניתנת כניכוי מההכנסה החייבת עד תקרת הפקדה שנתית, ` +
             'ולא לפי תקרת שכר חודשית. ניצול התקרה השנתית הוא נקודה לבדיקה מול בעל רישיון.',
           productType: p.productType,
+          policyId: p.id,
           policyNumber: p.policyNumber,
         }),
       )
@@ -88,6 +91,7 @@ export const savingsEngine: Engine = ({ policies, supplementary }) => {
               : `בתוך תקרת השכר המוטבת (${formatCurrency(EDUCATION_FUND_MONTHLY_SALARY_CAP)}). `) +
             (percents ? `שיעורי ההפרשה: ${percents}.` : ''),
           productType: p.productType,
+          policyId: p.id,
           policyNumber: p.policyNumber,
         }),
       )
@@ -106,6 +110,7 @@ export const savingsEngine: Engine = ({ policies, supplementary }) => {
           `הצבירה בחשבון ${p.policyNumber} (${formatCurrency(p.currentValue)}) נזילה בכל עת (בכפוף למס רווחי הון במשיכה). ` +
           'משיכה כקצבה מגיל 60 פטורה ממס.',
         productType: p.productType,
+        policyId: p.id,
         policyNumber: p.policyNumber,
       }),
     )

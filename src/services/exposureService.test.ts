@@ -4,6 +4,7 @@ import type { Policy, TreasuryAllocation } from '../models/types'
 
 function policy(over: Partial<Policy>): Policy {
   return {
+    id: 'test-policy',
     policyNumber: 'P',
     productType: 'gemel',
     productName: null,

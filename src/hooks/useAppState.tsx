@@ -11,7 +11,7 @@ export interface AppState {
   analysis: Analysis | null
   logicConfig: LogicConfig
   selectedProduct: ProductType | null
-  selectedPolicyNumber: string | null
+  selectedPolicyId: string | null
   error: string | null
 }
 
@@ -20,7 +20,7 @@ export type AppAction =
   | { type: 'PARSE_ERROR'; error: string }
   | { type: 'ANALYSIS_READY'; analysis: Analysis }
   | { type: 'OPEN_PRODUCT'; productType: ProductType }
-  | { type: 'OPEN_POLICY'; policyNumber: string }
+  | { type: 'OPEN_POLICY'; policyId: string }
   | { type: 'CLOSE_POLICY' }
   | { type: 'GO_DASHBOARD' }
   | { type: 'GO_SUMMARY' }
@@ -36,7 +36,7 @@ const initialState: AppState = {
   analysis: null,
   logicConfig: defaultLogicConfig(),
   selectedProduct: null,
-  selectedPolicyNumber: null,
+  selectedPolicyId: null,
   error: null,
 }
 
@@ -51,17 +51,17 @@ function reducer(state: AppState, action: AppAction): AppState {
     case 'OPEN_PRODUCT':
       return { ...state, selectedProduct: action.productType, step: 'product' }
     case 'OPEN_POLICY':
-      return { ...state, selectedPolicyNumber: action.policyNumber }
+      return { ...state, selectedPolicyId: action.policyId }
     case 'CLOSE_POLICY':
-      return { ...state, selectedPolicyNumber: null }
+      return { ...state, selectedPolicyId: null }
     case 'GO_DASHBOARD':
-      return { ...state, step: 'dashboard', selectedProduct: null, selectedPolicyNumber: null }
+      return { ...state, step: 'dashboard', selectedProduct: null, selectedPolicyId: null }
     case 'GO_SUMMARY':
-      return { ...state, step: 'summary', selectedPolicyNumber: null }
+      return { ...state, step: 'summary', selectedPolicyId: null }
     case 'GO_ADVISOR':
-      return { ...state, step: 'advisor', selectedPolicyNumber: null }
+      return { ...state, step: 'advisor', selectedPolicyId: null }
     case 'GO_LOGIC':
-      return { ...state, step: 'logic', selectedPolicyNumber: null }
+      return { ...state, step: 'logic', selectedPolicyId: null }
     case 'ANALYSIS_UPDATED':
       return { ...state, analysis: action.analysis }
     case 'LOGIC_UPDATED':

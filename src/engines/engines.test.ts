@@ -23,6 +23,7 @@ const client = {
 
 function makePolicy(overrides: Partial<Policy> = {}): Policy {
   return {
+    id: 'test-policy',
     policyNumber: 'P1',
     productType: 'pension',
     productName: 'קרן בדיקה',

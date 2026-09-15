@@ -188,6 +188,36 @@ describe('parsePensionXml', () => {
     ).not.toThrow()
   })
 
+  it('reads the reported salary from PirteiHaasaka > SACHAR-POLISA', () => {
+    expect(p.coveredSalary).toBe(12000)
+  })
+
+  it('falls back to SACHAR-KOVEA-LE-NECHUT-VE-SHEERIM when SACHAR-POLISA is absent', () => {
+    // Many pension funds leave SACHAR-POLISA empty and report the determining
+    // salary (a mandatory field for new pension funds) inside the coverage block.
+    const noPolicySalary = fixture()
+      .replace('<PirteiHaasaka><SACHAR-POLISA>12000.00</SACHAR-POLISA></PirteiHaasaka>', '')
+      .replace(
+        '<KisuiBKerenPensia>',
+        '<KisuiBKerenPensia><SACHAR-KOVEA-LE-NECHUT-VE-SHEERIM>11000.00</SACHAR-KOVEA-LE-NECHUT-VE-SHEERIM>',
+      )
+    const { policies: fb } = parsePensionXml(noPolicySalary, 'fallback.xml')
+    expect(fb[0].coveredSalary).toBe(11000)
+  })
+
+  it('assigns a distinct id to each account even when they share a policy number', () => {
+    // In pension funds MISPAR-POLISA-O-HESHBON is usually the national ID, so two
+    // funds report the same policy number — the id must still be unique per policy.
+    const twoFunds = fixture({ clientId2: '100000009' }).replace(
+      '<MISPAR-POLISA-O-HESHBON>P2</MISPAR-POLISA-O-HESHBON>',
+      '<MISPAR-POLISA-O-HESHBON>P1</MISPAR-POLISA-O-HESHBON>',
+    )
+    const { policies: two } = parsePensionXml(twoFunds, 'two.xml')
+    expect(two).toHaveLength(2)
+    expect(two[0].policyNumber).toBe(two[1].policyNumber)
+    expect(two[0].id).not.toBe(two[1].id)
+  })
+
   it('rejects invalid XML with a clear error', () => {
     expect(() => parsePensionXml('not xml <<<', 'bad.xml')).toThrow(XmlParseError)
   })

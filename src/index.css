@@ -18,15 +18,21 @@
    files were not shipped in the kit, so the base scale is mapped onto the brand
    palette; the custom accent palette (navy/coral/beige) is per the handoff. */
 :root {
-  /* clint navy scale */
-  --clint-950: #081527;
-  --clint-900: #0c1f38;
-  --clint-800: #123054;
-  --clint-700: #1a4270;
-  --clint-600: #235a92;
-  --clint-500: #2f6fad;
-  --clint-400: #5a8cc0;
-  --clint-50: #eef3f9;
+  /* clint primary scale — FinTech blue (mockup V2) */
+  --clint-950: #0a1a3a;
+  --clint-900: #10244a;
+  --clint-800: #12345b; /* deep navy — headers / hero / sidebar */
+  --clint-700: #1e54e0;
+  --clint-600: #2f6bff; /* PRIMARY blue */
+  --clint-500: #5b8bff;
+  --clint-400: #93b4ff;
+  --clint-300: #bcd0ff;
+  --clint-50: #eaf1ff;
+  /* cyan accent (mockup V2) */
+  --cyan-600: #1f9bbd;
+  --cyan-500: #32b6d9;
+  --cyan-400: #63cbe6;
+  --cyan-50: #e8f7fb;
   /* teal scale */
   --teal-700: #0b7a6d;
   --teal-600: #0e9484;
@@ -48,25 +54,25 @@
   --neutral-800: #1e293b;
   --neutral-900: #0f172a;
   /* semantic surfaces & text */
-  --color-bg-page: #f4f7fb;
+  --color-bg-page: #f6f8fc;
   --color-bg-card: #ffffff;
   --color-bg-overlay: rgba(8, 21, 39, 0.55);
-  --color-border-base: #e2e8f0;
-  --color-text-primary: #17233a;
-  --color-text-secondary: #475569;
+  --color-border-base: #e6ebf3;
+  --color-text-primary: #122033;
+  --color-text-secondary: #64748b;
   --color-text-tertiary: #94a3b8;
-  --color-primary: #1a4270;
-  --color-teal: #16ab99;
-  /* status pairs */
-  --color-danger: #dc2626;
-  --color-danger-bg: #fee2e2;
-  --color-danger-dark: #991b1b;
-  --color-warning: #d97706;
+  --color-primary: #12345b;
+  --color-teal: #32b6d9;
+  /* status pairs (mockup V2) */
+  --color-danger: #e5484d;
+  --color-danger-bg: #fdecec;
+  --color-danger-dark: #b4262b;
+  --color-warning: #f59e0b;
   --color-warning-bg: #fef3c7;
-  --color-warning-dark: #92400e;
-  --color-success: #0e9484;
-  --color-success-bg: #e6f7f4;
-  --color-success-dark: #0b6b60;
+  --color-warning-dark: #b45309;
+  --color-success: #22a06b;
+  --color-success-bg: #e7f6ef;
+  --color-success-dark: #157a4f;
   /* radii, effects, motion */
   --radius-md: 8px;
   --radius-lg: 16px;

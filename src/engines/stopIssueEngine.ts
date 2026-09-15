@@ -66,6 +66,7 @@ export const stopIssueEngine: Engine = ({ policies, supplementary }) => {
             : 'אין סוגיית חלוקת הפקדות שוטפות. ') +
           'נקודה לבדיקה מול בעל רישיון.',
         productType: 'managers',
+        policyId: p.id,
         policyNumber: p.policyNumber,
       })
     }
@@ -159,6 +160,7 @@ export const stopIssueEngine: Engine = ({ policies, supplementary }) => {
         clause +
         'נקודה לבדיקה מול בעל רישיון.',
       productType: 'managers',
+      policyId: p.id,
       policyNumber: p.policyNumber,
     })
   })

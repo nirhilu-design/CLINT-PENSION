@@ -178,7 +178,7 @@ export default function AdvisorPage() {
                 : { label: 'גבוה מהממוצע', bg: 'var(--color-warning-bg)', color: 'var(--color-warning-dark)' }
             }
             return (
-              <div key={p.policyNumber} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 120px 120px auto', gap: 12, alignItems: 'center', padding: '10px 0', borderTop: '1px solid var(--color-border-base)' }}>
+              <div key={p.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 120px 120px auto', gap: 12, alignItems: 'center', padding: '10px 0', borderTop: '1px solid var(--color-border-base)' }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>{productTypeLabels[p.productType]}</div>
                   <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-mono)' }}>{p.policyNumber}</div>

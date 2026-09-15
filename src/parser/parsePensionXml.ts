@@ -17,6 +17,13 @@ import { beneficiaryRelationLabels } from '../models/labels'
 
 export class XmlParseError extends Error {}
 
+/** First strictly-positive value, else null. Used for fields where a reported
+ *  0 means "not populated" and the real figure lives in a fallback field. */
+function firstPositive(...values: (number | null)[]): number | null {
+  for (const v of values) if (v !== null && v > 0) return v
+  return null
+}
+
 export interface ParsedFile {
   fileName: string
   client: Client
@@ -285,6 +292,7 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
 
   let client: Client | null = null
   const policies: Policy[] = []
+  let policyIndex = 0
 
   for (const mutzar of mutzarim) {
     const netunei = mutzar.querySelector('NetuneiMutzar')
@@ -375,6 +383,10 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
       const statusRaw = getText(heshbon, 'STATUS-POLISA-O-CHESHBON')
 
       policies.push({
+        // Unique within this file; buildAnalysis re-stamps a globally-unique id
+        // once policies from all files are combined. policyNumber alone is not
+        // unique (pension funds report the national ID as the policy number).
+        id: `${fileName}#${policyIndex++}`,
         policyNumber,
         productType,
         productName: planName,
@@ -394,7 +406,14 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
         // deposits stopped but risk coverage is kept temporarily from the accumulation.
         temporaryRisk: statusRaw === '4' || statusRaw === '8',
         currentValue,
-        coveredSalary: getNumber(heshbon, 'PirteiHaasaka > SACHAR-POLISA'),
+        // שכר מדווח: SACHAR-POLISA (השכר המחושב למוצר) הוא המקור הראשי, אך בקרנות
+        // פנסיה הוא לעיתים אינו מאוכלס — ואז נופלים ל-SACHAR-KOVEA-LE-NECHUT-VE-SHEERIM
+        // (שדה חובה בקרן פנסיה חדשה, השכר הקובע לכיסויים) ולבסוף לשכר ברמת ההפקדה.
+        coveredSalary: firstPositive(
+          getNumber(heshbon, 'PirteiHaasaka > SACHAR-POLISA'),
+          getNumber(heshbon, 'SACHAR-KOVEA-LE-NECHUT-VE-SHEERIM'),
+          getNumber(heshbon, 'SACHAR-BERAMAT-HAFKADA'),
+        ),
         // קצבה חודשית חזויה: עם המשך הפקדות מול ללא הפקדות (שני שדות נפרדים בדיווח)
         expectedPensionWithDeposits: getNumber(yitra, 'SCHUM-KITZVAT-ZIKNA'),
         expectedPensionWithoutDeposits: getNumber(yitra, 'KITZVAT-HODSHIT-TZFUYA'),

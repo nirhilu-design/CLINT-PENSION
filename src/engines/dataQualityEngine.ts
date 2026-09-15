@@ -85,6 +85,7 @@ export const dataQualityEngine: Engine = ({ policies, supplementary }) => {
             `בפוליסה ${p.policyNumber || '(ללא מספר)'} מהקובץ "${p.sourceFileName}" חסרים: ${missingCritical.join(', ')}. ` +
             'הניתוח עבור מוצר זה חלקי בלבד.',
           productType: p.productType,
+          policyId: p.id,
           policyNumber: p.policyNumber || undefined,
         }),
       )
@@ -104,6 +105,7 @@ export const dataQualityEngine: Engine = ({ policies, supplementary }) => {
           title: 'נתונים חלקיים בדיווח',
           description: `בפוליסה ${p.policyNumber} לא דווחו: ${missingImportant.join(', ')}. חלק מהבדיקות לא בוצעו.`,
           productType: p.productType,
+          policyId: p.id,
           policyNumber: p.policyNumber,
         }),
       )

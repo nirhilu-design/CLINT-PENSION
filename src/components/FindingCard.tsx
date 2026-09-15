@@ -58,7 +58,7 @@ export default function FindingCard({
         </p>
       )}
 
-      {interactive && (finding.policyNumber || finding.productType) && (
+      {interactive && (finding.policyId || finding.productType) && (
         <div className="mt-2 flex gap-3">
           {finding.productType && (
             <button
@@ -68,9 +68,9 @@ export default function FindingCard({
               למסך {productTypeLabels[finding.productType]} ←
             </button>
           )}
-          {finding.policyNumber && (
+          {finding.policyId && (
             <button
-              onClick={() => dispatch({ type: 'OPEN_POLICY', policyNumber: finding.policyNumber! })}
+              onClick={() => dispatch({ type: 'OPEN_POLICY', policyId: finding.policyId! })}
               className="text-xs text-brand-700 font-medium hover:underline"
             >
               לפרטי הפוליסה ←

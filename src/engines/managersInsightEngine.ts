@@ -71,6 +71,7 @@ export const managersInsightEngine: Engine = ({ policies, supplementary }) => {
         title: 'הארות על מבנה הפוליסה בתיק',
         description: `פוליסה ${policy.policyNumber}: ${notes.join(' | ')}.`,
         productType: 'managers',
+        policyId: policy.id,
         policyNumber: policy.policyNumber,
       }),
     )

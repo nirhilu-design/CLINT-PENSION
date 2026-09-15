@@ -60,7 +60,13 @@ export function buildAnalysis(
   logicConfig: LogicConfig = defaultLogicConfig(),
 ): Analysis {
   const client = parsedFiles[0].client
-  const policies: Policy[] = parsedFiles.flatMap((f) => f.policies)
+  // Re-stamp a globally-unique id across all files. policyNumber is not unique
+  // (pension funds report the national ID as the policy number), so every
+  // downstream identity — React keys, drawer selection, finding links — must
+  // use this id rather than policyNumber.
+  const policies: Policy[] = parsedFiles
+    .flatMap((f) => f.policies)
+    .map((p, i) => ({ ...p, id: `policy-${i}` }))
 
   // Apply the (possibly edited) thresholds before the engines read them.
   applyThresholds(logicConfig.thresholds)

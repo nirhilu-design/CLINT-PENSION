@@ -53,6 +53,7 @@ export const incomeProtectionEngine: Engine = ({ policies, supplementary }) => {
             `בפוליסה ${policy.policyNumber} שיעור הכיסוי לאובדן כושר עבודה הוא ${coverage.percent.toFixed(0)}% ` +
             `לעומת יעד מקובל של ${TARGET_PERCENT}%. נקודה לבדיקה מול בעל רישיון.`,
           productType: policy.productType,
+          policyId: policy.id,
           policyNumber: policy.policyNumber,
         }),
       )

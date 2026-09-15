@@ -54,6 +54,7 @@ export const pensionInsightEngine: Engine = ({ policies, supplementary }) => {
             'בעוד צוין שאין בן/בת זוג וילדים מתחת לגיל 21. ' +
             'קיים בקרנות הפנסיה מסלול ויתור שאירים לרווקים (מתחדש אחת לשנתיים) — נקודה שכדאי להכיר.',
           productType: 'pension',
+          policyId: policy.id,
           policyNumber: policy.policyNumber,
         }),
       )
@@ -71,6 +72,7 @@ export const pensionInsightEngine: Engine = ({ policies, supplementary }) => {
             `בקרן ${policy.policyNumber} קיים ויתור על כיסוי שאירים, בעוד צוין שקיימים בן/בת זוג או ילדים מתחת לגיל 21. ` +
             'המשמעות: במקרה פטירה לא תשולם קצבת שאירים מהקרן. נקודה לבדיקה מול בעל רישיון.',
           productType: 'pension',
+          policyId: policy.id,
           policyNumber: policy.policyNumber,
         }),
       )
@@ -105,6 +107,7 @@ export const pensionInsightEngine: Engine = ({ policies, supplementary }) => {
                 `(מתוך מקסימום ${MAX_DISABILITY_PERCENT}%), ולא זוהה כיסוי אובדן כושר עבודה במוצר אחר. ` +
                 'ייתכן פער בכיסוי אובדן כושר עבודה — נקודה לבדיקה מול בעל רישיון.',
             productType: 'pension',
+            policyId: policy.id,
             policyNumber: policy.policyNumber,
           }),
         )
