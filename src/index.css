@@ -124,6 +124,22 @@ body {
   border-radius: 3px;
 }
 
+/* Slim horizontal scrollbar for swipeable card rows */
+.clint-scroll-x {
+  scrollbar-width: thin;
+  scrollbar-color: var(--neutral-300) transparent;
+}
+.clint-scroll-x::-webkit-scrollbar {
+  height: 7px;
+}
+.clint-scroll-x::-webkit-scrollbar-thumb {
+  background: var(--neutral-300);
+  border-radius: 4px;
+}
+.clint-scroll-x::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 /* Visible keyboard focus everywhere, consistent with the brand */
 :focus-visible {
   outline: 2px solid var(--color-brand-600);

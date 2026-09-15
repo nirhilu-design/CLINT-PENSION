@@ -53,9 +53,14 @@ export default function FindingHighlights({ findings, limit = 5 }: { findings: F
         <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>נקודות מרכזיות לטיפול</h2>
         <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>{findings.length} נקודות · לחיצה על כרטיס פותחת "למה סומן?"</span>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'repeat(auto-fill,minmax(300px,1fr))', gap: 14 }}>
+      <div
+        className="clint-scroll-x"
+        style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 8, alignItems: 'flex-start', scrollSnapType: 'x proximity', WebkitOverflowScrolling: 'touch' }}
+      >
         {top.map((f) => (
-          <HighlightCard key={f.id} finding={f} />
+          <div key={f.id} style={{ flex: `0 0 ${mobile ? '85%' : '320px'}`, maxWidth: '90vw', scrollSnapAlign: 'start' }}>
+            <HighlightCard finding={f} />
+          </div>
         ))}
       </div>
     </section>
