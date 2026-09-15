@@ -60,48 +60,6 @@ const STATUS_META: Record<Status, { label: string; bg: string; color: string; fi
   bad: { label: 'פער', bg: 'var(--color-danger-bg)', color: 'var(--color-danger-dark)', fill: 'var(--color-danger)' },
 }
 
-function CoverageCard({
-  title,
-  status,
-  value,
-  note,
-  fill,
-  targetPct,
-  labels,
-}: {
-  title: string
-  status: Status
-  value: string
-  note: string
-  fill: number // 0–100
-  targetPct?: number
-  labels: [string, string]
-}) {
-  const m = STATUS_META[status]
-  return (
-    <Card padding={18}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-        <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--color-text-primary)' }}>{title}</span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 'var(--radius-full)', background: m.bg, color: m.color }}>
-          ● {m.label}
-        </span>
-      </div>
-      <div style={{ fontSize: 27, fontWeight: 800, margin: '13px 0 2px', color: 'var(--color-text-primary)', fontFamily: 'var(--font-mono)' }}>{value}</div>
-      <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>{note}</div>
-      <div style={{ marginTop: 14, height: 7, borderRadius: 5, background: 'var(--neutral-200)', position: 'relative' }}>
-        <span style={{ position: 'absolute', insetInlineEnd: 0, top: 0, bottom: 0, width: `${Math.max(0, Math.min(100, fill))}%`, borderRadius: 5, background: m.fill, display: 'block' }} />
-        {targetPct !== undefined && (
-          <span style={{ position: 'absolute', top: -3, bottom: -3, insetInlineEnd: `${targetPct}%`, width: 2, borderRadius: 2, background: 'var(--color-text-secondary)' }} />
-        )}
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 7, fontSize: 10.5, color: 'var(--color-text-tertiary)' }}>
-        <span>{labels[0]}</span>
-        <span>{labels[1]}</span>
-      </div>
-    </Card>
-  )
-}
-
 export default function DashboardPage() {
   const { state, dispatch } = useApp()
   const analysis = state.analysis!
@@ -155,13 +113,6 @@ export default function DashboardPage() {
     .flatMap((p) => p.coverages.filter((c) => c.type === 'disability'))
     .map((c) => c.percent)
     .filter((v): v is number => v !== null)
-  const survivorsMonthly = activePolicies
-    .flatMap((p) => p.coverages.filter((c) => c.type === 'survivors'))
-    .reduce((s, c) => s + (c.amount ?? 0), 0)
-  const deathLump = activePolicies
-    .flatMap((p) => p.coverages.filter((c) => c.type === 'death'))
-    .reduce((s, c) => s + (c.amount ?? 0), 0)
-  const lastDeposit = policies.map((p) => p.lastDepositMonth).filter(Boolean).sort().pop() as string | undefined
 
   const reportDates = policies.map((p) => p.reportDate).filter(Boolean) as string[]
   const asOf = reportDates.length ? formatDate(reportDates.sort()[reportDates.length - 1]) : 'לא דווח'
@@ -485,59 +436,16 @@ export default function DashboardPage() {
           <FindingHighlights findings={actionable} />
         </div>
 
-        {/* Smart coverage cards */}
-        <section style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, margin: '0 0 12px', flexWrap: 'wrap' }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>כיסויים ביטוחיים — מול יעד</h2>
-            <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>כל כיסוי נמדד מול היעד המקובל, עם רמזור מצב</span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 14 }}>
-            {(() => {
-              const ip = ipPercents.length > 0 ? Math.max(...ipPercents) : null
-              const ipStatus: Status = ip === null ? 'bad' : ip >= 73 ? 'good' : 'warn'
-              return (
-                <CoverageCard
-                  title="אובדן כושר עבודה"
-                  status={ipStatus}
-                  value={ip !== null ? `${ip.toFixed(0)}%` : '₪0'}
-                  note={ip !== null ? 'שיעור הכיסוי הגבוה בתיק' : 'לא אותר כיסוי אכ"ע'}
-                  fill={ip !== null ? Math.min(100, ip) : 3}
-                  targetPct={75}
-                  labels={['0%', 'יעד 75%']}
-                />
-              )
-            })()}
-            <CoverageCard
-              title="קצבת שאירים"
-              status={survivorsMonthly > 0 ? 'good' : 'bad'}
-              value={formatCurrency(survivorsMonthly)}
-              note={survivorsMonthly > 0 ? 'קצבה חודשית מקרן הפנסיה' : 'לא אותר כיסוי שאירים'}
-              fill={survivorsMonthly > 0 ? 100 : 3}
-              labels={['0', 'לחודש']}
-            />
-            <CoverageCard
-              title="ביטוח חיים (מוות)"
-              status={deathLump > 0 ? 'good' : 'bad'}
-              value={formatCurrency(deathLump)}
-              note={deathLump > 0 ? 'סכום חד-פעמי למקרה מוות' : 'לא אותר ביטוח למקרה מוות'}
-              fill={deathLump > 0 ? 100 : 3}
-              labels={['0', 'סכום ביטוח']}
-            />
-          </div>
-          {lastDeposit && (
-            <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', margin: '10px 2px 0' }}>
-              הפקדה אחרונה שנקלטה בתיק: {lastDeposit}
-            </p>
-          )}
-        </section>
-
         {/* Products */}
         <section>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, margin: '0 0 14px', flexWrap: 'wrap' }}>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>המוצרים בתיק</h2>
             <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>{policies.length} מוצרים · לחיצה פותחת את הפירוט</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'repeat(auto-fill,minmax(250px,1fr))', gap: 16 }}>
+          <div
+            className="clint-scroll-x"
+            style={{ display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x proximity', WebkitOverflowScrolling: 'touch' }}
+          >
             {[...policies]
               .sort((a, b) => policyHeadline(b).value - policyHeadline(a).value)
               .map((p) => {
@@ -550,6 +458,9 @@ export default function DashboardPage() {
                     key={p.id}
                     onClick={() => dispatch({ type: 'OPEN_POLICY', policyId: p.id })}
                     style={{
+                      flex: `0 0 ${mobile ? '80%' : '262px'}`,
+                      maxWidth: '90vw',
+                      scrollSnapAlign: 'start',
                       textAlign: 'right',
                       background: 'var(--color-bg-card)',
                       border: '1px solid var(--color-border-base)',
