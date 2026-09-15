@@ -18,6 +18,8 @@ export default function RetirementProjection({
   projectedAccumulation,
   projectedPension,
   onDetails,
+  bare = false,
+  heading = 'תחזית הפרישה',
 }: {
   currentAge: number | null
   retirementAge: number
@@ -26,6 +28,9 @@ export default function RetirementProjection({
   projectedAccumulation: number
   projectedPension: number
   onDetails?: () => void
+  /** Render inner content only (no Card chrome) — for embedding inside another card. */
+  bare?: boolean
+  heading?: string
 }) {
   const mobile = useIsMobile()
   const yearsToRetirement =
@@ -55,11 +60,11 @@ export default function RetirementProjection({
     />
   )
 
-  return (
-    <Card padding={mobile ? 18 : 24}>
+  const inner = (
+    <>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: mobile ? 14 : 18 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-          <span style={{ fontSize: mobile ? 15 : 16, fontWeight: 800, color: 'var(--color-text-primary)' }}>תחזית הפרישה</span>
+          <span style={{ fontSize: mobile ? 15 : 16, fontWeight: 800, color: 'var(--color-text-primary)' }}>{heading}</span>
           <Info size={15} color="var(--color-text-tertiary)" aria-hidden />
         </div>
         {onDetails && (
@@ -90,8 +95,11 @@ export default function RetirementProjection({
           </div>
         </>
       )}
-    </Card>
+    </>
   )
+
+  if (bare) return <div>{inner}</div>
+  return <Card padding={mobile ? 18 : 24}>{inner}</Card>
 }
 
 /**

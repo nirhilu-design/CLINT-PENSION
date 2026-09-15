@@ -4,8 +4,8 @@ import type { Policy, ProductType } from '../models/types'
 import { formatCurrency, formatDate } from '../utils/format'
 import ContextBar from '../components/ContextBar'
 import KpiRow, { type Kpi } from '../components/KpiRow'
-import RetirementProjection from '../components/RetirementProjection'
-import AssetDonut, { type AssetSlice } from '../components/AssetDonut'
+import PortfolioOverviewCard from '../components/PortfolioOverviewCard'
+import { type AssetSlice } from '../components/AssetDonut'
 import CompanyLogo from '../components/CompanyLogo'
 import FindingHighlights from '../components/FindingHighlights'
 import Card from '../components/ds/Card'
@@ -406,34 +406,22 @@ export default function DashboardPage() {
           )}
         </Card>
 
-        {/* Retirement projection (two-state timeline) + asset-allocation donut */}
-        {(hasProjection || donutSlices.length > 0) && (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: mobile ? '1fr' : 'minmax(0,1fr) minmax(0,1.45fr)',
-              gap: mobile ? 16 : 20,
-              marginBottom: 24,
-              alignItems: 'stretch',
-            }}
-          >
-            {donutSlices.length > 0 && (
-              <div id="allocation" style={{ scrollMarginTop: 80 }}>
-                <AssetDonut slices={donutSlices} onSelect={(type) => dispatch({ type: 'OPEN_PRODUCT', productType: type })} />
-              </div>
-            )}
-            {hasProjection && (
-              <div id="retirement" style={{ scrollMarginTop: 80 }}>
-                <RetirementProjection
-                  currentAge={age !== null && !isNaN(age) ? age : null}
-                  retirementAge={retirementAge ?? 67}
-                  currentAccumulation={totalAssets}
-                  currentPension={totalPensionWithoutDeposits}
-                  projectedAccumulation={projectedCapital}
-                  projectedPension={totalPensionWithDeposits}
-                />
-              </div>
-            )}
+        {/* Central card — "תמונת התיק" with tabs (overview / performance) */}
+        {(hasProjection || donutSlices.length > 0 || policies.length > 0) && (
+          <div id="portfolio" style={{ scrollMarginTop: 80 }}>
+            <PortfolioOverviewCard
+              slices={donutSlices}
+              onSelectProduct={(type) => dispatch({ type: 'OPEN_PRODUCT', productType: type })}
+              currentAge={age !== null && !isNaN(age) ? age : null}
+              retirementAge={retirementAge ?? 67}
+              currentAccumulation={totalAssets}
+              currentPension={totalPensionWithoutDeposits}
+              projectedAccumulation={projectedCapital}
+              projectedPension={totalPensionWithDeposits}
+              hasProjection={hasProjection}
+              policies={policies}
+              colorFor={(t) => DONUT_COLORS[t]}
+            />
           </div>
         )}
 

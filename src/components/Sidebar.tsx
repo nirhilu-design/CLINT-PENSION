@@ -34,9 +34,9 @@ type NavItem = RouteItem | SectionItem | SoonItem
 const NAV: NavItem[] = [
   { kind: 'route', label: 'תמונת מצב', icon: Home, action: { type: 'GO_DASHBOARD' }, isActive: (s) => s === 'dashboard' || s === 'product' },
   { kind: 'section', label: 'מוצרים', icon: Wallet, sectionId: 'products' },
-  { kind: 'section', label: 'השקעות', icon: TrendingUp, sectionId: 'allocation' },
+  { kind: 'section', label: 'השקעות', icon: TrendingUp, sectionId: 'portfolio' },
   { kind: 'section', label: 'ביטוחים', icon: ShieldCheck, sectionId: 'insurance' },
-  { kind: 'section', label: 'תחזית פרישה', icon: Compass, sectionId: 'retirement' },
+  { kind: 'section', label: 'תחזית פרישה', icon: Compass, sectionId: 'portfolio' },
   { kind: 'section', label: 'נקודות לטיפול', icon: Flag, sectionId: 'key-findings', badgeKind: 'findings' },
   { kind: 'soon', label: 'מסמכים', icon: FolderOpen },
   { kind: 'route', label: 'לקוחות', icon: Users, action: { type: 'GO_ADVISOR' }, isActive: (s) => s === 'advisor' },
