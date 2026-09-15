@@ -414,7 +414,7 @@ export default function DashboardPage() {
               gridTemplateColumns: mobile ? '1fr' : 'minmax(0,1fr) minmax(0,1.45fr)',
               gap: mobile ? 16 : 20,
               marginBottom: 24,
-              alignItems: 'start',
+              alignItems: 'stretch',
             }}
           >
             {donutSlices.length > 0 && (

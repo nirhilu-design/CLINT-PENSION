@@ -58,11 +58,11 @@ export default function AssetDonut({
   const clickable = (t: ProductType | 'other') => t !== 'other' && !!onSelect
 
   return (
-    <Card padding={mobile ? 18 : 22}>
+    <Card padding={mobile ? 18 : 22} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ fontSize: mobile ? 15 : 16, fontWeight: 800, color: 'var(--color-text-primary)', marginBottom: 16 }}>
         התפלגות נכסים כוללת
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: mobile ? 16 : 24, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: mobile ? 16 : 24, flexWrap: 'wrap', flex: 1 }}>
         <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
           <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="התפלגות נכסים לפי סוג מוצר">
             <g transform={`rotate(-90 ${size / 2} ${size / 2})`}>
