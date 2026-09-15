@@ -23,7 +23,13 @@ import {
   CalendarClock,
   ShieldCheck,
   BarChart3,
+  Bell,
 } from 'lucide-react'
+
+/** Smooth-scroll the "נקודות מרכזיות לטיפול" section into view. */
+function scrollToFindings() {
+  document.getElementById('key-findings')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 
 const PRODUCT_ORDER: ProductType[] = ['pension', 'managers', 'gemel', 'gemelInvestment', 'education', 'life', 'incomeProtection']
 
@@ -349,26 +355,40 @@ export default function DashboardPage() {
                 תמונת מצב מרוכזת מ-{policies.length} פוליסות · הנתונים נכונים ל-{asOf}
               </p>
             </div>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 7,
-                fontSize: 11,
-                fontWeight: 700,
-                padding: '6px 13px',
-                borderRadius: 'var(--radius-full)',
-                background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.16)',
-                color: 'rgba(255,255,255,0.85)',
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-                backdropFilter: 'blur(6px)',
-              }}
-            >
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--cyan-400)', boxShadow: '0 0 0 3px rgba(50,182,217,0.28)' }} />
-              מנוע ניתוח
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+              <button
+                onClick={scrollToFindings}
+                aria-label={`${actionable.length} נקודות לטיפול`}
+                title="נקודות מרכזיות לטיפול"
+                style={{ position: 'relative', width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.16)', color: '#fff', display: 'grid', placeItems: 'center', cursor: 'pointer', backdropFilter: 'blur(6px)' }}
+              >
+                <Bell size={17} />
+                {actionable.length > 0 && (
+                  <span style={{ position: 'absolute', top: -3, insetInlineStart: -3, minWidth: 18, height: 18, padding: '0 4px', borderRadius: 'var(--radius-full)', background: gapCount > 0 ? 'var(--color-danger)' : 'var(--color-warning)', color: '#fff', fontSize: 10.5, fontWeight: 800, display: 'grid', placeItems: 'center', border: '2px solid #0f2647' }}>
+                    {actionable.length}
+                  </span>
+                )}
+              </button>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 7,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: '6px 13px',
+                  borderRadius: 'var(--radius-full)',
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.16)',
+                  color: 'rgba(255,255,255,0.85)',
+                  whiteSpace: 'nowrap',
+                  backdropFilter: 'blur(6px)',
+                }}
+              >
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--cyan-400)', boxShadow: '0 0 0 3px rgba(50,182,217,0.28)' }} />
+                מנוע ניתוח
+              </span>
+            </div>
           </div>
 
         </div>
@@ -456,7 +476,9 @@ export default function DashboardPage() {
         )}
 
         {/* Key findings to act on */}
-        <FindingHighlights findings={actionable} />
+        <div id="key-findings" style={{ scrollMarginTop: 12 }}>
+          <FindingHighlights findings={actionable} />
+        </div>
 
         {/* Smart coverage cards */}
         <section style={{ marginBottom: 24 }}>

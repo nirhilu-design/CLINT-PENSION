@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Menu, Shield } from 'lucide-react'
+import { Menu, Shield, Bell } from 'lucide-react'
 import { useApp, type Step } from './hooks/useAppState'
 import { useIsMobile } from './hooks/useMediaQuery'
 import UploadPage from './pages/UploadPage'
@@ -68,6 +68,25 @@ export default function App() {
                 </span>
                 clint
               </span>
+              {(() => {
+                const fs = state.analysis?.findings ?? []
+                const count = fs.filter((f) => f.severity !== 'info').length
+                const gaps = fs.filter((f) => f.severity === 'gap').length
+                return (
+                  <button
+                    onClick={() => document.getElementById('key-findings')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                    aria-label={`${count} נקודות לטיפול`}
+                    style={{ marginInlineStart: 'auto', position: 'relative', width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', display: 'grid', placeItems: 'center', cursor: 'pointer' }}
+                  >
+                    <Bell size={17} />
+                    {count > 0 && (
+                      <span style={{ position: 'absolute', top: -2, insetInlineStart: -2, minWidth: 17, height: 17, padding: '0 4px', borderRadius: 'var(--radius-full)', background: gaps > 0 ? 'var(--color-danger)' : 'var(--color-warning)', color: '#fff', fontSize: 10, fontWeight: 800, display: 'grid', placeItems: 'center', border: '2px solid #0f2647' }}>
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                )
+              })()}
             </header>
             <main data-app-main className="clint-scroll" style={{ flex: 1, overflowY: 'auto', position: 'relative' }}>
               {page}
