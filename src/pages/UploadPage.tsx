@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react'
 import { useApp } from '../hooks/useAppState'
 import { parseFiles, buildAnalysis, emptySupplementary, XmlParseError } from '../services/analysisService'
-import Spinner from '../components/Spinner'
 
 export default function UploadPage() {
   const { state, dispatch } = useApp()
@@ -34,104 +33,131 @@ export default function UploadPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
       <div className="w-full max-w-xl text-center">
-        <h1 className="text-3xl font-bold text-slate-800 mb-2">מערכת ניתוח פנסיוני</h1>
-        <p className="text-slate-500 mb-6">העלאת קבצי XML מהמסלקה הפנסיונית לניתוח מרוכז של התיק</p>
+        <h1 className="clint-rise text-3xl font-bold text-slate-800 mb-2" style={{ animationDelay: '0ms' }}>
+          מערכת ניתוח פנסיוני
+        </h1>
+        <p className="clint-rise text-slate-500 mb-6" style={{ animationDelay: '70ms' }}>
+          העלאת קבצי XML מהמסלקה הפנסיונית לניתוח מרוכז של התיק
+        </p>
 
-        <div
-          onDragOver={(e) => {
-            e.preventDefault()
-            setDragOver(true)
-          }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={(e) => {
-            e.preventDefault()
-            setDragOver(false)
-            handleFiles(e.dataTransfer.files)
-          }}
-          onClick={() => inputRef.current?.click()}
-          className={`cursor-pointer rounded-2xl border-2 border-dashed p-12 transition-colors ${
-            dragOver ? 'border-brand-600 bg-brand-50' : 'border-slate-300 bg-white hover:border-brand-600/60'
-          }`}
-        >
-          <div className="mx-auto mb-4 w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-800 to-brand-700 grid place-items-center shadow-md shadow-brand-800/20">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 16V4" />
-              <path d="m7 9 5-5 5 5" />
-              <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
-            </svg>
-          </div>
-          <p className="font-semibold text-slate-700">גרירת קבצי XML לכאן או לחיצה לבחירה</p>
-          <p className="text-sm text-slate-400 mt-1">ניתן להעלות מספר קבצים — כולם של אותו לקוח</p>
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".xml,text/xml"
-            multiple
-            className="hidden"
-            onChange={(e) => handleFiles(e.target.files)}
-          />
-        </div>
-
-        {busy && (
-          <div className="mt-4 flex justify-center">
-            <Spinner label="קורא ומנתח את הקבצים…" />
-          </div>
-        )}
-
-        {state.error && (
-          <div className="mt-4 rounded-lg border border-red-300 bg-red-50 p-4 text-red-700 text-sm text-right">
-            {state.error}
-          </div>
-        )}
-
-        <div className="mt-8 grid grid-cols-3 gap-3 text-center">
-          {[
-            {
-              title: 'פרטי בלבד',
-              text: 'הקבצים מנותחים בדפדפן ואינם נשלחים לשום שרת',
-              path: (
-                <>
-                  <rect x="5" y="10" width="14" height="10" rx="2" />
-                  <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-                </>
-              ),
-            },
-            {
-              title: 'תמונה מאוחדת',
-              text: 'כל המוצרים הפנסיוניים והביטוחיים במקום אחד',
-              path: (
-                <>
-                  <rect x="4" y="4" width="7" height="7" rx="1.5" />
-                  <rect x="13" y="4" width="7" height="7" rx="1.5" />
-                  <rect x="4" y="13" width="7" height="7" rx="1.5" />
-                  <rect x="13" y="13" width="7" height="7" rx="1.5" />
-                </>
-              ),
-            },
-            {
-              title: 'הארות, לא המלצות',
-              text: 'המערכת מציפה נקודות לתשומת לב — לא מחליפה בעל רישיון',
-              path: (
-                <>
-                  <path d="M9 18h6" />
-                  <path d="M10 21h4" />
-                  <path d="M12 3a6 6 0 0 1 3.5 10.9c-.6.5-1 1.2-1.2 2.1h-4.6c-.2-.9-.6-1.6-1.2-2.1A6 6 0 0 1 12 3Z" />
-                </>
-              ),
-            },
-          ].map(({ title, text, path }) => (
-            <div key={title} className="rounded-2xl bg-white border border-slate-200/70 p-4 shadow-sm">
-              <div className="mx-auto w-9 h-9 rounded-xl bg-brand-50 grid place-items-center">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a4270" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  {path}
+        {busy ? (
+          <LoadingSkeleton />
+        ) : (
+          <>
+            <div
+              onDragOver={(e) => {
+                e.preventDefault()
+                setDragOver(true)
+              }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault()
+                setDragOver(false)
+                handleFiles(e.dataTransfer.files)
+              }}
+              onClick={() => inputRef.current?.click()}
+              className={`clint-rise clint-press cursor-pointer rounded-2xl border-2 border-dashed p-12 ${
+                dragOver ? 'border-brand-600 bg-brand-50' : 'border-slate-300 bg-white hover:border-brand-600/60'
+              }`}
+              style={{ animationDelay: '140ms', transform: dragOver ? 'scale(1.015)' : undefined }}
+            >
+              <div className="mx-auto mb-4 w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-800 to-brand-700 grid place-items-center shadow-md shadow-brand-800/20">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 16V4" />
+                  <path d="m7 9 5-5 5 5" />
+                  <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
                 </svg>
               </div>
-              <div className="text-sm font-semibold text-slate-700 mt-2">{title}</div>
-              <div className="text-xs text-slate-400 mt-0.5 leading-relaxed">{text}</div>
+              <p className="font-semibold text-slate-700">גרירת קבצי XML לכאן או לחיצה לבחירה</p>
+              <p className="text-sm text-slate-400 mt-1">ניתן להעלות מספר קבצים — כולם של אותו לקוח</p>
+              <input
+                ref={inputRef}
+                type="file"
+                accept=".xml,text/xml"
+                multiple
+                className="hidden"
+                onChange={(e) => handleFiles(e.target.files)}
+              />
             </div>
-          ))}
-        </div>
+
+            {state.error && (
+              <div className="clint-rise mt-4 rounded-lg border border-red-300 bg-red-50 p-4 text-red-700 text-sm text-right">
+                {state.error}
+              </div>
+            )}
+
+            <div className="clint-rise mt-8 grid grid-cols-3 gap-3 text-center" style={{ animationDelay: '220ms' }}>
+              {[
+                {
+                  title: 'פרטי בלבד',
+                  text: 'הקבצים מנותחים בדפדפן ואינם נשלחים לשום שרת',
+                  path: (
+                    <>
+                      <rect x="5" y="10" width="14" height="10" rx="2" />
+                      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                    </>
+                  ),
+                },
+                {
+                  title: 'תמונה מאוחדת',
+                  text: 'כל המוצרים הפנסיוניים והביטוחיים במקום אחד',
+                  path: (
+                    <>
+                      <rect x="4" y="4" width="7" height="7" rx="1.5" />
+                      <rect x="13" y="4" width="7" height="7" rx="1.5" />
+                      <rect x="4" y="13" width="7" height="7" rx="1.5" />
+                      <rect x="13" y="13" width="7" height="7" rx="1.5" />
+                    </>
+                  ),
+                },
+                {
+                  title: 'הארות, לא המלצות',
+                  text: 'המערכת מציפה נקודות לתשומת לב — לא מחליפה בעל רישיון',
+                  path: (
+                    <>
+                      <path d="M9 18h6" />
+                      <path d="M10 21h4" />
+                      <path d="M12 3a6 6 0 0 1 3.5 10.9c-.6.5-1 1.2-1.2 2.1h-4.6c-.2-.9-.6-1.6-1.2-2.1A6 6 0 0 1 12 3Z" />
+                    </>
+                  ),
+                },
+              ].map(({ title, text, path }) => (
+                <div key={title} className="rounded-2xl bg-white border border-slate-200/70 p-4 shadow-sm">
+                  <div className="mx-auto w-9 h-9 rounded-xl bg-brand-50 grid place-items-center">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#235a92" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      {path}
+                    </svg>
+                  </div>
+                  <div className="text-sm font-semibold text-slate-700 mt-2">{title}</div>
+                  <div className="text-xs text-slate-400 mt-0.5 leading-relaxed">{text}</div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
+    </div>
+  )
+}
+
+/** Shimmer placeholder shown while files are parsed — reads as the dashboard loading. */
+function LoadingSkeleton() {
+  return (
+    <div className="clint-rise" aria-live="polite" aria-busy="true">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border-base)', background: 'var(--color-bg-card)', padding: 14 }}>
+            <div className="clint-skeleton" style={{ width: 34, height: 34, borderRadius: '50%', marginInlineStart: 'auto' }} />
+            <div className="clint-skeleton" style={{ height: 10, width: '70%', marginTop: 12 }} />
+            <div className="clint-skeleton" style={{ height: 18, width: '85%', marginTop: 8 }} />
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16, marginTop: 16 }}>
+        <div className="clint-skeleton" style={{ height: 150, borderRadius: 'var(--radius-lg)' }} />
+        <div className="clint-skeleton" style={{ height: 150, borderRadius: 'var(--radius-lg)' }} />
+      </div>
+      <p style={{ marginTop: 16, fontSize: 13, color: 'var(--color-text-tertiary)' }}>קורא ומנתח את הקבצים…</p>
     </div>
   )
 }
