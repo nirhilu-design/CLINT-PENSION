@@ -12,6 +12,7 @@ import { parseTreasuryXml } from '../parser/parseTreasuryXml'
 import { parseEmployerFeeFile } from '../parser/parseEmployerFeeFile'
 import Card from '../components/ds/Card'
 import Spinner from '../components/Spinner'
+import { useIsMobile } from '../hooks/useMediaQuery'
 import { ArrowRight } from 'lucide-react'
 
 type Tab = 'fees' | 'treasury' | 'notes' | 'scenario'
@@ -33,6 +34,7 @@ const inputStyle: React.CSSProperties = {
 
 export default function AdvisorPage() {
   const { state, dispatch } = useApp()
+  const mobile = useIsMobile()
   const analysis = state.analysis!
   const policies = analysis.policies
   const supplementary = analysis.supplementary
@@ -140,17 +142,29 @@ export default function AdvisorPage() {
   const uniqueMofids = [...new Map(policies.filter((p) => p.mofid).map((p) => [p.mofid!, p])).values()]
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 32px 48px' }}>
-      <button onClick={() => dispatch({ type: 'GO_DASHBOARD' })} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 18, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
-        <ArrowRight size={14} color="var(--color-text-tertiary)" />
-        <span style={{ fontSize: 13, color: 'var(--color-text-tertiary)' }}>חזרה לדשבורד</span>
-      </button>
+    <>
+      {/* Hero */}
+      <div
+        style={{
+          background:
+            'var(--hero-bg)',
+          color: '#fff',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+        }}
+      >
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: mobile ? '18px 16px 22px' : '26px 32px 32px' }}>
+          <button onClick={() => dispatch({ type: 'GO_DASHBOARD' })} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
+            <ArrowRight size={14} color="rgba(255,255,255,0.7)" />
+            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>חזרה לדשבורד</span>
+          </button>
+          <h1 style={{ margin: 0, fontSize: mobile ? 22 : 26, fontWeight: 800, letterSpacing: '-0.01em' }}>אזור יועץ</h1>
+          <p style={{ margin: '6px 0 0', fontSize: mobile ? 12 : 13, color: 'rgba(255,255,255,0.65)' }}>
+            נתונים מקצועיים שמזינים את מנועי הניתוח. שמירה מריצה את הניתוח מחדש.
+          </p>
+        </div>
+      </div>
 
-      <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: 'var(--color-text-primary)' }}>אזור יועץ</h1>
-      <p style={{ margin: '6px 0 20px', fontSize: 13, color: 'var(--color-text-tertiary)' }}>
-        נתונים מקצועיים שמזינים את מנועי הניתוח. שמירה מריצה את הניתוח מחדש.
-      </p>
-
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: mobile ? '16px 16px 40px' : '24px 32px 48px' }}>
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--color-border-base)', marginBottom: 22 }}>
         {TABS.map((t) => (
@@ -280,6 +294,7 @@ export default function AdvisorPage() {
         </button>
         {saved && <span style={{ fontSize: 13, color: 'var(--color-success)', fontWeight: 600 }}>✓ נשמר — הניתוח עודכן</span>}
       </div>
-    </div>
+      </div>
+    </>
   )
 }

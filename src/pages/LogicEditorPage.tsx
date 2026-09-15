@@ -3,6 +3,7 @@ import { useApp } from '../hooks/useAppState'
 import { buildAnalysis } from '../services/analysisService'
 import { findingCountsByLogic } from '../engines'
 import { productTypeLabels } from '../models/labels'
+import { useIsMobile } from '../hooks/useMediaQuery'
 import { ArrowRight } from 'lucide-react'
 import type { FindingSeverity, ProductType } from '../models/types'
 import Card from '../components/ds/Card'
@@ -69,6 +70,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 
 export default function LogicEditorPage() {
   const { state, dispatch } = useApp()
+  const mobile = useIsMobile()
   const [cfg, setCfg] = useState<LogicConfig>(() => cloneConfig(state.logicConfig))
   const [product, setProduct] = useState<ProductType>('pension')
   const [saved, setSaved] = useState(false)
@@ -126,21 +128,33 @@ export default function LogicEditorPage() {
   }
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 32px 48px' }}>
-      <button
-        onClick={() => dispatch({ type: 'GO_DASHBOARD' })}
-        style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 18, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+    <>
+      {/* Hero */}
+      <div
+        style={{
+          background:
+            'var(--hero-bg)',
+          color: '#fff',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+        }}
       >
-        <ArrowRight size={14} color="var(--color-text-tertiary)" />
-        <span style={{ fontSize: 13, color: 'var(--color-text-tertiary)' }}>חזרה לדשבורד</span>
-      </button>
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: mobile ? '18px 16px 22px' : '26px 32px 32px' }}>
+          <button
+            onClick={() => dispatch({ type: 'GO_DASHBOARD' })}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+          >
+            <ArrowRight size={14} color="rgba(255,255,255,0.7)" />
+            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>חזרה לדשבורד</span>
+          </button>
+          <h1 style={{ margin: 0, fontSize: mobile ? 22 : 26, fontWeight: 800, letterSpacing: '-0.01em' }}>אזור לוגיקות</h1>
+          <p style={{ margin: '6px 0 0', fontSize: mobile ? 12 : 13, color: 'rgba(255,255,255,0.65)', maxWidth: 620, lineHeight: 1.6 }}>
+            כל לוגיקת ניתוח עם ההסבר כיצד ההארה נבנית והספים שניתן לכוונן. כיבוי לוגיקה מונע ממנה לייצר
+            הארות. שמירה מריצה את הניתוח מחדש.
+          </p>
+        </div>
+      </div>
 
-      <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: 'var(--color-text-primary)' }}>אזור לוגיקות</h1>
-      <p style={{ margin: '6px 0 20px', fontSize: 13, color: 'var(--color-text-tertiary)', maxWidth: 620, lineHeight: 1.6 }}>
-        כל לוגיקת ניתוח עם ההסבר כיצד ההארה נבנית והספים שניתן לכוונן. כיבוי לוגיקה מונע ממנה לייצר
-        הארות. שמירה מריצה את הניתוח מחדש.
-      </p>
-
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: mobile ? '16px 16px 40px' : '24px 32px 48px' }}>
       {/* Product filter pills */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
         {PRODUCT_TABS.map((p) => (
@@ -225,7 +239,8 @@ export default function LogicEditorPage() {
         </button>
         {saved && <span style={{ fontSize: 13, color: 'var(--color-success)', fontWeight: 600 }}>✓ נשמר — הניתוח עודכן</span>}
       </div>
-    </div>
+      </div>
+    </>
   )
 }
 

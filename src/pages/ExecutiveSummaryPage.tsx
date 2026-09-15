@@ -50,7 +50,7 @@ export default function ExecutiveSummaryPage() {
       <div
         style={{
           background:
-            'radial-gradient(680px circle at 90% 0%, rgba(47,107,255,0.28), transparent 60%),linear-gradient(120deg,#0f2647,var(--clint-800) 55%,#0c3a7a)',
+            'var(--hero-bg)',
           color: '#fff',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}
