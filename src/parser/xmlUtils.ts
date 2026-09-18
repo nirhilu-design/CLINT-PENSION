@@ -41,9 +41,14 @@ export function normalizeClientId(id: string | null): string {
   return core ? core.padStart(9, '0') : ''
 }
 
-/** מספר אוצר derived from KIDOD-ACHID: chars 18-23 (zero-padded fund code) */
+/** מספר אוצר (fund/product code) from the 30-digit KIDOD-ACHID. Per נספח ט',
+ *  chars 0-8 are the company ח"פ, 9-22 the אמ"ה fund number (or the product id
+ *  for insurers), 23-29 the investment-track code. We return the middle segment
+ *  stripped of leading zeros — present for pension/gemel/managers, empty (null)
+ *  when the product carries only the company ח"פ (e.g. products outside the
+ *  אוצר population). */
 export function mofidFromKidodAchid(kidod: string | null): string | null {
   if (!kidod || kidod.length < 23) return null
-  const code = kidod.slice(18, 23).replace(/^0+/, '')
+  const code = kidod.slice(9, 23).replace(/^0+/, '')
   return code || null
 }
