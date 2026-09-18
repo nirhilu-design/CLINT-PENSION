@@ -8,7 +8,6 @@ import PortfolioOverviewCard from '../components/PortfolioOverviewCard'
 import { type AssetSlice } from '../components/AssetDonut'
 import CompanyLogo from '../components/CompanyLogo'
 import FindingHighlights from '../components/FindingHighlights'
-import Card from '../components/ds/Card'
 import { computeExposure } from '../services/exposureService'
 import { useIsMobile } from '../hooks/useMediaQuery'
 import { useDragScroll } from '../hooks/useDragScroll'
@@ -348,62 +347,65 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* Client details — connected to the name, inside the hero */}
+          <div style={{ marginTop: mobile ? 16 : 20 }}>
+            <button
+              onClick={() => setDetailsOpen((v) => !v)}
+              aria-expanded={detailsOpen}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '10px 14px',
+                borderRadius: 'var(--radius-md)',
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.16)',
+                color: '#fff',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                textAlign: 'right',
+                backdropFilter: 'blur(6px)',
+              }}
+            >
+              <span style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,0.12)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                <User size={16} />
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>פרטי לקוח</div>
+                {!detailsOpen && (
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {clientDetails.filter((d) => ['תעודת זהות', 'תאריך לידה', 'גיל פרישה יעד'].includes(d.label)).map((d) => d.value).join(' · ')}
+                  </div>
+                )}
+              </div>
+              <ChevronDown
+                size={18}
+                color="rgba(255,255,255,0.7)"
+                style={{ flexShrink: 0, transform: detailsOpen ? 'rotate(180deg)' : 'none', transition: 'transform 180ms var(--ease-out)' }}
+              />
+            </button>
+            {detailsOpen && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 14, padding: 14, marginTop: 8, borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                {clientDetails.map((d) => (
+                  <div key={d.label}>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>{d.label}</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#fff', marginTop: 3 }}>{d.value}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: mobile ? '16px 16px 40px' : '24px 32px 48px' }}>
+        {/* Context questions — a bar (directly under the header, before the KPIs) */}
+        <ContextBar />
         {/* Primary KPIs — four white cards (V2 Overview) */}
         <div id="insurance" style={{ marginBottom: 24, scrollMarginTop: 80 }}>
           <KpiRow kpis={primaryKpis} />
         </div>
-        {/* Context questions — a bar (replaces the old full-page step) */}
-        <ContextBar />
-        {/* Client details — collapsible */}
-        <Card style={{ marginBottom: 24 }} padding={0}>
-          <button
-            onClick={() => setDetailsOpen((v) => !v)}
-            aria-expanded={detailsOpen}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              padding: '16px 20px',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              textAlign: 'right',
-            }}
-          >
-            <span style={{ width: 34, height: 34, borderRadius: 'var(--radius-md)', background: 'var(--clint-50)', display: 'grid', placeItems: 'center', flexShrink: 0, color: 'var(--clint-600)' }}>
-              <User size={17} />
-            </span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)' }}>פרטי לקוח</div>
-              {!detailsOpen && (
-                <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {clientDetails.filter((d) => ['תעודת זהות', 'תאריך לידה', 'גיל פרישה יעד'].includes(d.label)).map((d) => d.value).join(' · ')}
-                </div>
-              )}
-            </div>
-            <ChevronDown
-              size={18}
-              color="var(--color-text-tertiary)"
-              style={{ flexShrink: 0, transform: detailsOpen ? 'rotate(180deg)' : 'none', transition: 'transform 180ms var(--ease-out)' }}
-            />
-          </button>
-          {detailsOpen && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 16, padding: '0 20px 20px' }}>
-              {clientDetails.map((d) => (
-                <div key={d.label}>
-                  <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>{d.label}</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-primary)', marginTop: 3 }}>{d.value}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
 
         {/* Central card — "תמונת התיק" with tabs (overview / performance) */}
         {(hasProjection || donutSlices.length > 0 || policies.length > 0) && (
