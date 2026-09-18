@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { producerKey } from '../config/producers'
 
 /**
  * Managing-company badge. Renders the company's real logo when a matching asset
@@ -24,41 +25,11 @@ export const companyLogos: Record<string, string> = {
   ayalon: '/logos/ayalon.png',
 }
 
-// Hebrew name variations → key (from logo-map.json). Includes brand variants
-// like מקפת→migdal, מבטחים→menora, "מיטב דש"→meitav, אקסלנס→phoenix.
-const ALIASES: Record<string, string[]> = {
-  migdal: ['מגדל', 'מגדל ביטוח', 'מגדל חברה לביטוח', 'מקפת', 'מגדל מקפת', 'קרן פנסיה מקיפה מגדל', 'קרן פנסיה משלימה מגדל'],
-  harel: ['הראל', 'הראל ביטוח', 'הראל ביטוח ופיננסים', 'הראל פנסיה', 'הראל גמל', 'הראל פיננסים'],
-  menora: ['מנורה', 'מבטחים', 'מנורה מבטחים', 'מנורה מבטחים פנסיה וגמל', 'מנורה מבטחים ביטוח'],
-  clal: ['כלל', 'כלל ביטוח', 'כלל פנסיה', 'כלל פנסיה וגמל', 'כלל חברה לביטוח'],
-  phoenix: ['הפניקס', 'הפניקס ביטוח', 'הפניקס פנסיה וגמל', 'הפניקס חברה לביטוח', 'אקסלנס'],
-  meitav: ['מיטב', 'מיטב דש', 'מיטב בית השקעות', 'מיטב גמל ופנסיה', 'מיטב פנסיה'],
-  altshuler: ['אלטשולר', 'אלטשולר שחם', 'אלטשולר שחם בית השקעות', 'אלטשולר שחם גמל ופנסיה'],
-  more: ['מור', 'מור בית השקעות', 'מור גמל ופנסיה', 'י.ד. מור'],
-  analyst: ['אנליסט', 'אנליסט בית השקעות', 'אנליסט קופות גמל'],
-  'yelin-lapidot': ['ילין לפידות', 'ילין לפידות בית השקעות', 'ילין לפידות קופות גמל'],
-  hachshara: ['הכשרה', 'הכשרה ביטוח', 'הכשרה ביטוח ופיננסים', 'הכשרה חברה לביטוח'],
-  ayalon: ['איילון', 'איילון ביטוח', 'איילון חברה לביטוח', 'איילון ביטוח ופיננסים'],
-}
-
-// Flatten to [alias, key] pairs, longest alias first so specific names win.
-const ALIAS_INDEX: { alias: string; key: string }[] = Object.entries(ALIASES)
-  .flatMap(([key, list]) => list.map((alias) => ({ alias: normalize(alias), key })))
-  .sort((a, b) => b.alias.length - a.alias.length)
-
-/** trim, collapse spaces, strip quotes/dots, lowercase (affects Latin only). */
-function normalize(s: string): string {
-  return s
-    .trim()
-    .replace(/["'׳״.]/g, '')
-    .replace(/\s+/g, ' ')
-    .toLowerCase()
-}
-
+// Name → canonical key mapping (incl. brand variants like מקפת→migdal,
+// מבטחים→menora) lives in ../config/producers as the single source of truth.
 function logoFor(name: string): string | undefined {
-  const n = normalize(name)
-  const hit = ALIAS_INDEX.find((a) => n.includes(a.alias))
-  return hit ? companyLogos[hit.key] : undefined
+  const key = producerKey(name)
+  return key ? companyLogos[key] : undefined
 }
 
 const PALETTE = [

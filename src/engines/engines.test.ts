@@ -118,15 +118,26 @@ describe('costEngine', () => {
     expect(out).toHaveLength(0)
   })
 
-  it('flags a gap only against the employer fee agreement', () => {
+  it('flags a gap only against the fee agreement, matched by product + producer', () => {
     const out = costEngine(
-      input([makePolicy({ fees: { fromDeposit: 2, fromAccumulation: 0.3 } })], {
+      input([makePolicy({ managingCompany: 'מגדל חברה לביטוח', fees: { fromDeposit: 2, fromAccumulation: 0.3 } })], {
         feeAgreements: [
-          { policyNumber: 'P1', agreedFeeFromDeposit: 1.0, agreedFeeFromAccumulation: 0.1 },
+          { id: 'a1', productType: 'pension', producer: 'מגדל', agreedFeeFromDeposit: 1.0, agreedFeeFromAccumulation: 0.1 },
         ],
       }),
     )
     expect(out.some((f) => f.title.includes('מול הסכם המעסיק'))).toBe(true)
+  })
+
+  it('does not match an agreement from a different producer', () => {
+    const out = costEngine(
+      input([makePolicy({ managingCompany: 'מגדל חברה לביטוח', fees: { fromDeposit: 2, fromAccumulation: 0.3 } })], {
+        feeAgreements: [
+          { id: 'a1', productType: 'pension', producer: 'הראל', agreedFeeFromDeposit: 1.0, agreedFeeFromAccumulation: 0.1 },
+        ],
+      }),
+    )
+    expect(out).toHaveLength(0)
   })
 })
 
