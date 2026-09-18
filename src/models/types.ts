@@ -31,6 +31,7 @@ export interface Coverage {
   coveredSalary: number | null
   cost: number | null // monthly cost
   status: 'active' | 'inactive' | null
+  endDate: string | null // ISO yyyy-mm-dd — TAARICH-TOM-KISUY, when reported
   policyNumber: string
 }
 

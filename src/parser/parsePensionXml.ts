@@ -156,6 +156,7 @@ function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
           coveredSalary,
           cost: getNumber(pensionCover, 'ALUT-KISUI-NECHUT'),
           status: 'active',
+          endDate: null,
           policyNumber,
         })
       }
@@ -170,6 +171,7 @@ function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
           coveredSalary,
           cost: getNumber(pensionCover, 'ALUT-KISUY-SHEERIM'),
           status: 'active',
+          endDate: null,
           policyNumber,
         })
       }
@@ -183,6 +185,7 @@ function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
           coveredSalary,
           cost: null,
           status: 'active',
+          endDate: null,
           policyNumber,
         })
       }
@@ -190,13 +193,25 @@ function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
 
     // Insurance-company coverages (managers / life): each PirteiKisuiBeMutzar row
     // carries SUG-KISUY-BITOCHI identifying what it insures — death, disability,
-    // income protection (אכ"ע), etc. The amount is SCHUM-BITUACH, the premium is
-    // DMEI-BITUAH-LETASHLUM-BAPOAL. (Previously we mis-read PirteiTosafot — a rider
-    // block with no SCHUM-BITUACH — and hard-coded every row as death coverage.)
+    // income protection (אכ"ע), etc. The premium is DMEI-BITUAH-LETASHLUM-BAPOAL
+    // (or ALUT-KISUI). (Previously we mis-read PirteiTosafot — a rider block with
+    // no SCHUM-BITUACH — and hard-coded every row as death coverage.)
+    //
+    // The death benefit amount is NOT in PirteiKisuiBeMutzar > SCHUM-BITUACH: per
+    // the מבנה אחיד (שדה "סכום הביטוח") that field is 0 for basic (יסודי) insurance
+    // except אכ"ע. The real death sum lives in the sibling SchumeiBituahYesodi block
+    // as SCHUM-BITUAH-LEMAVET (שדה "סכום ביטוח למקרה מוות"). Reading only SCHUM-BITUACH
+    // made pure life policies show a 0₪ death benefit.
+    const deathSum = getNumber(kisui, 'SchumeiBituahYesodi > SCHUM-BITUAH-LEMAVET')
     for (const cover of kisui.querySelectorAll('PirteiKisuiBeMutzar')) {
       const type = coverageTypeFromKisuyBituchi(getText(cover, 'SUG-KISUY-BITOCHI'))
       if (type === null) continue // savings / premium-waiver rows are not risk covers
-      const amount = getNumber(cover, 'SCHUM-BITUACH')
+      // Death: prefer the basic-insurance sum; SCHUM-BITUACH is a fallback (and the
+      // real value for אכ"ע and riders).
+      const amount =
+        type === 'death'
+          ? firstPositive(getNumber(cover, 'SCHUM-BITUACH'), deathSum)
+          : getNumber(cover, 'SCHUM-BITUACH')
       // ACHUZ-MESACHAR is the אכ"ע rate of salary. Per the מבנה אחיד it is a decimal
       // fraction (0.75), but many issuers report a whole percent (75) — normalize
       // ≤1 ⇒ ×100. For death it is a salary multiple, so it is left untouched.
@@ -211,14 +226,19 @@ function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
         type === 'disability' && amount !== null && percent !== null && percent > 0
           ? Math.round(amount / (percent / 100))
           : null
+      const endRaw = getText(cover, 'TAARICH-TOM-KISUY')
       coverages.push({
         type,
         name,
         amount,
         percent,
         coveredSalary,
-        cost: getNumber(cover, 'DMEI-BITUAH-LETASHLUM-BAPOAL'),
-        status: coverageStatusFromEndDate(getText(cover, 'TAARICH-TOM-KISUY')),
+        cost: firstPositive(
+          getNumber(cover, 'DMEI-BITUAH-LETASHLUM-BAPOAL'),
+          getNumber(cover, 'ALUT-KISUI'),
+        ),
+        status: coverageStatusFromEndDate(endRaw),
+        endDate: parseDate(endRaw),
         policyNumber,
       })
     }

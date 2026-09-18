@@ -136,7 +136,7 @@ describe('deathPictureEngine liabilities', () => {
       policyNumber: 'L1',
       productType: 'life',
       coverages: [
-        { type: 'death', name: null, amount, percent: null, coveredSalary: null, cost: null, status: 'active', policyNumber: 'L1' },
+        { type: 'death', name: null, amount, percent: null, coveredSalary: null, cost: null, status: 'active', endDate: null, policyNumber: 'L1' },
       ],
     })
 
@@ -183,7 +183,7 @@ describe('managers generation engine (stopIssueEngine)', () => {
       hasGuaranteedFactor: true,
       savingsAllocationPercent: 90,
       coverages: [
-        { type: 'death', name: null, amount: 5, percent: null, coveredSalary: null, cost: null, status: 'active', policyNumber: 'MG' },
+        { type: 'death', name: null, amount: 5, percent: null, coveredSalary: null, cost: null, status: 'active', endDate: null, policyNumber: 'MG' },
       ],
     })
     const desc = stopIssueEngine(input([old]))[0].description
@@ -246,6 +246,7 @@ describe('incomeProtectionEngine', () => {
     coveredSalary: 14000,
     cost: 60,
     status: 'active' as const,
+    endDate: null,
     policyNumber: 'P1',
   }
 

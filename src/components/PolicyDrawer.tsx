@@ -187,14 +187,24 @@ export default function PolicyDrawer({
           ) : (
             policy.coverages.map((c, i) => (
               <div key={i} style={{ padding: '9px 0', borderBottom: '1px solid var(--color-border-base)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
                   <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>{coverageTypeLabels[c.type]}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-text-primary)' }}>{formatCurrency(c.amount)}</span>
+                  <span style={{ textAlign: 'left', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-text-primary)' }}>
+                      {c.amount !== null && c.amount > 0 ? formatCurrency(c.amount) : '—'}
+                    </span>
+                    <span style={{ fontSize: 10.5, color: 'var(--color-text-tertiary)', marginInlineStart: 5 }}>סכום ביטוח</span>
+                  </span>
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 2 }}>
-                  {c.name ? `${c.name} · ` : ''}
-                  {c.percent !== null ? `שיעור ${formatPercent(c.percent, 0)} · ` : ''}
-                  עלות חודשית: {formatCurrency(c.cost)}
+                  {[
+                    c.name ? c.name : null,
+                    c.percent !== null ? `שיעור ${formatPercent(c.percent, 0)}` : null,
+                    c.cost !== null && c.cost > 0 ? `עלות חודשית ${formatCurrency(c.cost)}` : null,
+                    c.endDate ? `בתוקף עד ${formatDate(c.endDate)}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
                 </div>
               </div>
             ))

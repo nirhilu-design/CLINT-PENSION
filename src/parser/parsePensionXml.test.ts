@@ -222,6 +222,34 @@ describe('parsePensionXml', () => {
     expect(() => parsePensionXml('not xml <<<', 'bad.xml')).toThrow(XmlParseError)
   })
 
+  it('reads the death benefit from SchumeiBituahYesodi, not the (zero) coverage-row sum', () => {
+    // Per the מבנה אחיד, PirteiKisuiBeMutzar > SCHUM-BITUACH is 0 for basic (יסודי)
+    // insurance; the real death sum is SchumeiBituahYesodi > SCHUM-BITUAH-LEMAVET.
+    // A pure life policy (SUG-MUTZAR=1, no savings) must surface that amount, its
+    // monthly cost, and its end date.
+    const life = `<?xml version="1.0" encoding="UTF-8"?>
+<Mimshak><YeshutYatzran><SHEM-YATZRAN>מבטח בדיקה</SHEM-YATZRAN><Mutzarim>
+<Mutzar><NetuneiMutzar><SUG-MUTZAR>1</SUG-MUTZAR>
+  <YeshutLakoach><MISPAR-ZIHUY-LAKOACH>100000009</MISPAR-ZIHUY-LAKOACH><SHEM-PRATI>א</SHEM-PRATI><SHEM-MISHPACHA>ב</SHEM-MISHPACHA></YeshutLakoach>
+</NetuneiMutzar>
+<HeshbonotOPolisot><HeshbonOPolisa>
+  <MISPAR-POLISA-O-HESHBON>LIFE-1</MISPAR-POLISA-O-HESHBON>
+  <SHEM-TOCHNIT>ביטוח חיים בדיקה</SHEM-TOCHNIT>
+  <STATUS-POLISA-O-CHESHBON>1</STATUS-POLISA-O-CHESHBON>
+  <Kisuim><ZihuiKisui><SHEM-KISUI-YATZRAN>אור 1</SHEM-KISUI-YATZRAN>
+    <SchumeiBituahYesodi><SCHUM-BITUAH-LEMAVET>500000.00</SCHUM-BITUAH-LEMAVET></SchumeiBituahYesodi>
+    <PirteiKisuiBeMutzar><SUG-KISUY-BITOCHI>1</SUG-KISUY-BITOCHI><SCHUM-BITUACH>0.00</SCHUM-BITUACH><DMEI-BITUAH-LETASHLUM-BAPOAL>16.00</DMEI-BITUAH-LETASHLUM-BAPOAL><TAARICH-TOM-KISUY>20450101</TAARICH-TOM-KISUY></PirteiKisuiBeMutzar>
+  </ZihuiKisui></Kisuim>
+</HeshbonOPolisa></HeshbonotOPolisot></Mutzar>
+</Mutzarim></YeshutYatzran></Mimshak>`
+    const { policies: lp } = parsePensionXml(life, 'life.xml')
+    expect(lp[0].productType).toBe('life')
+    const death = lp[0].coverages.find((c) => c.type === 'death')
+    expect(death?.amount).toBe(500000)
+    expect(death?.cost).toBe(16)
+    expect(death?.endDate).toBe('2045-01-01')
+  })
+
   it('resolves each product to its own producer when a file aggregates several', () => {
     // A holdings file can bundle products from multiple producers. Each product
     // must show ITS producer (matched by KOD-MEZAHE-YATZRAN), not the first one
