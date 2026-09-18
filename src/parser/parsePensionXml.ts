@@ -284,7 +284,23 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
     throw new XmlParseError(`הקובץ "${fileName}" אינו בפורמט מסלקה פנסיונית (חסר אלמנט Mimshak)`)
   }
 
-  const managingCompany = getText(doc, 'YeshutYatzran > SHEM-YATZRAN')
+  // A holdings file can aggregate products from several producers (יצרנים):
+  // YeshutYatzran is a repeating block (מרובה) per the מבנה אחיד, each carrying
+  // its own producer code (KOD-MEZAHE-YATZRAN) + name (SHEM-YATZRAN). Every
+  // product then references its producer via NetuneiMutzar > KOD-MEZAHE-YATZRAN.
+  // Resolving the name per-product avoids stamping the first producer's name on
+  // all of them — e.g. an אנליסט gemel-investment fund must not inherit the כלל
+  // name just because a כלל product happens to lead the file.
+  const producerNameByCode = new Map<string, string>()
+  for (const yeshut of doc.querySelectorAll('YeshutYatzran')) {
+    const code = getText(yeshut, 'KOD-MEZAHE-YATZRAN')
+    const name = getText(yeshut, 'SHEM-YATZRAN')
+    if (code && name) producerNameByCode.set(code, name)
+  }
+  // Fallback for files that don't populate producer codes (single-producer feeds
+  // and the legacy shape): keep the previous behavior of the first SHEM-YATZRAN.
+  const fallbackProducer = getText(doc, 'YeshutYatzran > SHEM-YATZRAN')
+
   const mutzarim = doc.querySelectorAll('Mutzar')
   if (mutzarim.length === 0) {
     throw new XmlParseError(`הקובץ "${fileName}" ריק — לא נמצאו מוצרים`)
@@ -297,6 +313,13 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
   for (const mutzar of mutzarim) {
     const netunei = mutzar.querySelector('NetuneiMutzar')
     const sugMutzar = getText(netunei, 'SUG-MUTZAR')
+
+    // Producer name for this specific product: match the product's producer code
+    // against the YeshutYatzran map; fall back to the first-declared name when the
+    // code is missing or unmatched (preserves single-producer behavior).
+    const producerCode = getText(netunei, 'KOD-MEZAHE-YATZRAN')
+    const managingCompany =
+      (producerCode ? (producerNameByCode.get(producerCode) ?? null) : null) ?? fallbackProducer
 
     const yeshutLakoach = netunei?.querySelector('YeshutLakoach')
     if (yeshutLakoach) {

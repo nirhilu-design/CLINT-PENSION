@@ -221,4 +221,31 @@ describe('parsePensionXml', () => {
   it('rejects invalid XML with a clear error', () => {
     expect(() => parsePensionXml('not xml <<<', 'bad.xml')).toThrow(XmlParseError)
   })
+
+  it('resolves each product to its own producer when a file aggregates several', () => {
+    // A holdings file can bundle products from multiple producers. Each product
+    // must show ITS producer (matched by KOD-MEZAHE-YATZRAN), not the first one
+    // declared — e.g. an אנליסט gemel-investment fund must not inherit the כלל
+    // name just because a כלל product leads the file.
+    const multiProducer = `<?xml version="1.0" encoding="UTF-8"?>
+<Mimshak>
+  <YeshutYatzran><KOD-MEZAHE-YATZRAN>511111111</KOD-MEZAHE-YATZRAN><SHEM-YATZRAN>כלל פנסיה וגמל בע"מ</SHEM-YATZRAN></YeshutYatzran>
+  <YeshutYatzran><KOD-MEZAHE-YATZRAN>522222222</KOD-MEZAHE-YATZRAN><SHEM-YATZRAN>אנליסט קופות גמל ופנסיה בע"מ</SHEM-YATZRAN></YeshutYatzran>
+  <Mutzarim>
+    <Mutzar><NetuneiMutzar><SUG-MUTZAR>2</SUG-MUTZAR><KOD-MEZAHE-YATZRAN>511111111</KOD-MEZAHE-YATZRAN>
+      <YeshutLakoach><MISPAR-ZIHUY-LAKOACH>100000009</MISPAR-ZIHUY-LAKOACH><SHEM-PRATI>א</SHEM-PRATI><SHEM-MISHPACHA>ב</SHEM-MISHPACHA></YeshutLakoach>
+    </NetuneiMutzar>
+    <HeshbonotOPolisot><HeshbonOPolisa><MISPAR-POLISA-O-HESHBON>PENSION-1</MISPAR-POLISA-O-HESHBON></HeshbonOPolisa></HeshbonotOPolisot></Mutzar>
+    <Mutzar><NetuneiMutzar><SUG-MUTZAR>9</SUG-MUTZAR><KOD-MEZAHE-YATZRAN>522222222</KOD-MEZAHE-YATZRAN>
+      <YeshutLakoach><MISPAR-ZIHUY-LAKOACH>100000009</MISPAR-ZIHUY-LAKOACH><SHEM-PRATI>א</SHEM-PRATI><SHEM-MISHPACHA>ב</SHEM-MISHPACHA></YeshutLakoach>
+    </NetuneiMutzar>
+    <HeshbonotOPolisot><HeshbonOPolisa><MISPAR-POLISA-O-HESHBON>10111936</MISPAR-POLISA-O-HESHBON></HeshbonOPolisa></HeshbonotOPolisot></Mutzar>
+  </Mutzarim>
+</Mimshak>`
+    const { policies: multi } = parsePensionXml(multiProducer, 'multi.xml')
+    const pension = multi.find((p) => p.policyNumber === 'PENSION-1')
+    const gemelInv = multi.find((p) => p.policyNumber === '10111936')
+    expect(pension?.managingCompany).toBe('כלל פנסיה וגמל בע"מ')
+    expect(gemelInv?.managingCompany).toBe('אנליסט קופות גמל ופנסיה בע"מ')
+  })
 })
