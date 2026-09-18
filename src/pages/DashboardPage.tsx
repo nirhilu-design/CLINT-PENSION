@@ -14,14 +14,12 @@ import { useIsMobile } from '../hooks/useMediaQuery'
 import { useDragScroll } from '../hooks/useDragScroll'
 import { sortFindings } from '../engines/findingPriority'
 import { assessCompleteness } from '../services/completenessService'
-import { effectiveSalary } from '../engines/engineTypes'
-import { PENSION_TO_SALARY_MIN_RATIO } from '../config/thresholds'
 import { useEffect, useState } from 'react'
 import {
   User,
   ChevronDown,
   PiggyBank,
-  CalendarClock,
+  Umbrella,
   ShieldCheck,
   BarChart3,
   Bell,
@@ -75,7 +73,6 @@ export default function DashboardPage() {
     0,
   )
   const totalPensionWithoutDeposits = policies.reduce((s, p) => s + (p.expectedPensionWithoutDeposits ?? 0), 0)
-  const salary = effectiveSalary(policies, supp)
 
   // Explicit product status per the reference: ✓ תקין / ! לבדיקה / ✕ חריגה
   const statusFromFindings = (fs: typeof findings): { label: string; tone: Status; sign: string } => {
@@ -143,7 +140,12 @@ export default function DashboardPage() {
 
   // ---- V2 Overview: four primary KPIs (white cards, per the reference) ----
   const ipMax = ipPercents.length > 0 ? Math.max(...ipPercents) : null
-  const pensionTarget = salary != null && salary > 0 ? salary * PENSION_TO_SALARY_MIN_RATIO : null
+  // Total death benefit (סכום למקרה מוות) — sum of death coverages that aren't
+  // expired. Factual figure; no target/recommendation ("מאיר ולא ממליץ").
+  const deathCovers = policies
+    .flatMap((p) => p.coverages)
+    .filter((c) => c.type === 'death' && c.status !== 'inactive' && (c.amount ?? 0) > 0)
+  const totalDeathBenefit = deathCovers.reduce((s, c) => s + (c.amount ?? 0), 0)
   const primaryKpis: Kpi[] = [
     {
       key: 'savings',
@@ -156,20 +158,17 @@ export default function DashboardPage() {
       sub: gemelSharePct > 0 ? `${Math.round(gemelSharePct)}% בקופות גמל` : `${policies.length} פוליסות`,
     },
     {
-      key: 'pension',
-      icon: CalendarClock,
+      key: 'death',
+      icon: Umbrella,
       accent: 'var(--clint-600)',
       tint: 'var(--clint-50)',
-      label: 'קצבה חודשית צפויה',
-      numeric: totalPensionWithDeposits,
+      label: 'סכום למקרה מוות',
+      numeric: totalDeathBenefit,
       format: formatCurrency,
-      sub: pensionTarget ? `יעד ≈${formatCurrency(pensionTarget)}` : 'בהמשך הפקדות',
-      status:
-        pensionTarget && totalPensionWithDeposits < pensionTarget
-          ? { label: `פער ${Math.round(((pensionTarget - totalPensionWithDeposits) / pensionTarget) * 100)}%`, tone: 'warn' }
-          : pensionTarget
-            ? { label: 'תקין', tone: 'good' }
-            : undefined,
+      sub:
+        deathCovers.length > 0
+          ? `${deathCovers.length} ${deathCovers.length === 1 ? 'כיסוי' : 'כיסויים'}`
+          : 'לא אותר כיסוי מוות',
     },
     {
       key: 'ip',
