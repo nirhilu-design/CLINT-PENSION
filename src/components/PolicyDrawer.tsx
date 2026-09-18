@@ -118,7 +118,7 @@ export default function PolicyDrawer({
             <Tile label="סכום הפקדה אחרונה" value={formatCurrency(policy.lastDepositTotal)} />
             <Tile label="תאריך הצטרפות" value={formatDate(policy.openDate)} />
             <Tile label="מספר אוצר" value={policy.mofid ?? '—'} />
-            <Tile label="תשואה נטו" value={formatPercent(policy.netReturn)} />
+            <Tile label="תשואה נטו (מתחילת שנה)" value={formatPercent(policy.netReturn)} />
           </div>
 
           <SectionLabel>הפקדות ודמי ניהול</SectionLabel>

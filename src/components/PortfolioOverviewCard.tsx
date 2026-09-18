@@ -4,7 +4,7 @@ import AssetDonut, { type AssetSlice } from './AssetDonut'
 import RetirementProjection from './RetirementProjection'
 import ReturnsPerformance from './ReturnsPerformance'
 import { useIsMobile } from '../hooks/useMediaQuery'
-import type { Policy, ProductType } from '../models/types'
+import type { Policy, ProductType, TreasuryFundData } from '../models/types'
 import { PieChart, BarChart3, ChevronRight, ChevronLeft } from 'lucide-react'
 
 type Tab = 'overview' | 'performance'
@@ -27,6 +27,7 @@ export default function PortfolioOverviewCard({
   hasProjection,
   policies,
   colorFor,
+  funds = [],
 }: {
   slices: AssetSlice[]
   onSelectProduct: (t: ProductType) => void
@@ -39,6 +40,7 @@ export default function PortfolioOverviewCard({
   hasProjection: boolean
   policies: Policy[]
   colorFor: (t: ProductType) => string
+  funds?: TreasuryFundData[]
 }) {
   const mobile = useIsMobile()
   const [tab, setTab] = useState<Tab>('overview')
@@ -167,7 +169,7 @@ export default function PortfolioOverviewCard({
             </div>
           )
         ) : (
-          <ReturnsPerformance policies={policies} colorFor={colorFor} />
+          <ReturnsPerformance policies={policies} colorFor={colorFor} funds={funds} />
         )}
       </div>
     </Card>

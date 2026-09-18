@@ -7,7 +7,7 @@
 // policies). A 0% anywhere else signals missing data, so it is not charted as a real
 // value. An implausibly large figure (|v| ≥ 100%, e.g. a -100 sentinel) is discarded.
 
-import type { Policy, ProductType } from '../models/types'
+import type { Policy, ProductType, TreasuryFundData } from '../models/types'
 
 const RETURN_TYPES: ProductType[] = ['pension', 'managers', 'gemel', 'gemelInvestment', 'education']
 const IMPLAUSIBLE = 100 // a YTD net return at/above this magnitude is not a real figure
@@ -42,4 +42,36 @@ export function policyDisplayReturn(p: Policy): PolicyReturn {
   if (value === null) value = weightedTrackReturn(p) // fall back to the tracks
   if (value === 0 && !isPre1992Managers(p)) return { value: null, suspiciousZero: true }
   return { value, suspiciousZero: false }
+}
+
+// ---- Comparison-chart returns ------------------------------------------------
+// The מסלקה XML carries only a net YTD return; gross and multi-period returns come
+// from the treasury (גמל-נט/פנסיה-נט) data the advisor loads, matched by מספר אוצר.
+// So: מתחילת השנה = net (from the XML); 12m/3y/5y = gross (from the treasury).
+export type ReturnRange = 'ytd' | '12m' | '3y' | '5y'
+
+export interface ChartReturn {
+  value: number | null
+  gross: boolean // true = treasury gross; false = XML net (YTD)
+}
+
+export function policyChartReturn(p: Policy, funds: TreasuryFundData[], range: ReturnRange): ChartReturn {
+  if (range === 'ytd') return { value: policyDisplayReturn(p).value, gross: false }
+  const fund = p.mofid ? funds.find((f) => f.mofid === p.mofid) : undefined
+  const raw = fund
+    ? range === '12m'
+      ? fund.return12m
+      : range === '3y'
+        ? fund.return3yAnnualized
+        : fund.return5yAnnualized
+    : null
+  const value = raw !== null && Math.abs(raw) < IMPLAUSIBLE ? raw : null
+  return { value, gross: true }
+}
+
+/** Ranges that have at least one real value across the portfolio (YTD is always
+ *  available from the XML; the gross ranges need treasury data by מספר אוצר). */
+export function availableRanges(policies: Policy[], funds: TreasuryFundData[]): ReturnRange[] {
+  const all: ReturnRange[] = ['ytd', '12m', '3y', '5y']
+  return all.filter((r) => policies.some((p) => policyChartReturn(p, funds, r).value !== null))
 }

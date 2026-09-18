@@ -421,6 +421,7 @@ export default function DashboardPage() {
               hasProjection={hasProjection}
               policies={policies}
               colorFor={(t) => DONUT_COLORS[t]}
+              funds={supp.treasuryFunds}
             />
           </div>
         )}

@@ -1,51 +1,50 @@
 import { useState } from 'react'
-import type { Policy, ProductType } from '../models/types'
+import type { Policy, ProductType, TreasuryFundData } from '../models/types'
 import { productTypeLabels } from '../models/labels'
 import { formatPercent, formatDate } from '../utils/format'
 import { useIsMobile } from '../hooks/useMediaQuery'
-import { policyDisplayReturn } from '../services/returnsService'
+import { policyDisplayReturn, policyChartReturn, availableRanges, type ReturnRange } from '../services/returnsService'
 import { TrendingUp, LineChart } from 'lucide-react'
 
 /**
- * ביצועים ותשואות. The clearinghouse XML reports one cumulative YTD net return
- * per product (SHEUR-TSUA-NETO) — a single point, not a monthly series. Per the
- * baseline spec we do NOT fabricate a historical line from a single point; we
- * compare the real per-product YTD returns as bars and surface the weighted
- * portfolio average. Longer ranges are shown but disabled until a real series
- * (e.g. treasury history) is connected.
+ * ביצועים ותשואות. The מסלקה XML carries only a net YTD return (SHEUR-TSUA-NETO)
+ * — one point, not a series. Gross and multi-period (12m/3y/5y) returns come from
+ * the treasury (גמל-נט/פנסיה-נט) data the advisor loads, matched by מספר אוצר. So
+ * מתחילת השנה shows net (from the XML); the longer ranges show gross (from the
+ * treasury). Each range is enabled only where real data exists.
  */
 
-type Range = 'ytd' | '1y' | '3y' | '5y' | 'all'
-const RANGES: { key: Range; label: string }[] = [
-  { key: 'ytd', label: 'מתחילת השנה' },
-  { key: '1y', label: 'שנה' },
-  { key: '3y', label: '3 שנים' },
-  { key: '5y', label: '5 שנים' },
-  { key: 'all', label: 'הכל' },
+const RANGES: { key: ReturnRange; label: string; gross: boolean }[] = [
+  { key: 'ytd', label: 'מתחילת השנה', gross: false },
+  { key: '12m', label: 'שנה', gross: true },
+  { key: '3y', label: '3 שנים', gross: true },
+  { key: '5y', label: '5 שנים', gross: true },
 ]
 
 export default function ReturnsPerformance({
   policies,
   colorFor,
+  funds = [],
 }: {
   policies: Policy[]
   colorFor: (t: ProductType) => string
+  funds?: TreasuryFundData[]
 }) {
   const mobile = useIsMobile()
-  const [range, setRange] = useState<Range>('ytd')
+  const available = new Set<ReturnRange>(availableRanges(policies, funds))
+  // Default to the 12-month gross view when treasury data is present, else YTD net.
+  const [range, setRange] = useState<ReturnRange>(available.has('12m') ? '12m' : 'ytd')
+  const grossRange = range !== 'ytd'
 
-  // Only YTD has real data from a single XML snapshot.
-  const available = new Set<Range>(['ytd'])
-
-  // Resolve each policy's reliable return (sanity-checked, track-weighted fallback).
+  // Resolve each policy's return for the selected range (net YTD, or treasury gross).
   const withReturn = policies
-    .map((p) => ({ p, value: policyDisplayReturn(p).value }))
+    .map((p) => ({ p, value: policyChartReturn(p, funds, range).value }))
     .filter((x): x is { p: Policy; value: number } => x.value !== null)
   const sorted = [...withReturn].sort((a, b) => b.value - a.value)
   const maxAbs = Math.max(0.01, ...sorted.map((x) => Math.abs(x.value)))
   const hasNegative = sorted.some((x) => x.value < 0)
-  // Products that carry savings but whose reported return is a not-real 0% (data gap).
-  const suspiciousCount = policies.filter((p) => policyDisplayReturn(p).suspiciousZero).length
+  // Products that carry savings but whose reported YTD return is a not-real 0% (data gap).
+  const suspiciousCount = range === 'ytd' ? policies.filter((p) => policyDisplayReturn(p).suspiciousZero).length : 0
 
   // Weighted average by current value (falls back to a simple mean).
   let wSum = 0
@@ -131,7 +130,9 @@ export default function ReturnsPerformance({
                 <TrendingUp size={17} />
               </span>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>תשואת התיק המשוקללת מתחילת השנה</div>
+                <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
+                  תשואת התיק המשוקללת · {RANGES.find((r) => r.key === range)?.label} ({grossRange ? 'ברוטו, נתוני אוצר' : 'נטו, מסלקה'})
+                </div>
                 <div style={{ fontSize: 18, fontWeight: 800, fontFamily: 'var(--font-mono)', color: weightedAvg >= 0 ? 'var(--color-success-dark)' : 'var(--color-danger-dark)' }}>
                   {weightedAvg >= 0 ? '+' : ''}{formatPercent(weightedAvg)}
                 </div>
@@ -161,7 +162,7 @@ export default function ReturnsPerformance({
                       <div
                         key={p.id}
                         style={{ width: colW, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-                        title={`${productTypeLabels[p.productType]}${p.mofid ? ` · אוצר ${p.mofid}` : ''}\n${p.managingCompany ?? ''}\nתשואה נטו מתחילת השנה: ${pos ? '+' : ''}${formatPercent(value)}`}
+                        title={`${productTypeLabels[p.productType]}${p.mofid ? ` · אוצר ${p.mofid}` : ''}\n${p.managingCompany ?? ''}\n${grossRange ? 'תשואת ברוטו (אוצר)' : 'תשואה נטו מתחילת השנה'}: ${pos ? '+' : ''}${formatPercent(value)}`}
                       >
                         {/* Plot cell with the zero baseline */}
                         <div style={{ position: 'relative', width: '100%', height: plotH }}>
@@ -217,7 +218,9 @@ export default function ReturnsPerformance({
           })()}
 
           <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 14, lineHeight: 1.6 }}>
-            תשואה נטו מצטברת מתחילת השנה כפי שדווחה בקובץ — נקודה אחת לכל פוליסה, לא סדרה היסטורית. מוצרי ביטוח חיים/אכ"ע אינם נכללים (אין בהם צבירה).
+            {grossRange
+              ? 'תשואת ברוטו ברמת הקופה מתוך נתוני האוצר (גמל-נט/פנסיה-נט), מותאמת לפי מספר אוצר. מוצרים ללא נתוני אוצר תואמים אינם נכללים בטווח זה.'
+              : 'תשואה נטו מתחילת השנה כפי שדווחה במסלקה — נקודה אחת לכל פוליסה. מוצרי ביטוח חיים/אכ"ע אינם נכללים (אין בהם צבירה). תשואת ברוטו ולתקופות ארוכות יותר זמינה בטווחים שנה/3ש/5ש כשנטענים נתוני אוצר.'}
             {suspiciousCount > 0 && ` ${suspiciousCount} מוצרים דיווחו תשואה 0% ולא נכללו — ערך שאינו סביר (למעט ביטוח מנהלים מלפני 1992). נקודה לבדיקה מול בעל רישיון.`}
           </div>
         </>
