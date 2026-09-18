@@ -4,24 +4,22 @@ import type { Policy, ProductType } from '../models/types'
 import { formatCurrency, formatDate } from '../utils/format'
 import ContextBar from '../components/ContextBar'
 import KpiRow, { type Kpi } from '../components/KpiRow'
-import RetirementProjection from '../components/RetirementProjection'
-import AssetDonut, { type AssetSlice } from '../components/AssetDonut'
+import PortfolioOverviewCard from '../components/PortfolioOverviewCard'
+import { type AssetSlice } from '../components/AssetDonut'
 import CompanyLogo from '../components/CompanyLogo'
 import FindingHighlights from '../components/FindingHighlights'
-import Card from '../components/ds/Card'
 import { computeExposure } from '../services/exposureService'
 import { useIsMobile } from '../hooks/useMediaQuery'
 import { useDragScroll } from '../hooks/useDragScroll'
 import { sortFindings } from '../engines/findingPriority'
 import { assessCompleteness } from '../services/completenessService'
-import { effectiveSalary } from '../engines/engineTypes'
-import { PENSION_TO_SALARY_MIN_RATIO } from '../config/thresholds'
+import { computeDeathBenefit } from '../services/deathBenefitService'
 import { useEffect, useState } from 'react'
 import {
   User,
   ChevronDown,
   PiggyBank,
-  CalendarClock,
+  Umbrella,
   ShieldCheck,
   BarChart3,
   Bell,
@@ -75,7 +73,6 @@ export default function DashboardPage() {
     0,
   )
   const totalPensionWithoutDeposits = policies.reduce((s, p) => s + (p.expectedPensionWithoutDeposits ?? 0), 0)
-  const salary = effectiveSalary(policies, supp)
 
   // Explicit product status per the reference: ✓ תקין / ! לבדיקה / ✕ חריגה
   const statusFromFindings = (fs: typeof findings): { label: string; tone: Status; sign: string } => {
@@ -143,7 +140,10 @@ export default function DashboardPage() {
 
   // ---- V2 Overview: four primary KPIs (white cards, per the reference) ----
   const ipMax = ipPercents.length > 0 ? Math.max(...ipPercents) : null
-  const pensionTarget = salary != null && salary > 0 ? salary * PENSION_TO_SALARY_MIN_RATIO : null
+  // Total death benefit (סכום למקרה מוות) — the lump sum passing to beneficiaries
+  // on death across life / managers / gemel / gemel-investment / education, plus a
+  // pension fund only when it reports no survivor coverage. Factual; no advice.
+  const deathBenefit = computeDeathBenefit(policies)
   const primaryKpis: Kpi[] = [
     {
       key: 'savings',
@@ -156,20 +156,17 @@ export default function DashboardPage() {
       sub: gemelSharePct > 0 ? `${Math.round(gemelSharePct)}% בקופות גמל` : `${policies.length} פוליסות`,
     },
     {
-      key: 'pension',
-      icon: CalendarClock,
+      key: 'death',
+      icon: Umbrella,
       accent: 'var(--clint-600)',
       tint: 'var(--clint-50)',
-      label: 'קצבה חודשית צפויה',
-      numeric: totalPensionWithDeposits,
+      label: 'סכום למקרה מוות',
+      numeric: deathBenefit.total,
       format: formatCurrency,
-      sub: pensionTarget ? `יעד ≈${formatCurrency(pensionTarget)}` : 'בהמשך הפקדות',
-      status:
-        pensionTarget && totalPensionWithDeposits < pensionTarget
-          ? { label: `פער ${Math.round(((pensionTarget - totalPensionWithDeposits) / pensionTarget) * 100)}%`, tone: 'warn' }
-          : pensionTarget
-            ? { label: 'תקין', tone: 'good' }
-            : undefined,
+      sub:
+        deathBenefit.contributingCount === 0
+          ? 'לא אותר סכום למקרה מוות'
+          : `${deathBenefit.contributingCount} ${deathBenefit.contributingCount === 1 ? 'מוצר' : 'מוצרים'}${deathBenefit.includesPensionWithoutSurvivors ? ' · כולל קרן ללא שאירים' : ''}`,
     },
     {
       key: 'ip',
@@ -349,87 +346,83 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* Client details — connected to the name, inside the hero */}
+          <div style={{ marginTop: mobile ? 16 : 20 }}>
+            <button
+              onClick={() => setDetailsOpen((v) => !v)}
+              aria-expanded={detailsOpen}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '10px 14px',
+                borderRadius: 'var(--radius-md)',
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.16)',
+                color: '#fff',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                textAlign: 'right',
+                backdropFilter: 'blur(6px)',
+              }}
+            >
+              <span style={{ width: 30, height: 30, borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,0.12)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                <User size={16} />
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>פרטי לקוח</div>
+                {!detailsOpen && (
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {clientDetails.filter((d) => ['תעודת זהות', 'תאריך לידה', 'גיל פרישה יעד'].includes(d.label)).map((d) => d.value).join(' · ')}
+                  </div>
+                )}
+              </div>
+              <ChevronDown
+                size={18}
+                color="rgba(255,255,255,0.7)"
+                style={{ flexShrink: 0, transform: detailsOpen ? 'rotate(180deg)' : 'none', transition: 'transform 180ms var(--ease-out)' }}
+              />
+            </button>
+            {detailsOpen && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 14, padding: 14, marginTop: 8, borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                {clientDetails.map((d) => (
+                  <div key={d.label}>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>{d.label}</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#fff', marginTop: 3 }}>{d.value}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: mobile ? '16px 16px 40px' : '24px 32px 48px' }}>
+        {/* Context questions — a bar (directly under the header, before the KPIs) */}
+        <ContextBar />
         {/* Primary KPIs — four white cards (V2 Overview) */}
-        <div style={{ marginBottom: 24 }}>
+        <div id="insurance" style={{ marginBottom: 24, scrollMarginTop: 80 }}>
           <KpiRow kpis={primaryKpis} />
         </div>
-        {/* Context questions — a bar (replaces the old full-page step) */}
-        <ContextBar />
-        {/* Client details — collapsible */}
-        <Card style={{ marginBottom: 24 }} padding={0}>
-          <button
-            onClick={() => setDetailsOpen((v) => !v)}
-            aria-expanded={detailsOpen}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              padding: '16px 20px',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              textAlign: 'right',
-            }}
-          >
-            <span style={{ width: 34, height: 34, borderRadius: 'var(--radius-md)', background: 'var(--clint-50)', display: 'grid', placeItems: 'center', flexShrink: 0, color: 'var(--clint-600)' }}>
-              <User size={17} />
-            </span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)' }}>פרטי לקוח</div>
-              {!detailsOpen && (
-                <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {clientDetails.filter((d) => ['תעודת זהות', 'תאריך לידה', 'גיל פרישה יעד'].includes(d.label)).map((d) => d.value).join(' · ')}
-                </div>
-              )}
-            </div>
-            <ChevronDown
-              size={18}
-              color="var(--color-text-tertiary)"
-              style={{ flexShrink: 0, transform: detailsOpen ? 'rotate(180deg)' : 'none', transition: 'transform 180ms var(--ease-out)' }}
-            />
-          </button>
-          {detailsOpen && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 16, padding: '0 20px 20px' }}>
-              {clientDetails.map((d) => (
-                <div key={d.label}>
-                  <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>{d.label}</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-primary)', marginTop: 3 }}>{d.value}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
 
-        {/* Retirement projection (two-state timeline) + asset-allocation donut */}
-        {(hasProjection || donutSlices.length > 0) && (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: mobile ? '1fr' : 'minmax(0,1fr) minmax(0,1.45fr)',
-              gap: mobile ? 16 : 20,
-              marginBottom: 24,
-              alignItems: 'start',
-            }}
-          >
-            {donutSlices.length > 0 && (
-              <AssetDonut slices={donutSlices} onSelect={(type) => dispatch({ type: 'OPEN_PRODUCT', productType: type })} />
-            )}
-            {hasProjection && (
-              <RetirementProjection
-                currentAge={age !== null && !isNaN(age) ? age : null}
-                retirementAge={retirementAge ?? 67}
-                currentAccumulation={totalAssets}
-                currentPension={totalPensionWithoutDeposits}
-                projectedAccumulation={projectedCapital}
-                projectedPension={totalPensionWithDeposits}
-              />
-            )}
+        {/* Central card — "תמונת התיק" with tabs (overview / performance) */}
+        {(hasProjection || donutSlices.length > 0 || policies.length > 0) && (
+          <div id="portfolio" style={{ scrollMarginTop: 80 }}>
+            <PortfolioOverviewCard
+              slices={donutSlices}
+              onSelectProduct={(type) => dispatch({ type: 'OPEN_PRODUCT', productType: type })}
+              currentAge={age !== null && !isNaN(age) ? age : null}
+              retirementAge={retirementAge ?? 67}
+              currentAccumulation={totalAssets}
+              currentPension={totalPensionWithoutDeposits}
+              projectedAccumulation={projectedCapital}
+              projectedPension={totalPensionWithDeposits}
+              hasProjection={hasProjection}
+              policies={policies}
+              colorFor={(t) => DONUT_COLORS[t]}
+              funds={supp.treasuryFunds}
+            />
           </div>
         )}
 
@@ -439,7 +432,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Products */}
-        <section>
+        <section id="products" style={{ scrollMarginTop: 80 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, margin: '0 0 14px', flexWrap: 'wrap' }}>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>המוצרים בתיק</h2>
             <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>{policies.length} מוצרים · לחיצה פותחת את הפירוט</span>
@@ -455,7 +448,9 @@ export default function DashboardPage() {
                 const head = policyHeadline(p)
                 const st = policyStatusOf(p)
                 const m = STATUS_META[st.tone]
-                const name = p.managingCompany ?? p.productName ?? productTypeLabels[p.productType]
+                const typeColor = DONUT_COLORS[p.productType]
+                const typeLabel = productTypeLabels[p.productType]
+                const company = p.managingCompany ?? p.productName ?? 'גוף לא דווח'
                 return (
                   <button
                     key={p.id}
@@ -467,6 +462,7 @@ export default function DashboardPage() {
                       textAlign: 'right',
                       background: 'var(--color-bg-card)',
                       border: '1px solid var(--color-border-base)',
+                      borderTop: `3px solid ${typeColor}`,
                       borderRadius: 'var(--radius-lg)',
                       boxShadow: 'var(--shadow-card)',
                       padding: 16,
@@ -475,21 +471,38 @@ export default function DashboardPage() {
                       transition: 'transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out)',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 11, justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
-                        <CompanyLogo company={p.managingCompany} size={40} />
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontWeight: 700, color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {name}
-                          </div>
-                          <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {productTypeLabels[p.productType]}
-                          </div>
-                        </div>
-                      </div>
+                    {/* Product type is the headline — many funds share a managing company */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'space-between' }}>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          fontSize: 13,
+                          fontWeight: 800,
+                          color: typeColor,
+                          background: `${typeColor}16`,
+                          padding: '4px 10px',
+                          borderRadius: 'var(--radius-full)',
+                          maxWidth: '100%',
+                          minWidth: 0,
+                        }}
+                      >
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: typeColor, flexShrink: 0 }} />
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{typeLabel}</span>
+                      </span>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 'var(--radius-full)', background: m.bg, color: m.color, whiteSpace: 'nowrap', flexShrink: 0 }}>
                         {st.sign} {st.label}
                       </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0, marginTop: 12 }}>
+                      <CompanyLogo company={p.managingCompany} size={36} />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 10.5, color: 'var(--color-text-tertiary)' }}>גוף מנהל</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {company}
+                        </div>
+                      </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 14 }}>
                       <div>

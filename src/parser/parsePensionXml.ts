@@ -156,6 +156,7 @@ function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
           coveredSalary,
           cost: getNumber(pensionCover, 'ALUT-KISUI-NECHUT'),
           status: 'active',
+          endDate: null,
           policyNumber,
         })
       }
@@ -170,6 +171,7 @@ function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
           coveredSalary,
           cost: getNumber(pensionCover, 'ALUT-KISUY-SHEERIM'),
           status: 'active',
+          endDate: null,
           policyNumber,
         })
       }
@@ -183,6 +185,7 @@ function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
           coveredSalary,
           cost: null,
           status: 'active',
+          endDate: null,
           policyNumber,
         })
       }
@@ -190,13 +193,25 @@ function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
 
     // Insurance-company coverages (managers / life): each PirteiKisuiBeMutzar row
     // carries SUG-KISUY-BITOCHI identifying what it insures — death, disability,
-    // income protection (אכ"ע), etc. The amount is SCHUM-BITUACH, the premium is
-    // DMEI-BITUAH-LETASHLUM-BAPOAL. (Previously we mis-read PirteiTosafot — a rider
-    // block with no SCHUM-BITUACH — and hard-coded every row as death coverage.)
+    // income protection (אכ"ע), etc. The premium is DMEI-BITUAH-LETASHLUM-BAPOAL
+    // (or ALUT-KISUI). (Previously we mis-read PirteiTosafot — a rider block with
+    // no SCHUM-BITUACH — and hard-coded every row as death coverage.)
+    //
+    // The death benefit amount is NOT in PirteiKisuiBeMutzar > SCHUM-BITUACH: per
+    // the מבנה אחיד (שדה "סכום הביטוח") that field is 0 for basic (יסודי) insurance
+    // except אכ"ע. The real death sum lives in the sibling SchumeiBituahYesodi block
+    // as SCHUM-BITUAH-LEMAVET (שדה "סכום ביטוח למקרה מוות"). Reading only SCHUM-BITUACH
+    // made pure life policies show a 0₪ death benefit.
+    const deathSum = getNumber(kisui, 'SchumeiBituahYesodi > SCHUM-BITUAH-LEMAVET')
     for (const cover of kisui.querySelectorAll('PirteiKisuiBeMutzar')) {
       const type = coverageTypeFromKisuyBituchi(getText(cover, 'SUG-KISUY-BITOCHI'))
       if (type === null) continue // savings / premium-waiver rows are not risk covers
-      const amount = getNumber(cover, 'SCHUM-BITUACH')
+      // Death: prefer the basic-insurance sum; SCHUM-BITUACH is a fallback (and the
+      // real value for אכ"ע and riders).
+      const amount =
+        type === 'death'
+          ? firstPositive(getNumber(cover, 'SCHUM-BITUACH'), deathSum)
+          : getNumber(cover, 'SCHUM-BITUACH')
       // ACHUZ-MESACHAR is the אכ"ע rate of salary. Per the מבנה אחיד it is a decimal
       // fraction (0.75), but many issuers report a whole percent (75) — normalize
       // ≤1 ⇒ ×100. For death it is a salary multiple, so it is left untouched.
@@ -211,14 +226,19 @@ function parseCoverages(heshbon: Element, policyNumber: string): Coverage[] {
         type === 'disability' && amount !== null && percent !== null && percent > 0
           ? Math.round(amount / (percent / 100))
           : null
+      const endRaw = getText(cover, 'TAARICH-TOM-KISUY')
       coverages.push({
         type,
         name,
         amount,
         percent,
         coveredSalary,
-        cost: getNumber(cover, 'DMEI-BITUAH-LETASHLUM-BAPOAL'),
-        status: coverageStatusFromEndDate(getText(cover, 'TAARICH-TOM-KISUY')),
+        cost: firstPositive(
+          getNumber(cover, 'DMEI-BITUAH-LETASHLUM-BAPOAL'),
+          getNumber(cover, 'ALUT-KISUI'),
+        ),
+        status: coverageStatusFromEndDate(endRaw),
+        endDate: parseDate(endRaw),
         policyNumber,
       })
     }
@@ -284,7 +304,23 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
     throw new XmlParseError(`הקובץ "${fileName}" אינו בפורמט מסלקה פנסיונית (חסר אלמנט Mimshak)`)
   }
 
-  const managingCompany = getText(doc, 'YeshutYatzran > SHEM-YATZRAN')
+  // A holdings file can aggregate products from several producers (יצרנים):
+  // YeshutYatzran is a repeating block (מרובה) per the מבנה אחיד, each carrying
+  // its own producer code (KOD-MEZAHE-YATZRAN) + name (SHEM-YATZRAN). Every
+  // product then references its producer via NetuneiMutzar > KOD-MEZAHE-YATZRAN.
+  // Resolving the name per-product avoids stamping the first producer's name on
+  // all of them — e.g. an אנליסט gemel-investment fund must not inherit the כלל
+  // name just because a כלל product happens to lead the file.
+  const producerNameByCode = new Map<string, string>()
+  for (const yeshut of doc.querySelectorAll('YeshutYatzran')) {
+    const code = getText(yeshut, 'KOD-MEZAHE-YATZRAN')
+    const name = getText(yeshut, 'SHEM-YATZRAN')
+    if (code && name) producerNameByCode.set(code, name)
+  }
+  // Fallback for files that don't populate producer codes (single-producer feeds
+  // and the legacy shape): keep the previous behavior of the first SHEM-YATZRAN.
+  const fallbackProducer = getText(doc, 'YeshutYatzran > SHEM-YATZRAN')
+
   const mutzarim = doc.querySelectorAll('Mutzar')
   if (mutzarim.length === 0) {
     throw new XmlParseError(`הקובץ "${fileName}" ריק — לא נמצאו מוצרים`)
@@ -297,6 +333,13 @@ export function parsePensionXml(xmlText: string, fileName: string): ParsedFile {
   for (const mutzar of mutzarim) {
     const netunei = mutzar.querySelector('NetuneiMutzar')
     const sugMutzar = getText(netunei, 'SUG-MUTZAR')
+
+    // Producer name for this specific product: match the product's producer code
+    // against the YeshutYatzran map; fall back to the first-declared name when the
+    // code is missing or unmatched (preserves single-producer behavior).
+    const producerCode = getText(netunei, 'KOD-MEZAHE-YATZRAN')
+    const managingCompany =
+      (producerCode ? (producerNameByCode.get(producerCode) ?? null) : null) ?? fallbackProducer
 
     const yeshutLakoach = netunei?.querySelector('YeshutLakoach')
     if (yeshutLakoach) {

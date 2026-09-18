@@ -31,6 +31,7 @@ export interface Coverage {
   coveredSalary: number | null
   cost: number | null // monthly cost
   status: 'active' | 'inactive' | null
+  endDate: string | null // ISO yyyy-mm-dd — TAARICH-TOM-KISUY, when reported
   policyNumber: string
 }
 
@@ -146,8 +147,13 @@ export interface Finding {
 
 // ---- Supplementary info (user-entered, not from XML) ----
 
+// A fee agreement is entered per product type + producer (יצרן). One product
+// type may carry several rows (e.g. a pension fund split across two producers).
+// Matched to policies by productType + normalized producer for the cost analysis.
 export interface FeeAgreement {
-  policyNumber: string
+  id: string
+  productType: ProductType
+  producer: string | null // canonical producer name (from the producers catalog)
   agreedFeeFromDeposit: number | null
   agreedFeeFromAccumulation: number | null
 }

@@ -6,14 +6,22 @@
 import type { Engine } from './engineTypes'
 import { makeFinding } from './engineTypes'
 import { isBlockedByStopIssue } from './stopIssueEngine'
+import { producerKey } from '../config/producers'
 
 export const costEngine: Engine = ({ policies, supplementary }) => {
   const findings = []
 
   for (const policy of policies) {
     if (isBlockedByStopIssue(policy)) continue
+    // Match the agreement by product type + producer: an agreement row entered for
+    // "מגדל / קרן פנסיה" applies to every pension policy whose issuer normalizes to
+    // מגדל. A row with no producer selected cannot be matched to a specific policy.
+    const policyProducer = producerKey(policy.managingCompany)
     const agreement = supplementary.feeAgreements.find(
-      (a) => a.policyNumber === policy.policyNumber,
+      (a) =>
+        a.productType === policy.productType &&
+        a.producer !== null &&
+        producerKey(a.producer) === policyProducer,
     )
     if (!agreement) continue
 

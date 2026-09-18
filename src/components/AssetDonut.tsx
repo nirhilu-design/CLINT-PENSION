@@ -24,9 +24,14 @@ function compact(v: number): string {
 export default function AssetDonut({
   slices,
   onSelect,
+  bare = false,
+  heading = 'התפלגות נכסים כוללת',
 }: {
   slices: AssetSlice[]
   onSelect?: (type: ProductType) => void
+  /** Render inner content only (no Card chrome) — for embedding inside another card. */
+  bare?: boolean
+  heading?: string
 }) {
   const mobile = useIsMobile()
   const [hover, setHover] = useState<string | null>(null)
@@ -57,12 +62,12 @@ export default function AssetDonut({
 
   const clickable = (t: ProductType | 'other') => t !== 'other' && !!onSelect
 
-  return (
-    <Card padding={mobile ? 18 : 22}>
+  const inner = (
+    <>
       <div style={{ fontSize: mobile ? 15 : 16, fontWeight: 800, color: 'var(--color-text-primary)', marginBottom: 16 }}>
-        התפלגות נכסים כוללת
+        {heading}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: mobile ? 16 : 24, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: mobile ? 16 : 24, flexWrap: 'wrap', flex: 1 }}>
         <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
           <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="התפלגות נכסים לפי סוג מוצר">
             <g transform={`rotate(-90 ${size / 2} ${size / 2})`}>
@@ -146,6 +151,15 @@ export default function AssetDonut({
           })}
         </div>
       </div>
+    </>
+  )
+
+  if (bare) {
+    return <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>{inner}</div>
+  }
+  return (
+    <Card padding={mobile ? 18 : 22} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {inner}
     </Card>
   )
 }

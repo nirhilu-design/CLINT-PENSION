@@ -4,16 +4,32 @@ import { buildAnalysis } from '../services/analysisService'
 import type {
   AdvisorNote,
   FeeAgreement,
+  ProductType,
   TreasuryAllocation,
   TreasuryFundData,
 } from '../models/types'
 import { productTypeLabels } from '../models/labels'
+import { INSURANCE_PRODUCERS, INVESTMENT_PRODUCERS } from '../config/producers'
 import { parseTreasuryXml } from '../parser/parseTreasuryXml'
 import { parseEmployerFeeFile } from '../parser/parseEmployerFeeFile'
 import Card from '../components/ds/Card'
 import Spinner from '../components/Spinner'
 import { useIsMobile } from '../hooks/useMediaQuery'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Plus, Trash2 } from 'lucide-react'
+
+// Editable fee-agreement row (string-typed inputs; parsed on save).
+interface FeeRow {
+  id: string
+  productType: ProductType
+  producer: string
+  deposit: string
+  accum: string
+}
+
+let rowSeq = 0
+function rowId(): string {
+  return typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `row-${Date.now()}-${rowSeq++}`
+}
 
 type Tab = 'fees' | 'treasury' | 'notes' | 'scenario'
 const TABS: { id: Tab; label: string }[] = [
@@ -47,11 +63,28 @@ export default function AdvisorPage() {
   const [parsing, setParsing] = useState(false)
   const [employerFeeLog, setEmployerFeeLog] = useState<string[]>([])
 
-  const [fees, setFees] = useState<Record<string, { deposit: string; accum: string }>>(() =>
-    Object.fromEntries(
-      supplementary.feeAgreements.map((a) => [a.policyNumber, { deposit: a.agreedFeeFromDeposit?.toString() ?? '', accum: a.agreedFeeFromAccumulation?.toString() ?? '' }]),
+  // Fee agreements are entered per product type + producer. Product types that
+  // carry fee agreements, excluding ביטוח מנהלים / ביטוח חיים (per request) and
+  // unknown — derived from the portfolio so the advisor sees only relevant tabs.
+  const feeProductTypes = [
+    ...new Set(
+      policies
+        .map((p) => p.productType)
+        .filter((t) => t !== 'managers' && t !== 'life' && t !== 'unknown'),
     ),
+  ] as ProductType[]
+  const [feeRows, setFeeRows] = useState<FeeRow[]>(() =>
+    supplementary.feeAgreements
+      .filter((a): a is FeeAgreement & { productType: ProductType } => Boolean(a.productType))
+      .map((a) => ({
+        id: a.id || rowId(),
+        productType: a.productType,
+        producer: a.producer ?? '',
+        deposit: a.agreedFeeFromDeposit?.toString() ?? '',
+        accum: a.agreedFeeFromAccumulation?.toString() ?? '',
+      })),
   )
+  const [feeProduct, setFeeProduct] = useState<ProductType | null>(feeProductTypes[0] ?? null)
   const [notesList, setNotesList] = useState<AdvisorNote[]>(supplementary.advisorNotes)
   const [newNote, setNewNote] = useState('')
   const [scenario, setScenario] = useState({
@@ -76,9 +109,17 @@ export default function AdvisorPage() {
     updated.scenarioRealReturnPercent = num(scenario.realReturn)
     updated.scenarioSalaryGrowthPercent = num(scenario.salaryGrowth)
     updated.scenarioLifeExpectancy = num(scenario.lifeExp)
-    updated.feeAgreements = Object.entries(fees)
-      .map(([policyNumber, v]): FeeAgreement => ({ policyNumber, agreedFeeFromDeposit: num(v.deposit), agreedFeeFromAccumulation: num(v.accum) }))
-      .filter((a) => a.agreedFeeFromDeposit !== null || a.agreedFeeFromAccumulation !== null)
+    updated.feeAgreements = feeRows
+      .map((r): FeeAgreement => ({
+        id: r.id,
+        productType: r.productType,
+        producer: r.producer.trim() || null,
+        agreedFeeFromDeposit: num(r.deposit),
+        agreedFeeFromAccumulation: num(r.accum),
+      }))
+      // Keep rows that carry a producer and at least one fee — the minimum needed
+      // to match a policy and raise a gap finding.
+      .filter((a) => a.producer !== null && (a.agreedFeeFromDeposit !== null || a.agreedFeeFromAccumulation !== null))
     updated.benchmarks = supplementary.benchmarks
     const rebuilt = buildAnalysis(state.parsedFiles, updated, state.logicConfig)
     dispatch({ type: 'ANALYSIS_UPDATED', analysis: rebuilt })
@@ -180,31 +221,114 @@ export default function AdvisorPage() {
 
       {tab === 'fees' && (
         <Card>
-          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 4 }}>הסכמי דמי ניהול מפעליים</div>
-          <p style={{ margin: '0 0 14px', fontSize: 12, color: 'var(--color-text-tertiary)' }}>הזנת הסכם מול היצרן/מעסיק לכל פוליסה. בדיקת פער מול ההסכם תרוץ רק היכן שהוזן.</p>
-          {policies.map((p) => {
-            const fund = p.mofid ? treasuryFunds.find((f) => f.mofid === p.mofid) : undefined
-            const agreedAccum = num(fees[p.policyNumber]?.accum ?? '')
-            let badge: { label: string; bg: string; color: string } | null = null
-            if (fund?.avgFeeFromAccumulation != null && agreedAccum != null) {
-              badge = agreedAccum <= fund.avgFeeFromAccumulation
-                ? { label: 'תואם ממוצע שוק', bg: 'var(--color-success-bg)', color: 'var(--color-success-dark)' }
-                : { label: 'גבוה מהממוצע', bg: 'var(--color-warning-bg)', color: 'var(--color-warning-dark)' }
-            }
-            return (
-              <div key={p.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 120px 120px auto', gap: 12, alignItems: 'center', padding: '10px 0', borderTop: '1px solid var(--color-border-base)' }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>{productTypeLabels[p.productType]}</div>
-                  <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-mono)' }}>{p.policyNumber}</div>
-                </div>
-                <input type="number" step="0.01" placeholder="% מהפקדה" value={fees[p.policyNumber]?.deposit ?? ''} onChange={(e) => setFees({ ...fees, [p.policyNumber]: { deposit: e.target.value, accum: fees[p.policyNumber]?.accum ?? '' } })} style={inputStyle} />
-                <input type="number" step="0.01" placeholder="% מצבירה" value={fees[p.policyNumber]?.accum ?? ''} onChange={(e) => setFees({ ...fees, [p.policyNumber]: { deposit: fees[p.policyNumber]?.deposit ?? '', accum: e.target.value } })} style={inputStyle} />
-                <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 'var(--radius-full)', whiteSpace: 'nowrap', background: badge?.bg ?? 'transparent', color: badge?.color ?? 'transparent' }}>
-                  {badge?.label ?? ''}
-                </span>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 4 }}>הסכמי דמי ניהול</div>
+          <p style={{ margin: '0 0 14px', fontSize: 12, color: 'var(--color-text-tertiary)' }}>
+            בוחרים מוצר, ולכל יצרן מזינים דמי ניהול מצבירה ומהפקדה. ניתן להוסיף כמה שורות (למשל שני יצרנים בקרן פנסיה). בדיקת פער מול ההסכם תרוץ רק היכן שהוזן.
+          </p>
+          {feeProductTypes.length === 0 ? (
+            <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)', margin: 0 }}>לא נמצאו מוצרים רלוונטיים בתיק.</p>
+          ) : (
+            <>
+              {/* Product selector — one button per product type */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                {feeProductTypes.map((t) => {
+                  const active = t === feeProduct
+                  const count = feeRows.filter((r) => r.productType === t).length
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => setFeeProduct(t)}
+                      style={{
+                        padding: '7px 14px',
+                        borderRadius: 'var(--radius-full)',
+                        fontSize: 13,
+                        fontWeight: 700,
+                        fontFamily: 'inherit',
+                        cursor: 'pointer',
+                        border: `1px solid ${active ? 'var(--clint-600)' : 'var(--color-border-base)'}`,
+                        background: active ? 'var(--clint-600)' : 'var(--color-bg-card)',
+                        color: active ? '#fff' : 'var(--color-text-secondary)',
+                      }}
+                    >
+                      {productTypeLabels[t]}
+                      {count > 0 && (
+                        <span style={{ marginInlineStart: 6, fontSize: 11, opacity: 0.8 }}>{count}</span>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
-            )
-          })}
+
+              {feeProduct && (
+                <div>
+                  {/* Column headers */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 140px 140px 34px', gap: 10, padding: '0 2px 8px', fontSize: 11, color: 'var(--color-text-tertiary)' }}>
+                    <span>יצרן (חברת ביטוח / בית השקעות)</span>
+                    <span>דמי ניהול מצבירה (%)</span>
+                    <span>דמי ניהול מהפקדה (%)</span>
+                    <span />
+                  </div>
+                  {feeRows.filter((r) => r.productType === feeProduct).length === 0 ? (
+                    <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', margin: '2px 0 10px' }}>אין שורות עדיין — הוסיפו יצרן.</p>
+                  ) : (
+                    feeRows
+                      .filter((r) => r.productType === feeProduct)
+                      .map((row) => (
+                        <div key={row.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 140px 140px 34px', gap: 10, alignItems: 'center', padding: '8px 0', borderTop: '1px solid var(--color-border-base)' }}>
+                          <select
+                            value={row.producer}
+                            onChange={(e) => setFeeRows((rows) => rows.map((r) => (r.id === row.id ? { ...r, producer: e.target.value } : r)))}
+                            style={{ ...inputStyle, fontFamily: 'inherit' }}
+                          >
+                            <option value="">בחר יצרן…</option>
+                            <optgroup label="חברות ביטוח">
+                              {INSURANCE_PRODUCERS.map((pr) => (
+                                <option key={pr.key} value={pr.name}>{pr.name}</option>
+                              ))}
+                            </optgroup>
+                            <optgroup label="בתי השקעות">
+                              {INVESTMENT_PRODUCERS.map((pr) => (
+                                <option key={pr.key} value={pr.name}>{pr.name}</option>
+                              ))}
+                            </optgroup>
+                          </select>
+                          <input
+                            type="number"
+                            step="0.01"
+                            placeholder="% מצבירה"
+                            value={row.accum}
+                            onChange={(e) => setFeeRows((rows) => rows.map((r) => (r.id === row.id ? { ...r, accum: e.target.value } : r)))}
+                            style={inputStyle}
+                          />
+                          <input
+                            type="number"
+                            step="0.01"
+                            placeholder="% מהפקדה"
+                            value={row.deposit}
+                            onChange={(e) => setFeeRows((rows) => rows.map((r) => (r.id === row.id ? { ...r, deposit: e.target.value } : r)))}
+                            style={inputStyle}
+                          />
+                          <button
+                            onClick={() => setFeeRows((rows) => rows.filter((r) => r.id !== row.id))}
+                            aria-label="הסר שורה"
+                            title="הסר שורה"
+                            style={{ width: 34, height: 34, borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border-base)', background: 'var(--color-bg-card)', color: 'var(--color-text-tertiary)', cursor: 'pointer', display: 'grid', placeItems: 'center' }}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      ))
+                  )}
+                  <button
+                    onClick={() => setFeeRows((rows) => [...rows, { id: rowId(), productType: feeProduct, producer: '', deposit: '', accum: '' }])}
+                    style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 'var(--radius-md)', border: '1px dashed var(--clint-300)', background: 'var(--clint-50)', color: 'var(--clint-700)', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}
+                  >
+                    <Plus size={15} /> הוסף שורה
+                  </button>
+                </div>
+              )}
+            </>
+          )}
           <div style={{ marginTop: 18, paddingTop: 14, borderTop: '1px solid var(--color-border-base)' }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: 8 }}>קובץ דמי ניהול מעסיק</div>
             <input type="file" accept=".xml,.csv,text/xml" multiple onChange={(e) => handleEmployerFeeFile(e.target.files)} style={{ fontSize: 13 }} />

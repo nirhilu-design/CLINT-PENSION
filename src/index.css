@@ -81,9 +81,10 @@
   --radius-full: 9999px;
   --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  /* fonts */
-  --font-ui: "Heebo", "Segoe UI", Arial, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  /* fonts — Calibri (with Hebrew-capable fallbacks for non-Windows). Numbers stay
+     tabular via font-feature-settings: "tnum" on body, so figures still align. */
+  --font-ui: "Calibri", "Gisha", "Segoe UI", Arial, sans-serif;
+  --font-mono: "Calibri", "Gisha", "Segoe UI", Arial, sans-serif;
   /* custom accent palette (handoff) — charts/bars */
   --accent-navy: #00215d;
   --accent-coral: #ff2756;
@@ -98,7 +99,7 @@ html {
 }
 
 body {
-  font-family: "Heebo", "Segoe UI", Arial, sans-serif;
+  font-family: "Calibri", "Gisha", "Segoe UI", Arial, sans-serif;
   background-color: #f4f6f9;
   color: #17233a;
   font-feature-settings: "tnum";

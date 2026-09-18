@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import type { Finding, Policy, TreasuryAllocation } from '../models/types'
 import { coverageTypeLabels, productTypeLabels } from '../models/labels'
 import { formatCurrency, formatDate, formatPercent } from '../utils/format'
+import { pensionLacksSurvivorCoverage } from '../services/deathBenefitService'
 import FindingCard from './FindingCard'
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -117,7 +118,7 @@ export default function PolicyDrawer({
             <Tile label="סכום הפקדה אחרונה" value={formatCurrency(policy.lastDepositTotal)} />
             <Tile label="תאריך הצטרפות" value={formatDate(policy.openDate)} />
             <Tile label="מספר אוצר" value={policy.mofid ?? '—'} />
-            <Tile label="תשואה נטו" value={formatPercent(policy.netReturn)} />
+            <Tile label="תשואה נטו (מתחילת שנה)" value={formatPercent(policy.netReturn)} />
           </div>
 
           <SectionLabel>הפקדות ודמי ניהול</SectionLabel>
@@ -187,17 +188,36 @@ export default function PolicyDrawer({
           ) : (
             policy.coverages.map((c, i) => (
               <div key={i} style={{ padding: '9px 0', borderBottom: '1px solid var(--color-border-base)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
                   <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>{coverageTypeLabels[c.type]}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-text-primary)' }}>{formatCurrency(c.amount)}</span>
+                  <span style={{ textAlign: 'left', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-text-primary)' }}>
+                      {c.amount !== null && c.amount > 0 ? formatCurrency(c.amount) : '—'}
+                    </span>
+                    <span style={{ fontSize: 10.5, color: 'var(--color-text-tertiary)', marginInlineStart: 5 }}>סכום ביטוח</span>
+                  </span>
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 2 }}>
-                  {c.name ? `${c.name} · ` : ''}
-                  {c.percent !== null ? `שיעור ${formatPercent(c.percent, 0)} · ` : ''}
-                  עלות חודשית: {formatCurrency(c.cost)}
+                  {[
+                    c.name ? c.name : null,
+                    c.percent !== null ? `שיעור ${formatPercent(c.percent, 0)}` : null,
+                    c.cost !== null && c.cost > 0 ? `עלות חודשית ${formatCurrency(c.cost)}` : null,
+                    c.endDate ? `בתוקף עד ${formatDate(c.endDate)}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
                 </div>
               </div>
             ))
+          )}
+
+          {pensionLacksSurvivorCoverage(policy) && (
+            <div style={{ marginTop: 12, padding: '11px 13px', borderRadius: 'var(--radius-md)', background: 'var(--clint-50)', border: '1px solid var(--clint-200, var(--color-border-base))' }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--clint-700)', marginBottom: 3 }}>הערה: לא דווח כיסוי שאירים/יתומים בקרן</div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
+                בקרן זו לא דווח כיסוי לשאירים או ליתומים. במקרה פטירה, הצבירה ({formatCurrency(policy.currentValue)}) צפויה לעבור למוטבים כסכום חד-פעמי — ולכן נכללת ב"סכום למקרה מוות". נקודה לבדיקה מול בעל רישיון.
+              </div>
+            </div>
           )}
 
           <SectionLabel>מוטבים</SectionLabel>
