@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import type { Finding, Policy, TreasuryAllocation } from '../models/types'
 import { coverageTypeLabels, productTypeLabels } from '../models/labels'
 import { formatCurrency, formatDate, formatPercent } from '../utils/format'
+import { pensionLacksSurvivorCoverage } from '../services/deathBenefitService'
 import FindingCard from './FindingCard'
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -208,6 +209,15 @@ export default function PolicyDrawer({
                 </div>
               </div>
             ))
+          )}
+
+          {pensionLacksSurvivorCoverage(policy) && (
+            <div style={{ marginTop: 12, padding: '11px 13px', borderRadius: 'var(--radius-md)', background: 'var(--clint-50)', border: '1px solid var(--clint-200, var(--color-border-base))' }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--clint-700)', marginBottom: 3 }}>הערה: לא דווח כיסוי שאירים/יתומים בקרן</div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
+                בקרן זו לא דווח כיסוי לשאירים או ליתומים. במקרה פטירה, הצבירה ({formatCurrency(policy.currentValue)}) צפויה לעבור למוטבים כסכום חד-פעמי — ולכן נכללת ב"סכום למקרה מוות". נקודה לבדיקה מול בעל רישיון.
+              </div>
+            </div>
           )}
 
           <SectionLabel>מוטבים</SectionLabel>

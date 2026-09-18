@@ -13,6 +13,7 @@ import { useIsMobile } from '../hooks/useMediaQuery'
 import { useDragScroll } from '../hooks/useDragScroll'
 import { sortFindings } from '../engines/findingPriority'
 import { assessCompleteness } from '../services/completenessService'
+import { computeDeathBenefit } from '../services/deathBenefitService'
 import { useEffect, useState } from 'react'
 import {
   User,
@@ -139,12 +140,10 @@ export default function DashboardPage() {
 
   // ---- V2 Overview: four primary KPIs (white cards, per the reference) ----
   const ipMax = ipPercents.length > 0 ? Math.max(...ipPercents) : null
-  // Total death benefit (סכום למקרה מוות) — sum of death coverages that aren't
-  // expired. Factual figure; no target/recommendation ("מאיר ולא ממליץ").
-  const deathCovers = policies
-    .flatMap((p) => p.coverages)
-    .filter((c) => c.type === 'death' && c.status !== 'inactive' && (c.amount ?? 0) > 0)
-  const totalDeathBenefit = deathCovers.reduce((s, c) => s + (c.amount ?? 0), 0)
+  // Total death benefit (סכום למקרה מוות) — the lump sum passing to beneficiaries
+  // on death across life / managers / gemel / gemel-investment / education, plus a
+  // pension fund only when it reports no survivor coverage. Factual; no advice.
+  const deathBenefit = computeDeathBenefit(policies)
   const primaryKpis: Kpi[] = [
     {
       key: 'savings',
@@ -162,12 +161,12 @@ export default function DashboardPage() {
       accent: 'var(--clint-600)',
       tint: 'var(--clint-50)',
       label: 'סכום למקרה מוות',
-      numeric: totalDeathBenefit,
+      numeric: deathBenefit.total,
       format: formatCurrency,
       sub:
-        deathCovers.length > 0
-          ? `${deathCovers.length} ${deathCovers.length === 1 ? 'כיסוי' : 'כיסויים'}`
-          : 'לא אותר כיסוי מוות',
+        deathBenefit.contributingCount === 0
+          ? 'לא אותר סכום למקרה מוות'
+          : `${deathBenefit.contributingCount} ${deathBenefit.contributingCount === 1 ? 'מוצר' : 'מוצרים'}${deathBenefit.includesPensionWithoutSurvivors ? ' · כולל קרן ללא שאירים' : ''}`,
     },
     {
       key: 'ip',
