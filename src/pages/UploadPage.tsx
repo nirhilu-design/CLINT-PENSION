@@ -1,12 +1,14 @@
 import { useRef, useState } from 'react'
 import { useApp } from '../hooks/useAppState'
 import { parseFiles, buildAnalysis, emptySupplementary, XmlParseError } from '../services/analysisService'
+import ClearinghouseRequest from '../components/ClearinghouseRequest'
 
 export default function UploadPage() {
   const { state, dispatch } = useApp()
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [mode, setMode] = useState<'mislaka' | 'upload'>('mislaka')
 
   async function handleFiles(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return
@@ -37,13 +39,32 @@ export default function UploadPage() {
           מערכת ניתוח פנסיוני
         </h1>
         <p className="clint-rise text-slate-500 mb-6" style={{ animationDelay: '70ms' }}>
-          העלאת קבצי XML מהמסלקה הפנסיונית לניתוח מרוכז של התיק
+          ניתוח מרוכז של התיק הפנסיוני — בקשה מהמסלקה או העלאת קבצים
         </p>
 
         {busy ? (
           <LoadingSkeleton />
         ) : (
           <>
+            {/* Path toggle: request from the clearinghouse (demo) vs. manual upload */}
+            <div className="clint-rise inline-flex rounded-xl bg-slate-100 p-1 mb-5" style={{ animationDelay: '110ms' }}>
+              {([['mislaka', 'בקשה מהמסלקה'], ['upload', 'העלאת קבצים']] as const).map(([m, label]) => (
+                <button
+                  key={m}
+                  onClick={() => setMode(m)}
+                  aria-pressed={mode === m}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${
+                    mode === m ? 'bg-white shadow-sm text-brand-800' : 'text-slate-500'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {mode === 'mislaka' && <ClearinghouseRequest />}
+
+            {mode === 'upload' && (
             <div
               onDragOver={(e) => {
                 e.preventDefault()
@@ -79,6 +100,7 @@ export default function UploadPage() {
                 onChange={(e) => handleFiles(e.target.files)}
               />
             </div>
+            )}
 
             {state.error && (
               <div className="clint-rise mt-4 rounded-lg border border-red-300 bg-red-50 p-4 text-red-700 text-sm text-right">

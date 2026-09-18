@@ -4,8 +4,8 @@ import type { Policy, ProductType } from '../models/types'
 import { formatCurrency, formatDate } from '../utils/format'
 import ContextBar from '../components/ContextBar'
 import KpiRow, { type Kpi } from '../components/KpiRow'
-import RetirementProjection from '../components/RetirementProjection'
-import AssetDonut, { type AssetSlice } from '../components/AssetDonut'
+import PortfolioOverviewCard from '../components/PortfolioOverviewCard'
+import { type AssetSlice } from '../components/AssetDonut'
 import CompanyLogo from '../components/CompanyLogo'
 import FindingHighlights from '../components/FindingHighlights'
 import Card from '../components/ds/Card'
@@ -354,7 +354,7 @@ export default function DashboardPage() {
 
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: mobile ? '16px 16px 40px' : '24px 32px 48px' }}>
         {/* Primary KPIs — four white cards (V2 Overview) */}
-        <div style={{ marginBottom: 24 }}>
+        <div id="insurance" style={{ marginBottom: 24, scrollMarginTop: 80 }}>
           <KpiRow kpis={primaryKpis} />
         </div>
         {/* Context questions — a bar (replaces the old full-page step) */}
@@ -406,30 +406,22 @@ export default function DashboardPage() {
           )}
         </Card>
 
-        {/* Retirement projection (two-state timeline) + asset-allocation donut */}
-        {(hasProjection || donutSlices.length > 0) && (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: mobile ? '1fr' : 'minmax(0,1fr) minmax(0,1.45fr)',
-              gap: mobile ? 16 : 20,
-              marginBottom: 24,
-              alignItems: 'start',
-            }}
-          >
-            {donutSlices.length > 0 && (
-              <AssetDonut slices={donutSlices} onSelect={(type) => dispatch({ type: 'OPEN_PRODUCT', productType: type })} />
-            )}
-            {hasProjection && (
-              <RetirementProjection
-                currentAge={age !== null && !isNaN(age) ? age : null}
-                retirementAge={retirementAge ?? 67}
-                currentAccumulation={totalAssets}
-                currentPension={totalPensionWithoutDeposits}
-                projectedAccumulation={projectedCapital}
-                projectedPension={totalPensionWithDeposits}
-              />
-            )}
+        {/* Central card — "תמונת התיק" with tabs (overview / performance) */}
+        {(hasProjection || donutSlices.length > 0 || policies.length > 0) && (
+          <div id="portfolio" style={{ scrollMarginTop: 80 }}>
+            <PortfolioOverviewCard
+              slices={donutSlices}
+              onSelectProduct={(type) => dispatch({ type: 'OPEN_PRODUCT', productType: type })}
+              currentAge={age !== null && !isNaN(age) ? age : null}
+              retirementAge={retirementAge ?? 67}
+              currentAccumulation={totalAssets}
+              currentPension={totalPensionWithoutDeposits}
+              projectedAccumulation={projectedCapital}
+              projectedPension={totalPensionWithDeposits}
+              hasProjection={hasProjection}
+              policies={policies}
+              colorFor={(t) => DONUT_COLORS[t]}
+            />
           </div>
         )}
 
@@ -439,7 +431,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Products */}
-        <section>
+        <section id="products" style={{ scrollMarginTop: 80 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, margin: '0 0 14px', flexWrap: 'wrap' }}>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>המוצרים בתיק</h2>
             <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>{policies.length} מוצרים · לחיצה פותחת את הפירוט</span>
@@ -455,7 +447,9 @@ export default function DashboardPage() {
                 const head = policyHeadline(p)
                 const st = policyStatusOf(p)
                 const m = STATUS_META[st.tone]
-                const name = p.managingCompany ?? p.productName ?? productTypeLabels[p.productType]
+                const typeColor = DONUT_COLORS[p.productType]
+                const typeLabel = productTypeLabels[p.productType]
+                const company = p.managingCompany ?? p.productName ?? 'גוף לא דווח'
                 return (
                   <button
                     key={p.id}
@@ -467,6 +461,7 @@ export default function DashboardPage() {
                       textAlign: 'right',
                       background: 'var(--color-bg-card)',
                       border: '1px solid var(--color-border-base)',
+                      borderTop: `3px solid ${typeColor}`,
                       borderRadius: 'var(--radius-lg)',
                       boxShadow: 'var(--shadow-card)',
                       padding: 16,
@@ -475,21 +470,38 @@ export default function DashboardPage() {
                       transition: 'transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out)',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 11, justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
-                        <CompanyLogo company={p.managingCompany} size={40} />
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontWeight: 700, color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {name}
-                          </div>
-                          <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {productTypeLabels[p.productType]}
-                          </div>
-                        </div>
-                      </div>
+                    {/* Product type is the headline — many funds share a managing company */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'space-between' }}>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          fontSize: 13,
+                          fontWeight: 800,
+                          color: typeColor,
+                          background: `${typeColor}16`,
+                          padding: '4px 10px',
+                          borderRadius: 'var(--radius-full)',
+                          maxWidth: '100%',
+                          minWidth: 0,
+                        }}
+                      >
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: typeColor, flexShrink: 0 }} />
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{typeLabel}</span>
+                      </span>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 'var(--radius-full)', background: m.bg, color: m.color, whiteSpace: 'nowrap', flexShrink: 0 }}>
                         {st.sign} {st.label}
                       </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0, marginTop: 12 }}>
+                      <CompanyLogo company={p.managingCompany} size={36} />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 10.5, color: 'var(--color-text-tertiary)' }}>גוף מנהל</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {company}
+                        </div>
+                      </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 14 }}>
                       <div>
